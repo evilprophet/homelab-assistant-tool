@@ -1,0 +1,21 @@
+parameters:
+  configuration:
+    cron: true # Enable or disable cron jobs
+    ssh_username: # Username for SSH connection
+    ssh_key_path: # Path to SSH key
+    timezone: # Timezone for the server
+
+  devices:
+    # device_name: Unique of the device
+    # platform: linux|debian|ubuntu|proxmox_ve|proxmox_bs|dsm|truenas
+    # ip: IP address of the device
+    # mac: MAC address of the device
+    - { name: "device_name", platform: "linux", ip: "192.168.1.1", mac: "00:00:00:00:00:00" }
+
+  schedules:
+    # name: Name of the schedule
+    # schedule: Cron schedule
+    # command: Command to execute
+    # devices: List of devices to execute the command on
+    - { name: "Start Devices", schedule: "0 0 * * *", command: "start", devices: [ "device1" ] }
+    - { name: "Stop Devices", schedule: "0 3 * * *", command: "stop", devices: [ "device1" ] }

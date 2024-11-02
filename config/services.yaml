@@ -1,0 +1,23 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    bind:
+      string $version: '1.0.0'
+      string $logDirectory: '%log_directory%'
+      array $configuration: '%configuration%'
+      array $devicesData: '%devices%'
+      array $schedulesData: '%schedules%'
+
+  _instanceof:
+    Symfony\Component\Console\Command\Command:
+      tags: [ 'command' ]
+
+  EvilStudio\HAT\:
+    resource: '../src/'
+    exclude: [ '../src/Model/Generic/*', '../src/Model/Schedule' ]
+
+  EvilStudio\HAT\Application:
+    public: true
+    arguments:
+      - !tagged command

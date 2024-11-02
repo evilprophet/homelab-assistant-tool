@@ -1,0 +1,32 @@
+{
+    "name": "evilstudio/homelab-assistant-tool",
+    "type": "project",
+    "description": "CLI Tool which can help with manage your homelab devices.",
+    "keywords": ["homelab", "assistant", "tool", "helper"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Dariusz Matoga",
+            "email": "dmatoga@evilstudio.pl"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "symfony/config": "^7.1",
+        "symfony/console": "^7.1",
+        "symfony/dependency-injection": "^7.1",
+        "symfony/filesystem": "^7.1",
+        "symfony/process": "^7.1",
+        "symfony/yaml": "^7.1",
+        "monolog/monolog": "^3.7",
+        "geerlingguy/ping": "^1.2",
+        "phpseclib/phpseclib": "^3.0",
+        "diegonz/php-wake-on-lan": "^2.1",
+        "dragonmantank/cron-expression": "^3.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "EvilStudio\\HAT\\": "src/"
+        }
+    }
+}

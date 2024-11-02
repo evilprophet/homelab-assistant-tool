@@ -1,0 +1,6 @@
+*.iml
+/config/parameters.yaml
+
+/.idea/
+/var/
+/vendor/
