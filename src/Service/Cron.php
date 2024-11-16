@@ -21,8 +21,6 @@ class Cron
 
     public function execute(): void
     {
-        $this->logger->logInfo('Cron job started');
-
         $schedules = $this->scheduleProvider->getSchedules();
 
         foreach ($schedules as $schedule) {
@@ -36,13 +34,24 @@ class Cron
             foreach ($schedule->getDeviceCodes() as $deviceCode) {
                 try {
                     $device = $this->deviceProvider->getDevice($deviceCode);
+                    $device->checkStatus();
 
                     switch ($schedule->getCommand()) {
                         case ScheduleInterface::COMMAND_START:
+                            if ($device->getStatus()) {
+                                $message = sprintf('Device already running: %s', $deviceCode);
+                                break;
+                            }
+
                             $device->start();
                             $message = sprintf('Device started: %s', $deviceCode);
                             break;
                         case ScheduleInterface::COMMAND_STOP:
+                            if ($device->getStatus()) {
+                                $message = sprintf('Device already stopped: %s', $deviceCode);
+                                break;
+                            }
+
                             $device->stop();
                             $message = sprintf('Device stopped: %s', $deviceCode);
                             break;
@@ -57,7 +66,5 @@ class Cron
                 }
             }
         }
-
-        $this->logger->logInfo('Cron job finished');
     }
 }
