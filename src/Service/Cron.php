@@ -47,7 +47,7 @@ class Cron
                             $message = sprintf('Device started: %s', $deviceCode);
                             break;
                         case ScheduleInterface::COMMAND_STOP:
-                            if ($device->getStatus()) {
+                            if (!$device->getStatus()) {
                                 $message = sprintf('Device already stopped: %s', $deviceCode);
                                 break;
                             }
