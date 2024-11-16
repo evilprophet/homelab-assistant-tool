@@ -29,8 +29,7 @@ class Linux extends Generic
 
     public function ssh(OutputInterface $output): void
     {
-        $user = $this->configuration->getSshUsername();
-        $sshCommand = sprintf('%s@%s', $user, $this->getIp());
+        $sshCommand = sprintf('%s@%s', $this->getUsername(), $this->getIp());
 
         $process = new Process(['ssh', '-t', $sshCommand]);
         $process->setTty(true);
