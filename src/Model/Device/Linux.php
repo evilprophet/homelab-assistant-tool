@@ -20,7 +20,7 @@ class Linux extends Generic
             return false;
         }
 
-        if (!$ssh->exec('systemctl poweroff')){
+        if ($ssh->exec('systemctl poweroff') != ''){
             return false;
         }
 
