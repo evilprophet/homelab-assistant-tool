@@ -24,14 +24,16 @@ class Generic implements DeviceInterface
     protected string $platform;
     protected string $ip;
     protected string $mac;
+    protected ?string $username;
     protected ?bool $status = null;
 
-    public function configure(string $name, string $platform, string $ip, string $mac): DeviceInterface
+    public function configure(string $name, string $platform, string $ip, string $mac, ?string $username): DeviceInterface
     {
         $this->name = $name;
         $this->platform = $platform;
         $this->ip = $ip;
         $this->mac = $mac;
+        $this->username = $username;
 
         return $this;
     }
@@ -56,6 +58,11 @@ class Generic implements DeviceInterface
         return $this->mac;
     }
 
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
+
     public function getStatus(bool $asString = false): ?bool
     {
         return $this->status;
@@ -67,7 +74,8 @@ class Generic implements DeviceInterface
             'name' => $this->getName(),
             'platform' => $this->getPlatform(),
             'ip' => $this->getIp(),
-            'mac' => $this->getMac()
+            'mac' => $this->getMac(),
+
         ];
 
         if ($this->getStatus() !== null) {

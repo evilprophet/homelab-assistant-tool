@@ -24,7 +24,8 @@ class DeviceProvider
                 $deviceData['name'],
                 $deviceData['platform'],
                 $deviceData['ip'],
-                $deviceData['mac']
+                $deviceData['mac'],
+                $deviceData['username'] ?? null
             );
 
             $this->deviceList[$device->getName()] = $device;

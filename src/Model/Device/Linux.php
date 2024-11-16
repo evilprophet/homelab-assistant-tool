@@ -16,7 +16,7 @@ class Linux extends Generic
         $ssh = new SSH2($this->getIp());
         $sshKey = PublicKeyLoader::load($this->configuration->getSshKey());
 
-        if (!$ssh->login($this->configuration->getSshUsername(), $sshKey)) {
+        if (!$ssh->login($this->getUsername(), $sshKey)) {
             return false;
         }
 
