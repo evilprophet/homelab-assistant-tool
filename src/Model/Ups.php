@@ -10,10 +10,12 @@ use EvilStudio\HAT\Exception\UpsFailedUpdateStatus;
 class Ups implements UpsInterface
 {
     protected const string COMMAND_UPDATE_STATUS = 'upsc %s@%s';
+
     protected const string PROPERTY_DEVICE_MODEL = 'device.model';
     protected const string PROPERTY_DEVICE_SERIAL = 'device.serial';
     protected const string PROPERTY_UPS_STATUS = 'ups.status';
     protected const string PROPERTY_BATTERY_RUNTIME = 'battery.runtime';
+    protected const string PROPERTY_BATTERY_RUNTIME_LOW = 'battery.runtime.low';
     protected const string PROPERTY_BATTERY_CHARGE = 'battery.charge';
     protected const string PROPERTY_VALUE_UPS_STATUS_ON_BATTERY = 'OB';
 
@@ -21,16 +23,16 @@ class Ups implements UpsInterface
     protected ?string $modelName = null;
     protected ?string $serialNumber = null;
     protected ?string $status = null;
-    protected ?int $batteryRuntime = null;
     protected ?int $batteryLevel = null;
+    protected ?int $batteryRuntime = null;
+    protected ?int $batteryRuntimeLow = null;
+    protected ?bool $isBatteryRuntimeLow = null;
     protected ?bool $isOnBattery = null;
-    protected ?bool $isBatteryLevelLow = null;
 
     public function __construct(
         protected string $name,
         protected string $identifier,
-        protected string $host,
-        protected ?int $batteryLevelLow
+        protected string $host
     ) {
     }
 
@@ -55,20 +57,22 @@ class Ups implements UpsInterface
         $this->modelName = $this->properties[self::PROPERTY_DEVICE_MODEL] ?? '';
         $this->serialNumber = $this->properties[self::PROPERTY_DEVICE_SERIAL] ?? '';
         $this->status = $this->properties[self::PROPERTY_UPS_STATUS] ?? '';
-        $this->batteryRuntime = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME]) ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME]) : null;
         $this->batteryLevel = isset($this->properties[self::PROPERTY_BATTERY_CHARGE]) ? intval($this->properties[self::PROPERTY_BATTERY_CHARGE]) : null;
+        $this->batteryRuntime = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME]) ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME]) : null;
+        $this->batteryRuntimeLow = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW]) ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW]) : null;
 
-        $this->isBatteryLevelLow = $this->batteryLevelLow && $this->batteryLevel && $this->batteryLevel <= $this->batteryLevelLow;
         $this->isOnBattery = str_contains($this->status, self::PROPERTY_VALUE_UPS_STATUS_ON_BATTERY);
+        $this->isBatteryRuntimeLow = $this->batteryRuntimeLow && $this->batteryRuntime && $this->batteryRuntime <= $this->batteryRuntimeLow;
     }
 
     public function toArray(): array
     {
-        $batteryInfo = sprintf("Current: %s%%", $this->getBatteryLevel() ?? '-');
-        $batteryInfo .= sprintf("\nRuntime: %s min", $this->getBatteryRuntime() ? round($this->batteryRuntime / 60) : 'N/A');
-        if ($this->getBatteryLevelLow()){
-            $batteryInfo .= sprintf("\nLow: %s%%", $this->getBatteryLevelLow());
-        }
+        $batteryInfo = sprintf(
+            "Current: %s%%\nRuntime: %s min\nRuntime Low: %s min",
+            $this->getBatteryLevel() ?? '-',
+            $this->getBatteryRuntime() ? round($this->batteryRuntime / 60) : 'N/A',
+            $this->getBatteryRuntimeLow() ? round($this->batteryRuntimeLow / 60) : 'N/A'
+        );
 
         return [
             'name' => $this->getName(),
@@ -109,19 +113,19 @@ class Ups implements UpsInterface
         return $this->status;
     }
 
-    public function getBatteryRuntime(): ?int
-    {
-        return $this->batteryRuntime;
-    }
-
     public function getBatteryLevel(): ?int
     {
         return $this->batteryLevel;
     }
 
-    public function getBatteryLevelLow(): ?int
+    public function getBatteryRuntime(): ?int
     {
-        return $this->batteryLevelLow;
+        return $this->batteryRuntime;
+    }
+
+    public function getBatteryRuntimeLow(): ?int
+    {
+        return $this->batteryRuntimeLow;
     }
 
     public function isOnBattery(): ?bool
@@ -129,8 +133,8 @@ class Ups implements UpsInterface
         return $this->isOnBattery;
     }
 
-    public function isBatteryLevelLow(): ?bool
+    public function isBatteryRuntimeLow(): ?bool
     {
-        return $this->isBatteryLevelLow;
+        return $this->isBatteryRuntimeLow;
     }
 }
