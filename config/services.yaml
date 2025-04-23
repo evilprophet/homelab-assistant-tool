@@ -3,10 +3,11 @@ services:
     autowire: true
     autoconfigure: true
     bind:
-      string $version: '1.0.0'
+      string $version: '1.1.0'
       string $logDirectory: '%log_directory%'
       array $configuration: '%configuration%'
       array $devicesData: '%devices%'
+      array $upsData: '%ups%'
       array $schedulesData: '%schedules%'
 
   _instanceof:

@@ -17,8 +17,7 @@ class ShowDevicesCommand extends Command
 {
     public function __construct(
         protected DeviceProvider $deviceProvider
-    )
-    {
+    ) {
         parent::__construct();
     }
 
@@ -38,8 +37,8 @@ class ShowDevicesCommand extends Command
         }
 
         $headers = $this->deviceProvider->getProperties();
-        $deviceProvider = $this->deviceProvider->getDevices();
-        $deviceArray = array_map(fn($device) => $device->toArray(), $deviceProvider);
+        $deviceList = $this->deviceProvider->getDeviceList();
+        $deviceArray = array_map(fn($device) => $device->toArray(), $deviceList);
 
         $outputHelper->table($headers, $deviceArray);
 

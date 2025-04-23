@@ -1,15 +1,24 @@
 parameters:
   configuration:
-    cron: true # Enable or disable cron jobs
+    cron: true # Enable or disable cron jobs. Command hat:cron:execute has to be manually added to crontab.
     ssh_key_path: # Path to SSH key
     timezone: # Timezone for the server
 
   devices:
     # device_name: Unique of the device
-    # platform: linux|debian|ubuntu|proxmox_ve|proxmox_bs|dsm|truenas
+    # platform: linux|debian|ubuntu|proxmox_ve|proxmox_bs
     # ip: IP address of the device
     # mac: MAC address of the device
-    - { name: "device_name", platform: "linux", ip: "192.168.1.1", mac: "00:00:00:00:00:00", username: "user" }
+    # ups_identifier: Identifier of the UPS to which the device is connected
+    # username: SSH username for the device
+    - { name: "device_name", platform: "linux", ip: "192.168.1.1", mac: "00:00:00:00:00:00", ups_identifier: "ups", username: "user" }
+
+  ups:
+    # name: Unique name of the UPS
+    # identifier: Name of UPS defined in NUT
+    # host: IP address of the UPS
+    # battery_level_low: Battery level threshold for low battery. Optional
+    - { name: "ups_name", identifier: "ups", host: "localhost", battery_level_low: 20 }
 
   schedules:
     # name: Name of the schedule

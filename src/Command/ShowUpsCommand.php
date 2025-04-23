@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command;
 
-use EvilStudio\HAT\Helper\Configuration;
-use EvilStudio\HAT\Provider\DeviceProvider;
-use EvilStudio\HAT\Service\Cron;
+use EvilStudio\HAT\Provider\UpsProvider;
 use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -14,29 +12,27 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'hat:cron:execute', description: 'Execute cron tasks, it should be added to crontab')]
-class CronCommand extends AbstractCommand
+#[AsCommand(name: 'hat:ups:show-all', description: 'Show list of all UPS')]
+class ShowUpsCommand extends Command
 {
     public function __construct(
-        protected Cron $cron,
-        protected Configuration $configuration,
-        DeviceProvider $deviceProvider
+        protected UpsProvider $upsProvider
     ) {
-        parent::__construct($deviceProvider);
+        parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $outputHelper = new SymfonyStyle($input, $output);
 
-        if (!$this->configuration->isCronEnabled()) {
-            $outputHelper->warning('Cron is disabled in configuration.');
+        $this->upsProvider->updateAllUpsStatus();
 
-            return Command::SUCCESS;
-        }
+        $headers = $this->upsProvider->getProperties();
+        $upsList = $this->upsProvider->getUpsList();
+        $upsArray = array_map(fn($ups) => $ups->toArray(), $upsList);
 
         try {
-            $this->cron->execute();
+            $outputHelper->table($headers, $upsArray);
         } catch (Exception $e) {
             $outputHelper->error($e->getMessage());
 

@@ -8,7 +8,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 interface DeviceInterface
 {
-    public function configure(string $name, string $platform, string $ip, string $mac, ?string $username): DeviceInterface;
+    public function configure(string $name, string $platform, string $ip, string $mac, ?string $upsIdentifier, ?string $username): DeviceInterface;
+
+    public function toArray(): array;
 
     public function getName(): string;
 
@@ -18,11 +20,11 @@ interface DeviceInterface
 
     public function getMac(): string;
 
+    public function getUpsIdentifier(): ?string;
+
     public function getUsername(): ?string;
 
     public function getStatus(bool $asString): ?bool;
-
-    public function toArray(): array;
 
     public function checkStatus(): void;
 
