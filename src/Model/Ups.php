@@ -14,6 +14,8 @@ class Ups implements UpsInterface
     protected const string PROPERTY_DEVICE_MODEL = 'device.model';
     protected const string PROPERTY_DEVICE_SERIAL = 'device.serial';
     protected const string PROPERTY_UPS_STATUS = 'ups.status';
+    protected const string PROPERTY_UPS_POWER = 'ups.power';
+    protected const string PROPERTY_UPS_REAL_POWER = 'ups.realpower';
     protected const string PROPERTY_BATTERY_RUNTIME = 'battery.runtime';
     protected const string PROPERTY_BATTERY_RUNTIME_LOW = 'battery.runtime.low';
     protected const string PROPERTY_BATTERY_CHARGE = 'battery.charge';
@@ -23,9 +25,12 @@ class Ups implements UpsInterface
     protected ?string $modelName = null;
     protected ?string $serialNumber = null;
     protected ?string $status = null;
+    protected ?int $power = null;
+    protected ?int $realPower = null;
     protected ?int $batteryLevel = null;
     protected ?int $batteryRuntime = null;
     protected ?int $batteryRuntimeLow = null;
+
     protected ?bool $isBatteryRuntimeLow = null;
     protected ?bool $isOnBattery = null;
 
@@ -57,6 +62,8 @@ class Ups implements UpsInterface
         $this->modelName = $this->properties[self::PROPERTY_DEVICE_MODEL] ?? '';
         $this->serialNumber = $this->properties[self::PROPERTY_DEVICE_SERIAL] ?? '';
         $this->status = $this->properties[self::PROPERTY_UPS_STATUS] ?? '';
+        $this->power = isset($this->properties[self::PROPERTY_UPS_POWER]) ? intval($this->properties[self::PROPERTY_UPS_POWER]) : null;
+        $this->realPower = isset($this->properties[self::PROPERTY_UPS_REAL_POWER]) ? intval($this->properties[self::PROPERTY_UPS_REAL_POWER]) : null;
         $this->batteryLevel = isset($this->properties[self::PROPERTY_BATTERY_CHARGE]) ? intval($this->properties[self::PROPERTY_BATTERY_CHARGE]) : null;
         $this->batteryRuntime = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME]) ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME]) : null;
         $this->batteryRuntimeLow = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW]) ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW]) : null;
@@ -67,6 +74,12 @@ class Ups implements UpsInterface
 
     public function toArray(): array
     {
+        $powerInfo = sprintf(
+            "P: %s W\nS: %s VA",
+            $this->getRealPower() ?? '-',
+            $this->getPower() ?? '-'
+        );
+
         $batteryInfo = sprintf(
             "Current: %s%%\nRuntime: %s min\nRuntime Low: %s min",
             $this->getBatteryLevel() ?? '-',
@@ -79,6 +92,7 @@ class Ups implements UpsInterface
             'model_name' => $this->getModelName(),
             'serial_number' => $this->getSerialNumber(),
             'status' => $this->getStatus(),
+            'power' => $powerInfo,
             'battery' => $batteryInfo
         ];
     }
@@ -111,6 +125,16 @@ class Ups implements UpsInterface
     public function getStatus(): ?string
     {
         return $this->status;
+    }
+
+    public function getPower(): ?int
+    {
+        return $this->power;
+    }
+
+    public function getRealPower(): ?int
+    {
+        return $this->realPower;
     }
 
     public function getBatteryLevel(): ?int

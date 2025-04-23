@@ -11,7 +11,7 @@ use EvilStudio\HAT\Model\Ups;
 
 class UpsProvider extends AbstractProvider
 {
-    protected array $properties = ['Name', 'Model Name', 'Serial Number', 'Status', 'Battery'];
+    protected array $properties = ['Name', 'Model Name', 'Serial Number', 'Status', 'Power', 'Battery'];
     protected array $upsList = [];
 
     public function __construct(

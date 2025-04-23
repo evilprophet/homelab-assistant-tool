@@ -22,6 +22,10 @@ interface UpsInterface
 
     public function getStatus(): ?string;
 
+    public function getPower(): ?int;
+
+    public function getRealPower(): ?int;
+
     public function getBatteryLevel(): ?int;
 
     public function getBatteryRuntime(): ?int;
