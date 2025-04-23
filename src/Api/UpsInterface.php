@@ -22,13 +22,13 @@ interface UpsInterface
 
     public function getStatus(): ?string;
 
-    public function getBatteryRuntime(): ?int;
-
     public function getBatteryLevel(): ?int;
 
-    public function getBatteryLevelLow(): ?int;
+    public function getBatteryRuntime(): ?int;
+
+    public function getBatteryRuntimeLow(): ?int;
 
     public function isOnBattery(): ?bool;
 
-    public function isBatteryLevelLow(): ?bool;
+    public function isBatteryRuntimeLow(): ?bool;
 }

@@ -17,8 +17,7 @@ parameters:
     # name: Unique name of the UPS
     # identifier: Name of UPS defined in NUT
     # host: IP address of the UPS
-    # battery_level_low: Battery level threshold for low battery. Optional
-    - { name: "ups_name", identifier: "ups", host: "localhost", battery_level_low: 20 }
+    - { name: "ups_name", identifier: "ups", host: "localhost" }
 
   schedules:
     # name: Name of the schedule
