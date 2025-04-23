@@ -15,13 +15,13 @@ class Cron
         protected DeviceProvider $deviceProvider,
         protected ScheduleProvider $scheduleProvider,
         protected Logger $logger
-    )
-    {
+    ) {
     }
 
     public function execute(): void
     {
-        $schedules = $this->scheduleProvider->getSchedules();
+        $this->scheduleProvider->checkAllCronSchedule();
+        $schedules = $this->scheduleProvider->getScheduleList();
 
         foreach ($schedules as $schedule) {
             if (!$schedule->isCronScheduleMatching()) {

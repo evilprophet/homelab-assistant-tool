@@ -14,8 +14,7 @@ abstract class AbstractCommand extends Command
 {
     public function __construct(
         protected DeviceProvider $deviceProvider
-    )
-    {
+    ) {
         parent::__construct();
     }
 
@@ -24,7 +23,7 @@ abstract class AbstractCommand extends Command
         $name = $input->getArgument('name');
 
         if (!$name) {
-            $deviceNames = array_keys($this->deviceProvider->getDevices());
+            $deviceNames = array_keys($this->deviceProvider->getDeviceList());
             $name = $outputHelper->choice('Please select a device', $deviceNames);
         }
 

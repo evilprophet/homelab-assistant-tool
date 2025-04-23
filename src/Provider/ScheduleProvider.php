@@ -7,20 +7,20 @@ namespace EvilStudio\HAT\Provider;
 use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Model\Schedule;
 
-class ScheduleProvider
+class ScheduleProvider extends AbstractProvider
 {
+    protected array $properties = ['Name', 'Schedule', 'Command', 'Devices'];
     protected array $scheduleList = [];
 
     public function __construct(
-        protected Configuration $configuration,
+        Configuration $configuration,
         array $schedulesData
-    )
-    {
+    ) {
+        parent::__construct($configuration);
+
         if (empty($schedulesData)) {
             return;
         }
-
-        $currentDateTime = $this->configuration->getCurrentDateTime();
 
         foreach ($schedulesData as $scheduleData) {
             $schedule = new Schedule(
@@ -30,14 +30,21 @@ class ScheduleProvider
                 $scheduleData['devices'],
             );
 
-            $schedule->checkCronSchedule($currentDateTime);
-
             $this->scheduleList[] = $schedule;
         }
     }
 
-    public function getSchedules(): array
+    public function getScheduleList(): array
     {
         return $this->scheduleList;
+    }
+
+    public function checkAllCronSchedule(): void
+    {
+        $currentDateTime = $this->configuration->getCurrentDateTime();
+
+        foreach ($this->getScheduleList() as $schedule) {
+            $schedule->checkCronSchedule($currentDateTime);
+        }
     }
 }

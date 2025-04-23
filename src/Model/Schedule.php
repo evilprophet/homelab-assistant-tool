@@ -17,8 +17,17 @@ class Schedule implements ScheduleInterface
         protected string $schedule,
         protected string $command,
         protected array $deviceCodes,
-    )
+    ) {
+    }
+
+    public function toArray(): array
     {
+        return [
+            'name' => $this->getName(),
+            'schedule' => $this->getSchedule(),
+            'command' => $this->getCommand(),
+            'devices' => implode(', ', $this->getDeviceCodes()),
+        ];
     }
 
     public function getName(): string

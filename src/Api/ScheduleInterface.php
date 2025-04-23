@@ -11,6 +11,8 @@ interface ScheduleInterface
     public const string COMMAND_START = 'start';
     public const string COMMAND_STOP = 'stop';
 
+    public function toArray(): array;
+
     public function getName(): string;
 
     public function getSchedule(): string;
