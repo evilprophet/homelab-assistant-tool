@@ -26,6 +26,11 @@ class Logger
         $this->logger->info($message);
     }
 
+    public function logWarning(string $message): void
+    {
+        $this->logger->warning($message);
+    }
+
     public function logError(string $message): void
     {
         $this->logger->error($message);

@@ -50,7 +50,7 @@ class DeviceProvider extends AbstractProvider
         return $this->deviceList[$deviceName];
     }
 
-    public function checkStatus(): void
+    public function checkAllDevicesStatus(): void
     {
         if (!array_key_exists('status', $this->properties)) {
             $this->properties[] = 'Status';

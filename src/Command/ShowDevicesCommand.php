@@ -33,7 +33,7 @@ class ShowDevicesCommand extends Command
         $withStatus = $input->getOption('with-status');
 
         if ($withStatus) {
-            $this->deviceProvider->checkStatus();
+            $this->deviceProvider->checkAllDevicesStatus();
         }
 
         $headers = $this->deviceProvider->getProperties();
