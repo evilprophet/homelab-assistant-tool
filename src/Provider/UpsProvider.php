@@ -55,4 +55,15 @@ class UpsProvider extends AbstractProvider
             $ups->updateStatus();
         }
     }
+
+    public function isAnyUpsOnBattery(): bool
+    {
+        foreach ($this->getUpsList() as $ups) {
+            if ($ups->isOnBattery()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

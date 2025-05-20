@@ -1,6 +1,7 @@
 parameters:
   configuration:
     cron: true # Enable or disable cron jobs. Command hat:cron:execute has to be manually added to crontab.
+    ups_mode: true|false # When enabled cron schedule won't be executed if any UPS is on battery and devices will be shut down when battery is low.
     ssh_key_path: # Path to SSH key
     timezone: # Timezone for the server
 

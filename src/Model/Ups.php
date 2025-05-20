@@ -31,9 +31,6 @@ class Ups implements UpsInterface
     protected ?int $batteryRuntime = null;
     protected ?int $batteryRuntimeLow = null;
 
-    protected ?bool $isBatteryRuntimeLow = null;
-    protected ?bool $isOnBattery = null;
-
     public function __construct(
         protected string $name,
         protected string $identifier,
@@ -67,9 +64,6 @@ class Ups implements UpsInterface
         $this->batteryLevel = isset($this->properties[self::PROPERTY_BATTERY_CHARGE]) ? intval($this->properties[self::PROPERTY_BATTERY_CHARGE]) : null;
         $this->batteryRuntime = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME]) ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME]) : null;
         $this->batteryRuntimeLow = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW]) ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW]) : null;
-
-        $this->isOnBattery = str_contains($this->status, self::PROPERTY_VALUE_UPS_STATUS_ON_BATTERY);
-        $this->isBatteryRuntimeLow = $this->batteryRuntimeLow && $this->batteryRuntime && $this->batteryRuntime <= $this->batteryRuntimeLow;
     }
 
     public function toArray(): array
@@ -152,13 +146,13 @@ class Ups implements UpsInterface
         return $this->batteryRuntimeLow;
     }
 
-    public function isOnBattery(): ?bool
+    public function isOnBattery(): bool
     {
-        return $this->isOnBattery;
+        return str_contains($this->status, self::PROPERTY_VALUE_UPS_STATUS_ON_BATTERY);
     }
 
-    public function isBatteryRuntimeLow(): ?bool
+    public function isBatteryRuntimeLow(): bool
     {
-        return $this->isBatteryRuntimeLow;
+        return $this->batteryRuntimeLow && $this->batteryRuntime && $this->batteryRuntime <= $this->batteryRuntimeLow;
     }
 }
