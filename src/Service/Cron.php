@@ -56,7 +56,15 @@ class Cron
                 $ups = $this->upsProvider->getUps($upsIdentifier);
 
                 if (!$ups->isBatteryRuntimeLow()) {
-                   continue;
+                    $this->logger->logInfo(
+                        sprintf(
+                            'Device %s is running - UPS %s has remaining runtime: %s',
+                            $device->getName(),
+                            $upsIdentifier,
+                            $ups->getBatteryRuntime() / 60 . ' minutes'
+                        )
+                    );
+                    continue;
                 }
 
                 $device->stop();
