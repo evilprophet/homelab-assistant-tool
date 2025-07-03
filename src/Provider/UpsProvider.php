@@ -28,7 +28,8 @@ class UpsProvider extends AbstractProvider
             $ups = new Ups(
                 $ups['name'],
                 $ups['identifier'],
-                $ups['host']
+                $ups['host'],
+                $ups['safe_battery_runtime_threshold'] ?? null
             );
 
             $this->upsList[$ups->getIdentifier()] = $ups;

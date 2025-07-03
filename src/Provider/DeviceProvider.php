@@ -11,7 +11,7 @@ use EvilStudio\HAT\Model\DeviceFactory;
 
 class DeviceProvider extends AbstractProvider
 {
-    protected array $properties = ['Name', 'Platform', 'IP', 'MAC', 'UPS'];
+    protected array $properties = ['Name', 'IP', 'MAC', 'Platform', 'UPS', 'UPS Low Battery Runtime Threshold'];
     protected array $deviceList = [];
 
     public function __construct(
@@ -25,11 +25,13 @@ class DeviceProvider extends AbstractProvider
             $device = $this->deviceFactory->createDevice($deviceData['platform']);
             $device->configure(
                 $deviceData['name'],
-                $deviceData['platform'],
                 $deviceData['ip'],
                 $deviceData['mac'],
+                $deviceData['platform'],
                 $deviceData['ups_identifier'] ?? null,
+                $deviceData['ups_low_battery_runtime_threshold'] ?? null,
                 $deviceData['username'] ?? null
+
             );
 
             $this->deviceList[$device->getName()] = $device;

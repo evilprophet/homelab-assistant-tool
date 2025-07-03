@@ -30,7 +30,9 @@ interface UpsInterface
 
     public function getBatteryRuntime(): ?int;
 
-    public function getBatteryRuntimeLow(): ?int;
+    public function getLowBatteryRuntimeThreshold(): ?int;
+
+    public function getSafeBatteryRuntimeThreshold(): ?int;
 
     public function isOnBattery(): ?bool;
 

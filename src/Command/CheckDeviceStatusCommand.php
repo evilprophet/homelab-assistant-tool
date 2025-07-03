@@ -32,7 +32,10 @@ class CheckDeviceStatusCommand extends AbstractCommand
             return Command::FAILURE;
         }
 
-        $message = sprintf("Status for device '%s': %s", $device->getName(), $device->getStatus());
+        $device->checkStatus();
+        $deviceAsArray = $device->toArray();
+
+        $message = sprintf("Status for device '%s': %s.", $device->getName(), $deviceAsArray['status']);
         $outputHelper->note($message);
 
         return Command::SUCCESS;

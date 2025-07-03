@@ -33,7 +33,7 @@ class StopDeviceCommand extends AbstractCommand
         }
 
         $result = $device->stop();
-        $message = sprintf("Device '%s' stopped: %s", $device->getName(), $result ? 'yes' : 'no');
+        $message = sprintf("Device '%s' stopped.", $device->getName(), $result ? 'yes' : 'no');
         $outputHelper->note($message);
 
         return Command::SUCCESS;
