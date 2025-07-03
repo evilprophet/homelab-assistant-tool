@@ -11,14 +11,15 @@ parameters:
     # ip: IP address of the device
     # mac: MAC address of the device
     # platform: linux|debian|ubuntu|proxmox_ve|proxmox_bs
-    # ups_identifier: Identifier of the UPS to which the device is connected
-    # username: SSH username for the device if empty `default_ssh_username` will be used
+    # [optional] ups_identifier: Identifier of the UPS to which the device is connected
+    # [optional] username: SSH username for the device if empty `default_ssh_username` will be used
     - { name: device_name, ip: 192.168.1.1, mac: 00:00:00:00:00:00, platform: linux, ups_identifier: ups, ups_runtime_low: 600,  username: user }
 
   ups:
     # name: Unique name of the UPS
     # identifier: Name of UPS defined in NUT
     # host: IP address of the UPS
+    # [optional] safe_battery_runtime_threshold: Minimum runtime in seconds before devices are start
     - { name: ups_name, identifier: ups, host: localhost, safe_battery_runtime_threshold: 600 }
 
   schedules:
