@@ -55,22 +55,30 @@ class Cron
             try {
                 $ups = $this->upsProvider->getUps($upsIdentifier);
 
-                if (!$ups->isBatteryRuntimeLow()) {
-                    $this->logger->logInfo(
-                        sprintf(
-                            'Device %s is running - UPS %s has remaining runtime: %s minutes',
-                            $device->getName(),
-                            $upsIdentifier,
-                            round($ups->getBatteryRuntime() / 60)
-                        )
-                    );
+                if ($ups->isBatteryRuntimeLow()) {
+                    $device->stop();
+                    $this->logger->logInfo(sprintf("Device '%s' stopped - UPS '%s' has low battery.", $device->getName(), $upsIdentifier));
+
                     continue;
                 }
 
-                $device->stop();
-                $this->logger->logInfo(sprintf('Device %s stopped - UPS %s has low battery', $device->getName(), $upsIdentifier));
+                if ($device->getUpsLowBatteryRuntimeThreshold() && $device->getUpsLowBatteryRuntimeThreshold() > $ups->getBatteryRuntime()) {
+                    $device->stop();
+                    $this->logger->logInfo(sprintf("Device '%s' stopped - UPS '%s' has too low battery for this device.", $device->getName(), $upsIdentifier));
+
+                    continue;
+                }
+
+                $this->logger->logInfo(
+                    sprintf(
+                        "Device '%s' is running - UPS '%s' has remaining runtime: %s minutes.",
+                        $device->getName(),
+                        $upsIdentifier,
+                        round($ups->getBatteryRuntime() / 60)
+                    )
+                );
             } catch (Exception $e) {
-                $this->logger->logError(sprintf('Error processing device %s: %s', $device->getName(), $e->getMessage()));
+                $this->logger->logError(sprintf("Error processing device '%s': %s.", $device->getName(), $e->getMessage()));
             }
         }
     }
@@ -85,43 +93,67 @@ class Cron
                 continue;
             }
 
-            $message = sprintf('Schedule "%s" is matching', $schedule->getName());
+            $message = sprintf('Schedule "%s" is matching.', $schedule->getName());
             $this->logger->logInfo($message);
 
-            foreach ($schedule->getDeviceCodes() as $deviceName) {
-                try {
-                    $device = $this->deviceProvider->getDevice($deviceName);
-                    $device->checkStatus();
-
-                    switch ($schedule->getCommand()) {
-                        case ScheduleInterface::COMMAND_START:
-                            if ($device->getStatus()) {
-                                $message = sprintf('Device already running: %s', $deviceName);
-                                break;
-                            }
-
-                            $device->start();
-                            $message = sprintf('Device started: %s', $deviceName);
-                            break;
-                        case ScheduleInterface::COMMAND_STOP:
-                            if (!$device->getStatus()) {
-                                $message = sprintf('Device already stopped: %s', $deviceName);
-                                break;
-                            }
-
-                            $device->stop();
-                            $message = sprintf('Device stopped: %s', $deviceName);
-                            break;
-                        default:
-                            $message = sprintf('Unknown command: %s', $schedule->getCommand());
-                            break;
-                    }
-
-                    $this->logger->logInfo($message);
-                } catch (Exception $e) {
-                    $this->logger->logError($e->getMessage());
-                }
+            switch ($schedule->getCommand()) {
+                case ScheduleInterface::COMMAND_START:
+                    $this->commandStart($schedule->getDeviceCodes());
+                    break;
+                case ScheduleInterface::COMMAND_STOP:
+                    $this->commandStop($schedule->getDeviceCodes());
+                    break;
+                default:
+                    $this->logger->logInfo(sprintf('Unknown command: %s.', $schedule->getCommand()));
+                    break;
             }
         }
     }
+
+    protected function commandStart(array $deviceCodes): void
+    {
+        foreach ($deviceCodes as $deviceName) {
+            try {
+                $device = $this->deviceProvider->getDevice($deviceName);
+                $device->checkStatus();
+
+                if ($device->getStatus()) {
+                    $this->logger->logInfo(sprintf("Device '%s' already running.", $deviceName));
+                    continue;
+                }
+
+                $ups = $this->upsProvider->getUps($device->getUpsIdentifier());
+                if ($ups->getSafeBatteryRuntimeThreshold() && $ups->getSafeBatteryRuntimeThreshold() > $ups->getBatteryRuntime()) {
+                    $this->logger->logInfo(sprintf("Device '%s' cannot be started - UPS %s has too low battery.", $deviceName, $device->getUpsIdentifier()));
+                    continue;
+                }
+
+                $device->start();
+                $this->logger->logInfo(sprintf("Device '%s' started.", $deviceName));
+            } catch (Exception $e) {
+                $this->logger->logError($e->getMessage());
+            }
+        }
+    }
+
+    protected function commandStop(array $deviceCodes): void
+    {
+        foreach ($deviceCodes as $deviceName) {
+            try {
+                $device = $this->deviceProvider->getDevice($deviceName);
+                $device->checkStatus();
+
+                if (!$device->getStatus()) {
+                    $this->logger->logInfo(sprintf("Device '%s' already stopped.", $deviceName));
+                    continue;
+                }
+
+                $device->stop();
+                $this->logger->logInfo(sprintf("Device '%s' stopped.", $deviceName));
+            } catch (Exception $e) {
+                $this->logger->logError($e->getMessage());
+            }
+        }
+    }
+
 }

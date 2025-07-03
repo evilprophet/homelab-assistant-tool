@@ -20,33 +20,38 @@ class Generic implements DeviceInterface
     }
 
     protected string $name;
-    protected string $platform;
     protected string $ip;
     protected string $mac;
+    protected string $platform;
     protected ?string $upsIdentifier;
-    protected ?string $username;
+    protected int $upsLowBatteryRuntimeThreshold;
+    protected string $username;
     protected ?bool $status = null;
 
-    public function configure(string $name, string $platform, string $ip, string $mac, ?string $upsIdentifier, ?string $username): DeviceInterface
+    public function configure(string $name, string $ip, string $mac, string $platform, ?string $upsIdentifier, ?int $upsLowBatteryRuntimeThreshold, ?string $username): DeviceInterface
     {
         $this->name = $name;
-        $this->platform = $platform;
         $this->ip = $ip;
         $this->mac = $mac;
+        $this->platform = $platform;
         $this->upsIdentifier = $upsIdentifier;
-        $this->username = $username;
+        $this->upsLowBatteryRuntimeThreshold = (int)$upsLowBatteryRuntimeThreshold;
+        $this->username = $username ?? $this->configuration->getDefaultSshUsername();
 
         return $this;
     }
 
     public function toArray(): array
     {
+        $upsLowBatteryRuntimeThreshold = $this->getUpsLowBatteryRuntimeThreshold() ? sprintf('%s min', round($this->getUpsLowBatteryRuntimeThreshold() / 60)) : '-';
+
         $data = [
             'name' => $this->getName(),
-            'platform' => $this->getPlatform(),
             'ip' => $this->getIp(),
             'mac' => $this->getMac(),
-            'ups' => $this->getUpsIdentifier() ?? '-'
+            'platform' => $this->getPlatform(),
+            'ups' => $this->getUpsIdentifier() ?? '-',
+            'ups_low_battery_runtime_threshold' => $upsLowBatteryRuntimeThreshold
         ];
 
         if ($this->getStatus() !== null) {
@@ -61,11 +66,6 @@ class Generic implements DeviceInterface
         return $this->name;
     }
 
-    public function getPlatform(): string
-    {
-        return $this->platform;
-    }
-
     public function getIp(): string
     {
         return $this->ip;
@@ -76,9 +76,19 @@ class Generic implements DeviceInterface
         return $this->mac;
     }
 
+    public function getPlatform(): string
+    {
+        return $this->platform;
+    }
+
     public function getUpsIdentifier(): ?string
     {
         return $this->upsIdentifier;
+    }
+
+    public function getUpsLowBatteryRuntimeThreshold(): int
+    {
+        return $this->upsLowBatteryRuntimeThreshold;
     }
 
     public function getUsername(): ?string
@@ -86,7 +96,7 @@ class Generic implements DeviceInterface
         return $this->username;
     }
 
-    public function getStatus(bool $asString = false): ?bool
+    public function getStatus(): ?bool
     {
         return $this->status;
     }
@@ -119,11 +129,11 @@ class Generic implements DeviceInterface
 
     public function stop(): bool
     {
-        throw new NoSupportedAction(sprintf('Stop action is not supported on %s device.', $this->getPlatform()));
+        throw new NoSupportedAction(sprintf("Stop action is not supported on '%s' device.", $this->getPlatform()));
     }
 
     public function ssh(OutputInterface $output): void
     {
-        throw new NoSupportedAction(sprintf('SSH action is not supported on %s device.', $this->getPlatform()));
+        throw new NoSupportedAction(sprintf("SSH action is not supported on '%s' device.", $this->getPlatform()));
     }
 }

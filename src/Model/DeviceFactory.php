@@ -19,7 +19,7 @@ class DeviceFactory
     public function createDevice(string $platform): DeviceInterface
     {
         return match ($platform) {
-            'debian', 'ubuntu', 'linux', 'proxmox_bs', 'proxmox_dm', 'proxmox_ve' => new Linux($this->configuration),
+            'linux', 'debian', 'ubuntu', 'proxmox_dm', 'proxmox_bs', 'proxmox_ve' => new Linux($this->configuration),
             default => new Generic($this->configuration),
         };
     }
