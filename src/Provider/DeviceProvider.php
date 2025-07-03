@@ -31,7 +31,6 @@ class DeviceProvider extends AbstractProvider
                 $deviceData['ups_identifier'] ?? null,
                 $deviceData['ups_low_battery_runtime_threshold'] ?? null,
                 $deviceData['username'] ?? null
-
             );
 
             $this->deviceList[$device->getName()] = $device;
