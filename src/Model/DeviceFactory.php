@@ -8,6 +8,7 @@ use EvilStudio\HAT\Api\DeviceInterface;
 use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Model\Device\Generic;
 use EvilStudio\HAT\Model\Device\Linux;
+use EvilStudio\HAT\Model\Device\ProxmoxVE;
 
 class DeviceFactory
 {
@@ -19,7 +20,8 @@ class DeviceFactory
     public function createDevice(string $platform): DeviceInterface
     {
         return match ($platform) {
-            'linux', 'debian', 'ubuntu', 'proxmox_dm', 'proxmox_bs', 'proxmox_ve' => new Linux($this->configuration),
+            'linux', 'debian', 'ubuntu', 'proxmox_dm', 'proxmox_bs' => new Linux($this->configuration),
+            'proxmox_ve' => new ProxmoxVE($this->configuration),
             default => new Generic($this->configuration),
         };
     }

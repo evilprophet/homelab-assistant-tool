@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EvilStudio\HAT\Command;
+namespace EvilStudio\HAT\Command\Device;
 
 use EvilStudio\HAT\Provider\DeviceProvider;
 use Symfony\Component\Console\Attribute\AsCommand;

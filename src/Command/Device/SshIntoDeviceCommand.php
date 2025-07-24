@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace EvilStudio\HAT\Command;
+namespace EvilStudio\HAT\Command\Device;
 
+use EvilStudio\HAT\Command\AbstractCommand;
 use EvilStudio\HAT\Exception\MissingDevice;
 use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;

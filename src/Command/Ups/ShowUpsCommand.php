@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace EvilStudio\HAT\Command;
+namespace EvilStudio\HAT\Command\Ups;
 
+use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Provider\UpsProvider;
 use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -16,7 +17,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class ShowUpsCommand extends Command
 {
     public function __construct(
-        protected UpsProvider $upsProvider
+        protected UpsProvider $upsProvider,
+        protected Configuration $configuration
     ) {
         parent::__construct();
     }
@@ -24,6 +26,12 @@ class ShowUpsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $outputHelper = new SymfonyStyle($input, $output);
+
+        if (!$this->configuration->isUpsModeEnabled()) {
+            $outputHelper->warning('UPS Mode is disabled in configuration.');
+
+            return Command::SUCCESS;
+        }
 
         $this->upsProvider->updateAllUpsStatus();
 

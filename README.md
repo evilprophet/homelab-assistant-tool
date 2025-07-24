@@ -23,6 +23,7 @@ Be aware that some commands might not be available on all platforms.
 | **SSH Into Device** | SSH into a specified device.                             | `php bin/console.php hat:device:ssh`          |
 | **Start Device**    | Start a specified device via WOL.                        | `php bin/console.php hat:device:start`        |
 | **Stop Device**     | Stop a specified device.                                 | `php bin/console.php hat:device:stop`         |
+| **UPS Show**        | Show UPS status and parameters.                          | `php bin/console.php hat:ups:show`            |
 | **Cron Job**        | Execute cron schedules <br/> should be added to crontab. | `php bin/console.php hat:cron:run`            |
 
 **_NOTE:_**  Logs for cron job can be found in `var/logs/cron.log`.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace EvilStudio\HAT\Command;
+namespace EvilStudio\HAT\Command\Schedule;
 
 use EvilStudio\HAT\Provider\ScheduleProvider;
 use Symfony\Component\Console\Attribute\AsCommand;
