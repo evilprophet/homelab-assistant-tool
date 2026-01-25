@@ -42,7 +42,10 @@ class Ups implements UpsInterface
     public function updateStatus(): void
     {
         $command = sprintf(self::COMMAND_UPDATE_STATUS, $this->getIdentifier(), $this->getHost());
-        exec($command, $output, $resultCode);
+        $output = [];
+        $resultCode = 0;
+
+        $this->executeCommand($command, $output, $resultCode);
 
         if ($resultCode !== 0) {
             throw new UpsFailedUpdateStatus(sprintf("Cannot load status for UPS '%s' at '%s'.", $this->getIdentifier(), $this->getHost()));
@@ -161,5 +164,10 @@ class Ups implements UpsInterface
     public function isBatteryRuntimeLow(): bool
     {
         return $this->getLowBatteryRuntimeThreshold() && $this->getBatteryRuntime() && $this->getBatteryRuntime() <= $this->getLowBatteryRuntimeThreshold();
+    }
+
+    protected function executeCommand(string $command, array &$output, int &$resultCode): void
+    {
+        exec($command, $output, $resultCode);
     }
 }
