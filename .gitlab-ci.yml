@@ -1,0 +1,53 @@
+stages:
+  - test
+  - coverage
+
+variables:
+  COMPOSER_CACHE_DIR: "$CI_PROJECT_DIR/.composer-cache"
+
+cache:
+  paths:
+    - .composer-cache/
+    - vendor/
+
+.php_template: &php_template
+  image: php:8.3-cli
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq git unzip libzip-dev zlib1g-dev libxml2-dev pkg-config build-essential autoconf libssl-dev
+    - docker-php-ext-install zip sockets
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install --no-progress --no-interaction --prefer-dist
+
+test:phpunit:
+  <<: *php_template
+  stage: test
+  script:
+    - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Unit --no-coverage
+    - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Integration --no-coverage
+
+test:coverage:
+  <<: *php_template
+  stage: coverage
+  variables:
+    XDEBUG_MODE: coverage
+  script:
+    - pecl install xdebug
+    - docker-php-ext-enable xdebug
+    - vendor/bin/phpunit --configuration ./phpunit.xml.dist --coverage-text --coverage-html tests/results/coverage
+  coverage: '/^\s*Lines:\s*\d+\.\d+\%/'
+  artifacts:
+    paths:
+      - tests/results/coverage/
+    expire_in: 1 month
+  only:
+    - main
+    - develop
+
+code-quality:phpcs:
+  <<: *php_template
+  stage: test
+  script:
+    - composer require --dev friendsofphp/php-cs-fixer
+    - vendor/bin/php-cs-fixer fix --dry-run --diff --verbose
+  allow_failure: true

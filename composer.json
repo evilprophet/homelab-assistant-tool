@@ -24,9 +24,17 @@
         "diegonz/php-wake-on-lan": "^2.1",
         "dragonmantank/cron-expression": "^3.4"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
     "autoload": {
         "psr-4": {
             "EvilStudio\\HAT\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EvilStudio\\HAT\\Tests\\": "tests/"
         }
     }
 }
