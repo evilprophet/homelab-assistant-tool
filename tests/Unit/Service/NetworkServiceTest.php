@@ -11,7 +11,7 @@ class NetworkServiceTest extends TestCase
 {
     public function testPingUsesFactory(): void
     {
-        $fakePing = new class() {
+        $fakePing = new class () {
             public function ping(): bool
             {
                 return true;
@@ -27,7 +27,7 @@ class NetworkServiceTest extends TestCase
 
     public function testPingReturnsFalseWhenPingFails(): void
     {
-        $fakePing = new class() {
+        $fakePing = new class () {
             public function ping(): bool
             {
                 return false;
@@ -43,7 +43,7 @@ class NetworkServiceTest extends TestCase
 
     public function testWakeOnLanUsesFactory(): void
     {
-        $fakeWakeOnLan = new class() {
+        $fakeWakeOnLan = new class () {
             public function wake(array $macAddresses): array
             {
                 return ['result' => 'OK'];
