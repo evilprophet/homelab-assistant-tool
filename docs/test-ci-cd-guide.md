@@ -2,7 +2,7 @@
 
 **Pipeline Status:** ✅ Configured  
 **Coverage Reports:** ✅ Enabled  
-**Last Updated:** 2026-01-25
+**Last Updated:** 2026-01-26
 
 ---
 
@@ -11,8 +11,8 @@
 This project uses GitLab CI/CD for automated testing and code quality verification. Every push and merge request automatically triggers the test suite and generates coverage reports.
 
 ### Pipeline Features:
-- ✅ Automated test execution (165 tests)
-- ✅ Code coverage reports (83%)
+- ✅ Automated test execution (175 tests)
+- ✅ Code coverage reports (87.05% / 363 of 417 lines)
 - ✅ JUnit XML artifacts for GitLab integration
 - ✅ HTML coverage reports
 - ✅ Composer dependency caching (~50% faster)
@@ -26,7 +26,7 @@ This project uses GitLab CI/CD for automated testing and code quality verificati
 The pipeline consists of 2 stages:
 
 #### Stage 1: Test (Every Push/MR)
-- Runs all 165 tests
+- Runs all 175 tests
 - Generates JUnit XML report
 - Displays coverage percentage
 - Takes ~2-3 minutes
@@ -47,7 +47,7 @@ The pipeline consists of 2 stages:
 stage: test
 script:
   - composer install
-  - vendor/bin/phpunit
+  - bin/phpunit
 artifacts:
   - tests/results/junit.xml
 coverage: '/^\s*Lines:\s*\d+\.\d+\%/'
@@ -62,7 +62,7 @@ coverage: '/^\s*Lines:\s*\d+\.\d+\%/'
 stage: coverage
 script:
   - pecl install xdebug
-  - vendor/bin/phpunit --coverage-html tests/results/coverage
+  - bin/phpunit-coverage
 artifacts:
   - tests/results/coverage/
 only:
@@ -102,18 +102,18 @@ only:
 
 ### Run All Tests:
 ```bash
-vendor/bin/phpunit
+bin/phpunit
 ```
 
 ### With Coverage (requires Xdebug):
 ```bash
-XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html tests/results/coverage
+bin/phpunit-coverage
 ```
 
 
 ### Single Test File:
 ```bash
-vendor/bin/phpunit tests/Unit/Model/UpsTest.php
+bin/phpunit tests/Unit/Model/UpsTest.php
 ```
 
 ---
@@ -205,5 +205,5 @@ Add to README.md:
 ---
 
 **Document Version:** 1.0  
-**Last Updated:** 2026-01-25  
+**Last Updated:** 2026-01-26  
 **Pipeline Status:** ✅ Active

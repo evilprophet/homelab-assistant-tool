@@ -334,6 +334,36 @@ class CronTest extends TestCase
         $cron->execute();
     }
 
+    public function testCommandStartWithoutUpsIdentifierDoesNotQueryUps(): void
+    {
+        $scheduleMock = $this->createMock(ScheduleInterface::class);
+        $scheduleMock->method('isCronScheduleMatching')->willReturn(true);
+        $scheduleMock->method('getName')->willReturn('Test Schedule');
+        $scheduleMock->method('getCommand')->willReturn('start');
+        $scheduleMock->method('getDeviceCodes')->willReturn(['device1']);
+
+        $deviceMock = $this->createMock(DeviceInterface::class);
+        $deviceMock->method('getStatus')->willReturn(false);
+        $deviceMock->method('getName')->willReturn('device1');
+        $deviceMock->method('getUpsIdentifier')->willReturn(null);
+        $deviceMock->expects($this->once())->method('checkStatus');
+        $deviceMock->expects($this->once())->method('start');
+
+        $this->upsProvider->expects($this->never())->method('getUps');
+        $this->upsProvider->method('updateAllUpsStatus');
+        $this->configuration->method('isUpsModeEnabled')->willReturn(false);
+
+        $this->scheduleProvider->method('checkAllCronSchedule');
+        $this->scheduleProvider->method('getScheduleList')->willReturn([$scheduleMock]);
+        $this->deviceProvider->method('getDevice')->with('device1')->willReturn($deviceMock);
+
+        $this->logger->expects($this->atLeastOnce())
+            ->method('logInfo');
+
+        $cron = $this->createCron();
+        $cron->execute();
+    }
+
     public function testCommandStopSkipsAlreadyStoppedDevices(): void
     {
         $scheduleMock = $this->createMock(ScheduleInterface::class);

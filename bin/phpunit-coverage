@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export XDEBUG_MODE=coverage
+
+exec "$(cd "$(dirname "$0")/.." && pwd)/vendor/bin/phpunit" \
+  --coverage-html tests/results/coverage \
+  --coverage-text "$@"

@@ -135,19 +135,21 @@ class Cron
                     continue;
                 }
 
-                $ups = $this->upsProvider->getUps($device->getUpsIdentifier());
-                if (
-                    $ups->getSafeBatteryRuntimeThreshold()
-                    && $ups->getSafeBatteryRuntimeThreshold() > $ups->getBatteryRuntime()
-                ) {
-                    $this->logger->logInfo(
-                        sprintf(
-                            "Device '%s' cannot be started - UPS %s has too low battery.",
-                            $deviceName,
-                            $device->getUpsIdentifier()
-                        )
-                    );
-                    continue;
+                if ($device->getUpsIdentifier()) {
+                    $ups = $this->upsProvider->getUps($device->getUpsIdentifier());
+                    if (
+                        $ups->getSafeBatteryRuntimeThreshold()
+                        && $ups->getSafeBatteryRuntimeThreshold() > $ups->getBatteryRuntime()
+                    ) {
+                        $this->logger->logInfo(
+                            sprintf(
+                                "Device '%s' cannot be started - UPS %s has too low battery.",
+                                $deviceName,
+                                $device->getUpsIdentifier()
+                            )
+                        );
+                        continue;
+                    }
                 }
 
                 $device->start();

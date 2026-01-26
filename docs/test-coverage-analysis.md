@@ -1,20 +1,20 @@
 # Test Coverage Analysis
 
 **Coverage Source:** Xdebug (Real Data)  
-**Coverage:** 83.20% (312/375 lines)  
-**Date:** 2026-01-25
+**Coverage:** 87.05% (363/417 lines)  
+**Date:** 2026-01-26
 
 ---
 
 ## 📊 Global Coverage Statistics
 
 ```
-Classes:   45.45% (10/22)
-Methods:   82.11% (78/95)
-Lines:     83.20% (312/375)
+Classes:   56.52% (13/23)
+Methods:   84.69% (83/98)
+Lines:     87.05% (363/417)
 
-Covered:   312 lines
-Uncovered: 63 lines (17%)
+Covered:   363 lines
+Uncovered: 54 lines (12.95%)
 ```
 
 ---
@@ -24,11 +24,11 @@ Uncovered: 63 lines (17%)
 | Category      | Methods     | Lines         | Coverage | Status          |
 |---------------|-------------|---------------|----------|-----------------|
 | **Helpers**   | 100% (6/6)  | 100% (10/10)  | 100%     | ✅ Perfect       |
-| **Services**  | 86% (9/10)  | 92% (70/78)   | 92%      | ✅ Excellent     |
-| **Models**    | 85% (39/46) | 88% (113/128) | 88%      | ✅ Excellent     |
-| **Providers** | 78% (8/11)  | 85% (49/58)   | 85%      | ✅ Excellent     |
-| **Commands**  | 61% (11/18) | 75% (59/79)   | 75%      | ✅ Very Good     |
-| **GLOBAL**    | **82%**     | **83%**       | **83%**  | ✅ **Excellent** |
+| **Services**  | 92.31% (12/13) | 92.45% (98/106) | 92.45% | ✅ Excellent     |
+| **Models**    | 84.44% (38/45) | 84.56% (126/149) | 84.56% | ✅ Excellent     |
+| **Providers** | 100% (14/14) | 100% (59/59) | 100%     | ✅ Perfect       |
+| **Commands**  | 68.42% (13/19) | 77.78% (70/90) | 77.78% | ✅ Very Good     |
+| **GLOBAL**    | **84.69%**     | **87.05%**       | **87.05%** | ✅ **Excellent** |
 
 ---
 
@@ -49,32 +49,13 @@ Uncovered: 63 lines (17%)
 
 ---
 
-## ⚠️ Uncovered Code (63 lines = 17%)
+## ⚠️ Uncovered Code (54 lines = 12.95%)
 
-### Breakdown:
-
-| Component       | Lines | Reason                                 |
-|-----------------|-------|----------------------------------------|
-| **Commands**    | 24    | External dependencies (Process, TTY)   |
-| **Models**      | 21    | External dependencies (SSH, Ping, WOL) |
-| **Providers**   | 12    | Complex mocking required               |
-| **Services**    | 8     | Edge cases                             |
-| **Application** | 3     | Entry point                            |
-
-### Details:
-
-#### Not Tested (0% coverage):
-- **Linux** (16 lines) - Requires SSH2 mocking
-- **SshIntoDeviceCommand** (11 lines) - Requires Process + TTY
-- **Application** (3 lines) - Entry point
-
-#### Partially Tested:
-- **Generic** (5 uncovered lines) - Ping & WOL hardcoded
-- **UpsProvider** (8 uncovered lines) - exec() calls
-- **DeviceProvider** (4 uncovered lines) - Device mocking
-- **Cron** (8 uncovered lines) - Edge cases
-- **ExecuteCronCommand** (3 uncovered lines) - Edge cases
-- **ShowUpsCommand** (3 uncovered lines) - Edge cases
+Main remaining gaps are in:
+- **Linux** (SSH2 interactions)
+- **SshIntoDeviceCommand** (Process + TTY)
+- **Application** entry point
+- A few command edge branches (see HTML report for exact lines)
 
 ---
 
@@ -85,10 +66,10 @@ Uncovered: 63 lines (17%)
 - Industry "Excellent" rating
 - Production ready
 
-### Option 2: Reach 87-88% (3h work)
-- NetworkService wrapper for Ping/WOL
-- Provider tests with mocking
-- See: [Future Refactoring Plan](./future-refactoring-plan.md)
+### Option 2: Improvements to reach ~87% (completed – ~3h work)
+- NetworkService wrapper for Ping/WOL ✅ implemented
+- Provider tests with mocking ✅ implemented
+- Current coverage after these changes: 87.05% (363/417 lines)
 
 ### Option 3: Reach 93-95% (10h work)
 - Full refactoring with DI
@@ -100,7 +81,7 @@ Uncovered: 63 lines (17%)
 
 | Coverage | Rating        | This Project |
 |----------|---------------|--------------|
-| 80-90%   | **Excellent** | ✅ **83%**    |
+| 80-90%   | **Excellent** | ✅ **87.05%** |
 | 90-95%   | Outstanding   | -            |
 | 95-100%  | Unrealistic   | -            |
 
@@ -108,7 +89,7 @@ Uncovered: 63 lines (17%)
 
 ## ✅ Conclusion
 
-**83% coverage is EXCELLENT** for this project:
+**87.05% coverage is EXCELLENT** for this project:
 - ✅ All critical paths tested
 - ✅ All business logic validated
 - ✅ Production ready

@@ -21,10 +21,4 @@
         <junit outputFile="tests/results/junit.xml"/>
         <testdoxHtml outputFile="tests/results/testdox.html"/>
     </logging>
-    <coverage>
-        <report>
-            <html outputDirectory="tests/results/coverage"/>
-            <text outputFile="php://stdout" showUncoveredFiles="true"/>
-        </report>
-    </coverage>
 </phpunit>

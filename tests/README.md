@@ -2,8 +2,8 @@
 
 ## 📊 Quick Stats
 
-- **Tests:** 165 (98 Unit + 67 Integration)
-- **Coverage:** 83.20% (Real, Xdebug verified)
+- **Tests:** 175 (122 Unit + 53 Integration)
+- **Coverage:** 87.05% (363/417 lines)
 - **Success Rate:** 100% ✅
 - **Status:** Production Ready
 
@@ -12,17 +12,17 @@
 ## 🚀 Running Tests
 
 ```bash
-# All tests
-vendor/bin/phpunit
+# All tests (Xdebug off)
+bin/phpunit
 
-# Unit tests only
-vendor/bin/phpunit --testsuite Unit
+# Unit tests only (Xdebug off)
+bin/phpunit --testsuite Unit
 
-# Integration tests only
-vendor/bin/phpunit --testsuite Integration
+# Integration tests only (Xdebug off)
+bin/phpunit --testsuite Integration
 
 # With coverage report (requires Xdebug)
-XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html tests/results/coverage
+bin/phpunit-coverage
 ```
 
 ---
@@ -31,12 +31,12 @@ XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-html tests/results/coverage
 
 ```
 tests/
-├── Unit/ (98 tests)
+├── Unit/ (122 tests)
 │   ├── Helper/ConfigurationTest.php
 │   ├── Model/
 │   ├── Provider/
 │   └── Service/
-└── Integration/ (67 tests)
+└── Integration/ (53 tests)
     └── Command/
 ```
 

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -z "${XDEBUG_MODE:-}" ]]; then
+  export XDEBUG_MODE=off
+fi
+
+exec "$(cd "$(dirname "$0")/.." && pwd)/vendor/bin/phpunit" "$@"

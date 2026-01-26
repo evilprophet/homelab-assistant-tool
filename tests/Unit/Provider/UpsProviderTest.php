@@ -6,6 +6,7 @@ namespace EvilStudio\HAT\Tests\Unit\Provider;
 
 use EvilStudio\HAT\Exception\MissingUps;
 use EvilStudio\HAT\Helper\Configuration;
+use EvilStudio\HAT\Api\UpsInterface;
 use EvilStudio\HAT\Model\Ups;
 use EvilStudio\HAT\Provider\UpsProvider;
 use PHPUnit\Framework\TestCase;
@@ -173,5 +174,59 @@ class UpsProviderTest extends TestCase
         $this->assertEquals('First UPS', $upsList['first']->getName());
         $this->assertEquals('Second UPS', $upsList['second']->getName());
         $this->assertEquals('Third UPS', $upsList['third']->getName());
+    }
+
+    public function testUpdateAllUpsStatusCallsUpdateOnEachUps(): void
+    {
+        $upsMock1 = $this->createMock(UpsInterface::class);
+        $upsMock1->expects($this->once())->method('updateStatus');
+
+        $upsMock2 = $this->createMock(UpsInterface::class);
+        $upsMock2->expects($this->once())->method('updateStatus');
+
+        $provider = new UpsProvider($this->configuration, []);
+
+        $reflection = new \ReflectionClass($provider);
+        $property = $reflection->getProperty('upsList');
+        $property->setAccessible(true);
+        $property->setValue($provider, ['ups1' => $upsMock1, 'ups2' => $upsMock2]);
+
+        $provider->updateAllUpsStatus();
+    }
+
+    public function testIsAnyUpsOnBatteryReturnsTrueWhenOneUpsOnBattery(): void
+    {
+        $upsMock1 = $this->createMock(UpsInterface::class);
+        $upsMock1->method('isOnBattery')->willReturn(false);
+
+        $upsMock2 = $this->createMock(UpsInterface::class);
+        $upsMock2->method('isOnBattery')->willReturn(true);
+
+        $provider = new UpsProvider($this->configuration, []);
+
+        $reflection = new \ReflectionClass($provider);
+        $property = $reflection->getProperty('upsList');
+        $property->setAccessible(true);
+        $property->setValue($provider, ['ups1' => $upsMock1, 'ups2' => $upsMock2]);
+
+        $this->assertTrue($provider->isAnyUpsOnBattery());
+    }
+
+    public function testIsAnyUpsOnBatteryReturnsFalseWhenNoUpsOnBattery(): void
+    {
+        $upsMock1 = $this->createMock(UpsInterface::class);
+        $upsMock1->method('isOnBattery')->willReturn(false);
+
+        $upsMock2 = $this->createMock(UpsInterface::class);
+        $upsMock2->method('isOnBattery')->willReturn(false);
+
+        $provider = new UpsProvider($this->configuration, []);
+
+        $reflection = new \ReflectionClass($provider);
+        $property = $reflection->getProperty('upsList');
+        $property->setAccessible(true);
+        $property->setValue($provider, ['ups1' => $upsMock1, 'ups2' => $upsMock2]);
+
+        $this->assertFalse($provider->isAnyUpsOnBattery());
     }
 }

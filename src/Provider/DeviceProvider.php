@@ -53,7 +53,7 @@ class DeviceProvider extends AbstractProvider
 
     public function checkAllDevicesStatus(): void
     {
-        if (!array_key_exists('status', $this->properties)) {
+        if (!in_array('Status', $this->properties, true)) {
             $this->properties[] = 'Status';
         }
 
