@@ -110,7 +110,11 @@ class DeviceFactoryTest extends TestCase
 
         foreach ($platforms as $platform) {
             $device = $this->factory->createDevice($platform);
-            $this->assertInstanceOf(DeviceInterface::class, $device, "Platform '{$platform}' should implement DeviceInterface");
+            $this->assertInstanceOf(
+                DeviceInterface::class,
+                $device,
+                "Platform '{$platform}' should implement DeviceInterface"
+            );
         }
     }
 

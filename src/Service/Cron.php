@@ -57,14 +57,25 @@ class Cron
 
                 if ($ups->isBatteryRuntimeLow()) {
                     $device->stop();
-                    $this->logger->logInfo(sprintf("Device '%s' stopped - UPS '%s' has low battery.", $device->getName(), $upsIdentifier));
+                    $this->logger->logInfo(
+                        sprintf("Device '%s' stopped - UPS '%s' has low battery.", $device->getName(), $upsIdentifier)
+                    );
 
                     continue;
                 }
 
-                if ($device->getUpsLowBatteryRuntimeThreshold() && $device->getUpsLowBatteryRuntimeThreshold() > $ups->getBatteryRuntime()) {
+                if (
+                    $device->getUpsLowBatteryRuntimeThreshold()
+                    && $device->getUpsLowBatteryRuntimeThreshold() > $ups->getBatteryRuntime()
+                ) {
                     $device->stop();
-                    $this->logger->logInfo(sprintf("Device '%s' stopped - UPS '%s' has too low battery for this device.", $device->getName(), $upsIdentifier));
+                    $this->logger->logInfo(
+                        sprintf(
+                            "Device '%s' stopped - UPS '%s' has too low battery for this device.",
+                            $device->getName(),
+                            $upsIdentifier
+                        )
+                    );
 
                     continue;
                 }
@@ -78,7 +89,9 @@ class Cron
                     )
                 );
             } catch (Exception $e) {
-                $this->logger->logError(sprintf("Error processing device '%s': %s.", $device->getName(), $e->getMessage()));
+                $this->logger->logError(
+                    sprintf("Error processing device '%s': %s.", $device->getName(), $e->getMessage())
+                );
             }
         }
     }
@@ -123,8 +136,17 @@ class Cron
                 }
 
                 $ups = $this->upsProvider->getUps($device->getUpsIdentifier());
-                if ($ups->getSafeBatteryRuntimeThreshold() && $ups->getSafeBatteryRuntimeThreshold() > $ups->getBatteryRuntime()) {
-                    $this->logger->logInfo(sprintf("Device '%s' cannot be started - UPS %s has too low battery.", $deviceName, $device->getUpsIdentifier()));
+                if (
+                    $ups->getSafeBatteryRuntimeThreshold()
+                    && $ups->getSafeBatteryRuntimeThreshold() > $ups->getBatteryRuntime()
+                ) {
+                    $this->logger->logInfo(
+                        sprintf(
+                            "Device '%s' cannot be started - UPS %s has too low battery.",
+                            $deviceName,
+                            $device->getUpsIdentifier()
+                        )
+                    );
                     continue;
                 }
 
@@ -155,5 +177,4 @@ class Cron
             }
         }
     }
-
 }

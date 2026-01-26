@@ -1,7 +1,3 @@
-stages:
-  - test
-  - coverage
-
 variables:
   COMPOSER_CACHE_DIR: "$CI_PROJECT_DIR/.composer-cache"
 
@@ -19,35 +15,15 @@ cache:
     - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
     - composer install --no-progress --no-interaction --prefer-dist
 
+lint:phpcs:
+  <<: *php_template
+  stage: test
+  script:
+    - vendor/bin/phpcs --standard=PSR12 --extensions=php src tests
+
 test:phpunit:
   <<: *php_template
   stage: test
   script:
     - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Unit --no-coverage
     - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Integration --no-coverage
-
-test:coverage:
-  <<: *php_template
-  stage: coverage
-  variables:
-    XDEBUG_MODE: coverage
-  script:
-    - pecl install xdebug
-    - docker-php-ext-enable xdebug
-    - vendor/bin/phpunit --configuration ./phpunit.xml.dist --coverage-text --coverage-html tests/results/coverage
-  coverage: '/^\s*Lines:\s*\d+\.\d+\%/'
-  artifacts:
-    paths:
-      - tests/results/coverage/
-    expire_in: 1 month
-  only:
-    - main
-    - develop
-
-code-quality:phpcs:
-  <<: *php_template
-  stage: test
-  script:
-    - composer require --dev friendsofphp/php-cs-fixer
-    - vendor/bin/php-cs-fixer fix --dry-run --diff --verbose
-  allow_failure: true

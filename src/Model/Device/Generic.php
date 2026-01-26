@@ -28,8 +28,15 @@ class Generic implements DeviceInterface
     protected string $username;
     protected ?bool $status = null;
 
-    public function configure(string $name, string $ip, string $mac, string $platform, ?string $upsIdentifier, ?int $upsLowBatteryRuntimeThreshold, ?string $username): DeviceInterface
-    {
+    public function configure(
+        string $name,
+        string $ip,
+        string $mac,
+        string $platform,
+        ?string $upsIdentifier,
+        ?int $upsLowBatteryRuntimeThreshold,
+        ?string $username
+    ): DeviceInterface {
         $this->name = $name;
         $this->ip = $ip;
         $this->mac = $mac;
@@ -43,7 +50,11 @@ class Generic implements DeviceInterface
 
     public function toArray(): array
     {
-        $upsLowBatteryRuntimeThreshold = $this->getUpsLowBatteryRuntimeThreshold() ? sprintf('%s min', round($this->getUpsLowBatteryRuntimeThreshold() / 60)) : '-';
+        if ($this->getUpsLowBatteryRuntimeThreshold()) {
+            $upsLowBatteryRuntimeThreshold = sprintf('%s min', round($this->getUpsLowBatteryRuntimeThreshold() / 60));
+        } else {
+            $upsLowBatteryRuntimeThreshold = '-';
+        }
 
         $data = [
             'name' => $this->getName(),
