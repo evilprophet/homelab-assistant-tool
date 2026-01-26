@@ -19,7 +19,9 @@ class NetworkService
 
     public function ping(string $ip, int $ttl = 32, int $timeout = 1): bool
     {
-        $factory = $this->pingFactory ?? static fn (string $ip, int $ttl, int $timeout): Ping => new Ping($ip, $ttl, $timeout);
+        $factory = $this->pingFactory ??
+            static fn(string $ip, int $ttl, int $timeout): Ping => new Ping($ip, $ttl, $timeout);
+
         $ping = $factory($ip, $ttl, $timeout);
 
         return $ping->ping() !== false;
@@ -27,13 +29,13 @@ class NetworkService
 
     public function wakeOnLan(string $mac): bool
     {
-        $factory = $this->wakeOnLanFactory ?? static fn (): PHPWakeOnLan => new PHPWakeOnLan();
+        $factory = $this->wakeOnLanFactory ?? static fn(): PHPWakeOnLan => new PHPWakeOnLan();
         $wakeOnLan = $factory();
         $result = $wakeOnLan->wake([$mac]);
 
         return ($result['result'] ?? null) === 'OK';
     }
 
-    private ?\Closure $pingFactory;
-    private ?\Closure $wakeOnLanFactory;
+    protected ?\Closure $pingFactory;
+    protected ?\Closure $wakeOnLanFactory;
 }
