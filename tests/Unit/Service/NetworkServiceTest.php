@@ -19,7 +19,7 @@ class NetworkServiceTest extends TestCase
         };
 
         $service = new NetworkService(
-            pingFactory: static fn (string $ip, int $ttl, int $timeout): object => $fakePing
+            pingFactory: static fn(string $ip, int $ttl, int $timeout): object => $fakePing
         );
 
         $this->assertTrue($service->ping('192.168.1.1'));
@@ -35,7 +35,7 @@ class NetworkServiceTest extends TestCase
         };
 
         $service = new NetworkService(
-            pingFactory: static fn (string $ip, int $ttl, int $timeout): object => $fakePing
+            pingFactory: static fn(string $ip, int $ttl, int $timeout): object => $fakePing
         );
 
         $this->assertFalse($service->ping('192.168.1.2'));
@@ -51,7 +51,7 @@ class NetworkServiceTest extends TestCase
         };
 
         $service = new NetworkService(
-            wakeOnLanFactory: static fn (): object => $fakeWakeOnLan
+            wakeOnLanFactory: static fn(): object => $fakeWakeOnLan
         );
 
         $this->assertTrue($service->wakeOnLan('00:11:22:33:44:55'));
