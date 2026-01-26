@@ -10,7 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 class UpsTest extends TestCase
 {
-
     protected function createUpsWithMockedCommand(array $mockOutput, int $mockResultCode = 0): Ups
     {
         $ups = $this->getMockBuilder(Ups::class)

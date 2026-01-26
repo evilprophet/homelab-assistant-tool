@@ -48,7 +48,9 @@ class Ups implements UpsInterface
         $this->executeCommand($command, $output, $resultCode);
 
         if ($resultCode !== 0) {
-            throw new UpsFailedUpdateStatus(sprintf("Cannot load status for UPS '%s' at '%s'.", $this->getIdentifier(), $this->getHost()));
+            throw new UpsFailedUpdateStatus(
+                sprintf("Cannot load status for UPS '%s' at '%s'.", $this->getIdentifier(), $this->getHost())
+            );
         }
 
         foreach ($output as $line) {
@@ -63,11 +65,21 @@ class Ups implements UpsInterface
         $this->modelName = $this->properties[self::PROPERTY_DEVICE_MODEL] ?? '';
         $this->serialNumber = $this->properties[self::PROPERTY_DEVICE_SERIAL] ?? '';
         $this->status = $this->properties[self::PROPERTY_UPS_STATUS] ?? '';
-        $this->power = isset($this->properties[self::PROPERTY_UPS_POWER]) ? intval($this->properties[self::PROPERTY_UPS_POWER]) : null;
-        $this->realPower = isset($this->properties[self::PROPERTY_UPS_REAL_POWER]) ? intval($this->properties[self::PROPERTY_UPS_REAL_POWER]) : null;
-        $this->batteryLevel = isset($this->properties[self::PROPERTY_BATTERY_CHARGE]) ? intval($this->properties[self::PROPERTY_BATTERY_CHARGE]) : null;
-        $this->batteryRuntime = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME]) ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME]) : null;
-        $this->lowBatteryRuntimeThreshold = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW]) ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW]) : null;
+        $this->power = isset($this->properties[self::PROPERTY_UPS_POWER])
+            ? intval($this->properties[self::PROPERTY_UPS_POWER])
+            : null;
+        $this->realPower = isset($this->properties[self::PROPERTY_UPS_REAL_POWER])
+            ? intval($this->properties[self::PROPERTY_UPS_REAL_POWER])
+            : null;
+        $this->batteryLevel = isset($this->properties[self::PROPERTY_BATTERY_CHARGE])
+            ? intval($this->properties[self::PROPERTY_BATTERY_CHARGE])
+            : null;
+        $this->batteryRuntime = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME])
+            ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME])
+            : null;
+        $this->lowBatteryRuntimeThreshold = isset($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW])
+            ? intval($this->properties[self::PROPERTY_BATTERY_RUNTIME_LOW])
+            : null;
     }
 
     public function toArray(): array
@@ -163,7 +175,9 @@ class Ups implements UpsInterface
 
     public function isBatteryRuntimeLow(): bool
     {
-        return $this->getLowBatteryRuntimeThreshold() && $this->getBatteryRuntime() && $this->getBatteryRuntime() <= $this->getLowBatteryRuntimeThreshold();
+        return $this->getLowBatteryRuntimeThreshold()
+            && $this->getBatteryRuntime()
+            && $this->getBatteryRuntime() <= $this->getLowBatteryRuntimeThreshold();
     }
 
     protected function executeCommand(string $command, array &$output, int &$resultCode): void

@@ -6,5 +6,4 @@ namespace EvilStudio\HAT\Model\Device;
 
 class ProxmoxVE extends Linux
 {
-
 }

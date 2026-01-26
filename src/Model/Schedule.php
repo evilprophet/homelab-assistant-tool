@@ -62,6 +62,8 @@ class Schedule implements ScheduleInterface
         $dateTimeBefore = (clone $dateTime)->modify('-1 minute');
         $dateTimeAfter = (clone $dateTime)->modify('+1 minute');
 
-        $this->isCronScheduleMatching = $cron->isDue($dateTimeBefore) || $cron->isDue($dateTime) || $cron->isDue($dateTimeAfter);
+        $this->isCronScheduleMatching = $cron->isDue($dateTimeBefore)
+            || $cron->isDue($dateTime)
+            || $cron->isDue($dateTimeAfter);
     }
 }

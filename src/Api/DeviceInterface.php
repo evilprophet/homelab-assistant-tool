@@ -8,7 +8,15 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 interface DeviceInterface
 {
-    public function configure(string $name, string $ip, string $mac, string $platform, ?string $upsIdentifier, ?int $upsLowBatteryRuntimeThreshold, ?string $username): DeviceInterface;
+    public function configure(
+        string $name,
+        string $ip,
+        string $mac,
+        string $platform,
+        ?string $upsIdentifier,
+        ?int $upsLowBatteryRuntimeThreshold,
+        ?string $username
+    ): DeviceInterface;
 
     public function toArray(): array;
 
