@@ -34,7 +34,7 @@ class StartDeviceCommand extends AbstractCommand
         }
 
         $result = $device->start();
-        $message = sprintf("Device '%s' started.", $device->getName(), $result ? 'yes' : 'no');
+        $message = sprintf("Device '%s' started: %s.", $device->getName(), $result ? 'yes' : 'no');
         $outputHelper->note($message);
 
         return Command::SUCCESS;

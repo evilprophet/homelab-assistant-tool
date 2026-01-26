@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Model\Device;
 
-use Diegonz\PHPWakeOnLan\PHPWakeOnLan;
 use EvilStudio\HAT\Api\DeviceInterface;
 use EvilStudio\HAT\Exception\Platform\NoSupportedAction;
 use EvilStudio\HAT\Helper\Configuration;
+use EvilStudio\HAT\Service\NetworkService;
 use Exception;
-use JJG\Ping;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class Generic implements DeviceInterface
 {
     public function __construct(
-        protected Configuration $configuration
+        protected Configuration $configuration,
+        protected ?NetworkService $networkService = null
     ) {
+        $this->networkService ??= new NetworkService();
     }
 
     protected string $name;
@@ -115,10 +116,7 @@ class Generic implements DeviceInterface
     public function checkStatus(): void
     {
         try {
-            $ip = $this->getIp();
-            $ping = new Ping($ip, 32, 1);
-
-            $this->status = $ping->ping() !== false;
+            $this->status = $this->networkService->ping($this->getIp());
         } catch (Exception) {
             $this->status = false;
         }
@@ -127,15 +125,12 @@ class Generic implements DeviceInterface
     public function start(): bool
     {
         try {
-            $macAddresses = [$this->getMac()];
-
-            $wakeOnLan = new PHPWakeOnLan();
-            $result = $wakeOnLan->wake($macAddresses);
+            $result = $this->networkService->wakeOnLan($this->getMac());
         } catch (Exception) {
             return false;
         }
 
-        return $result['result'] == 'OK';
+        return $result;
     }
 
     public function stop(): bool

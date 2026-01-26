@@ -6,6 +6,7 @@ namespace EvilStudio\HAT\Tests\Integration\Command;
 
 use EvilStudio\HAT\Command\Device\StartDeviceCommand;
 use EvilStudio\HAT\Helper\Configuration;
+use EvilStudio\HAT\Api\DeviceInterface;
 use EvilStudio\HAT\Model\DeviceFactory;
 use EvilStudio\HAT\Provider\DeviceProvider;
 use PHPUnit\Framework\TestCase;
@@ -34,21 +35,26 @@ class StartDeviceCommandTest extends TestCase
     protected function createCommand(array $devicesData = []): StartDeviceCommand
     {
         $deviceProvider = new DeviceProvider($this->configuration, $this->deviceFactory, $devicesData);
+
         return new StartDeviceCommand($deviceProvider);
+    }
+
+    protected function createCommandWithMockedDevice(string $deviceName, bool $startResult = true): StartDeviceCommand
+    {
+        $deviceMock = $this->createMock(DeviceInterface::class);
+        $deviceMock->method('getName')->willReturn($deviceName);
+        $deviceMock->method('start')->willReturn($startResult);
+
+        $providerMock = $this->createMock(DeviceProvider::class);
+        $providerMock->method('getDevice')->with($deviceName)->willReturn($deviceMock);
+        $providerMock->method('getDeviceList')->willReturn([$deviceName => $deviceMock]);
+
+        return new StartDeviceCommand($providerMock);
     }
 
     public function testExecuteWithDeviceName(): void
     {
-        $devicesData = [
-            [
-                'name' => 'Test Server',
-                'ip' => '192.168.1.10',
-                'mac' => '00:11:22:33:44:55',
-                'platform' => 'generic',
-            ],
-        ];
-
-        $command = $this->createCommand($devicesData);
+        $command = $this->createCommandWithMockedDevice('Test Server');
         $commandTester = new CommandTester($command);
 
         $commandTester->execute(['name' => 'Test Server']);
@@ -84,16 +90,7 @@ class StartDeviceCommandTest extends TestCase
 
     public function testExecuteDisplaysSuccessMessage(): void
     {
-        $devicesData = [
-            [
-                'name' => 'Production Server',
-                'ip' => '192.168.1.100',
-                'mac' => 'AA:BB:CC:DD:EE:FF',
-                'platform' => 'generic',
-            ],
-        ];
-
-        $command = $this->createCommand($devicesData);
+        $command = $this->createCommandWithMockedDevice('Production Server');
         $commandTester = new CommandTester($command);
 
         $commandTester->execute(['name' => 'Production Server']);
@@ -132,22 +129,7 @@ class StartDeviceCommandTest extends TestCase
 
     public function testExecuteWithMultipleDevices(): void
     {
-        $devicesData = [
-            [
-                'name' => 'Server 1',
-                'ip' => '192.168.1.10',
-                'mac' => '00:11:22:33:44:55',
-                'platform' => 'generic',
-            ],
-            [
-                'name' => 'Server 2',
-                'ip' => '192.168.1.20',
-                'mac' => 'AA:BB:CC:DD:EE:FF',
-                'platform' => 'generic',
-            ],
-        ];
-
-        $command = $this->createCommand($devicesData);
+        $command = $this->createCommandWithMockedDevice('Server 2');
         $commandTester = new CommandTester($command);
 
         $commandTester->execute(['name' => 'Server 2']);
@@ -161,16 +143,7 @@ class StartDeviceCommandTest extends TestCase
 
     public function testExecuteWithLinuxDevice(): void
     {
-        $devicesData = [
-            [
-                'name' => 'Linux Server',
-                'ip' => '192.168.1.50',
-                'mac' => 'FF:EE:DD:CC:BB:AA',
-                'platform' => 'linux',
-            ],
-        ];
-
-        $command = $this->createCommand($devicesData);
+        $command = $this->createCommandWithMockedDevice('Linux Server');
         $commandTester = new CommandTester($command);
 
         $commandTester->execute(['name' => 'Linux Server']);

@@ -95,20 +95,20 @@ Here is a list of commands available in HAT.
 
 ## 🧪 Testing & Quality
 
-✅ **165 automated tests** | ✅ **83% code coverage** | ✅ **100% success rate**
+✅ **175 automated tests** | ✅ **87.05% code coverage (363/417 lines)** | ✅ **100% success rate**
 
 This project has comprehensive test coverage with automated quality checks:
-- **98 Unit Tests** - Testing individual components in isolation
-- **67 Integration Tests** - Testing component interactions
+- **122 Unit Tests** - Testing individual components in isolation
+- **53 Integration Tests** - Testing component interactions
 - **All tests passing** - Production ready
 
 ### Quick Start:
 ```bash
-# Run all tests
-vendor/bin/phpunit
+# Run all tests (Xdebug off)
+bin/phpunit
 
 # Run with coverage report
-vendor/bin/phpunit --coverage-html tests/results/coverage
+bin/phpunit-coverage
 ```
 
 ### 📚 Documentation:

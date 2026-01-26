@@ -66,10 +66,9 @@ class ShowUpsCommandTest extends TestCase
     {
         $upsMock = $this->createMock(UpsInterface::class);
         $upsMock->method('toArray')->willReturn([
-            'identifier' => 'ups1',
+            'name' => 'ups1',
             'status' => 'online',
-            'battery_charge' => 100,
-            'battery_runtime' => 3600,
+            'battery' => '100%',
         ]);
 
         $command = $this->createCommand(upsModeEnabled: true, upsList: [$upsMock]);
@@ -88,13 +87,13 @@ class ShowUpsCommandTest extends TestCase
     {
         $upsMock1 = $this->createMock(UpsInterface::class);
         $upsMock1->method('toArray')->willReturn([
-            'identifier' => 'ups1',
+            'name' => 'ups1',
             'status' => 'online',
         ]);
 
         $upsMock2 = $this->createMock(UpsInterface::class);
         $upsMock2->method('toArray')->willReturn([
-            'identifier' => 'ups2',
+            'name' => 'ups2',
             'status' => 'on battery',
         ]);
 
@@ -113,7 +112,7 @@ class ShowUpsCommandTest extends TestCase
     {
         $upsMock = $this->createMock(UpsInterface::class);
         $upsMock->method('toArray')->willReturn([
-            'identifier' => 'test-ups',
+            'name' => 'test-ups',
             'status' => 'online',
         ]);
 

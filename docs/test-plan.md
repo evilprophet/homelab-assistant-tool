@@ -94,30 +94,30 @@ These tests will verify that different parts of the application work together as
 
 -   **[x] Commands Testing**:
     -   `ShowScheduleCommand` - Integration test with CommandTester ✅
-    -   `ShowDevicesCommand` - Integration test with --with-status option ✅
+    -   `ShowDevicesCommand` - Integration test without `--with-status` (no real ping) ✅
     -   `CheckDeviceStatusCommand` - Check device status with argument ✅
     -   `StartDeviceCommand` - Start device (non-interactive mode) ✅
     -   `StopDeviceCommand` - Stop device (non-interactive mode, with mocking) ✅
 
 -   **[x] Test Fixes**:
     -   Fixed table format assertions (UTF-8 → ASCII)
-    -   Fixed StopDeviceCommand with Device mocking (SSH key issue)
-    -   All 130 tests passed with 350 assertions ✅
+    -   StopDeviceCommand uses Device mocking (SSH key issue)
+    -   Start/CheckStatus commands now mocked to avoid real ping/WOL ✅
 
--   **[x] Service/Cron Testing** (19 tests):
+-   **[x] Service/Cron Testing** (20 tests):
     -   `execute()` - main entry point with UPS mode routing ✅
     -   `handleBatteryMode()` - stops devices based on UPS battery levels ✅
     -   `handleOnlineMode()` - executes scheduled tasks ✅
     -   `commandStart()` - starts devices with UPS battery checks ✅
     -   `commandStop()` - stops devices ✅
     -   Exception handling and logging ✅
-    -   **Total: 149 tests, 394 assertions** 🎉
+    -   **Total: 175 tests, 453 assertions** 🎉
 
--   **[x] Additional Commands & Coverage Improvements** (16 tests) ⭐:
+-   **[x] Additional Commands & Coverage Improvements** ⭐:
     -   Configuration::getSshKey() - File I/O test ✅
     -   ExecuteCronCommand - Cron execution integration (7 tests) ✅
     -   ShowUpsCommand - UPS display command (8 tests) ✅
-    -   **Final: 165 tests, 423 assertions, 83% coverage** 🎊
+    -   **Final: 175 tests, 453 assertions, 87.05% coverage (363/417 lines)** 🎊
 
 **Notes:**
 - Interactive mode for Start/Stop commands is not implemented (requires TTY simulation, low priority)
@@ -129,6 +129,6 @@ These tests will verify that different parts of the application work together as
 -   **[x] GitLab CI/CD**:
     -   Created `.gitlab-ci.yml` workflow file
     -   Pipeline triggers on every `push` and `merge_request`
-    -   Automated workflow: checkout code → install dependencies (`composer install`) → run full test suite (`vendor/bin/phpunit`)
+    -   Automated workflow: checkout code → install dependencies (`composer install`) → run full test suite (`bin/phpunit`)
     -   Code coverage reports generated for main branches
     -   Artifacts stored for 1 week (JUnit) and 1 month (coverage reports)

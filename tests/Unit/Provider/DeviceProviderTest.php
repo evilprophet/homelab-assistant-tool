@@ -6,6 +6,7 @@ namespace EvilStudio\HAT\Tests\Unit\Provider;
 
 use EvilStudio\HAT\Exception\MissingDevice;
 use EvilStudio\HAT\Helper\Configuration;
+use EvilStudio\HAT\Api\DeviceInterface;
 use EvilStudio\HAT\Model\Device\Generic;
 use EvilStudio\HAT\Model\Device\Linux;
 use EvilStudio\HAT\Model\DeviceFactory;
@@ -197,5 +198,25 @@ class DeviceProviderTest extends TestCase
 
         $this->assertInstanceOf(Linux::class, $provider->getDevice('Linux Server'));
         $this->assertInstanceOf(Generic::class, $provider->getDevice('Generic Device'));
+    }
+
+    public function testCheckAllDevicesStatusCallsCheckStatusOnEachDevice(): void
+    {
+        $deviceMock1 = $this->createMock(DeviceInterface::class);
+        $deviceMock1->expects($this->once())->method('checkStatus');
+
+        $deviceMock2 = $this->createMock(DeviceInterface::class);
+        $deviceMock2->expects($this->once())->method('checkStatus');
+
+        $provider = new DeviceProvider($this->configuration, $this->deviceFactory, []);
+
+        $reflection = new \ReflectionClass($provider);
+        $property = $reflection->getProperty('deviceList');
+        $property->setAccessible(true);
+        $property->setValue($provider, ['device1' => $deviceMock1, 'device2' => $deviceMock2]);
+
+        $provider->checkAllDevicesStatus();
+
+        $this->assertContains('Status', $provider->getProperties());
     }
 }

@@ -7,6 +7,7 @@ namespace EvilStudio\HAT\Tests\Unit\Model\Device;
 use EvilStudio\HAT\Exception\Platform\NoSupportedAction;
 use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Model\Device\Generic;
+use EvilStudio\HAT\Service\NetworkService;
 use PHPUnit\Framework\TestCase;
 
 class GenericTest extends TestCase
@@ -203,5 +204,53 @@ class GenericTest extends TestCase
         );
 
         $this->assertSame($device, $result);
+    }
+
+    public function testCheckStatusUsesNetworkService(): void
+    {
+        $networkServiceMock = $this->createMock(NetworkService::class);
+        $networkServiceMock->expects($this->once())
+            ->method('ping')
+            ->with('192.168.1.10')
+            ->willReturn(true);
+
+        $device = new Generic($this->configuration, $networkServiceMock);
+        $device->configure(
+            name: 'Test Device',
+            ip: '192.168.1.10',
+            mac: '00:11:22:33:44:55',
+            platform: 'generic',
+            upsIdentifier: null,
+            upsLowBatteryRuntimeThreshold: null,
+            username: null
+        );
+
+        $device->checkStatus();
+
+        $this->assertTrue($device->getStatus());
+    }
+
+    public function testStartUsesNetworkService(): void
+    {
+        $networkServiceMock = $this->createMock(NetworkService::class);
+        $networkServiceMock->expects($this->once())
+            ->method('wakeOnLan')
+            ->with('AA:BB:CC:DD:EE:FF')
+            ->willReturn(true);
+
+        $device = new Generic($this->configuration, $networkServiceMock);
+        $device->configure(
+            name: 'Test Device',
+            ip: '192.168.1.20',
+            mac: 'AA:BB:CC:DD:EE:FF',
+            platform: 'generic',
+            upsIdentifier: null,
+            upsLowBatteryRuntimeThreshold: null,
+            username: null
+        );
+
+        $result = $device->start();
+
+        $this->assertTrue($result);
     }
 }
