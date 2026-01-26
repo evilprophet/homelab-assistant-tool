@@ -1,21 +1,20 @@
 # GitLab CI/CD Guide
 
 **Pipeline Status:** ✅ Configured  
-**Coverage Reports:** ✅ Enabled  
+**Coverage Reports:** ❌ Not generated in CI (local only)  
 **Last Updated:** 2026-01-26
 
 ---
 
 ## 📋 Overview
 
-This project uses GitLab CI/CD for automated testing and code quality verification. Every push and merge request automatically triggers the test suite and generates coverage reports.
+This project uses GitLab CI/CD for automated testing and code quality verification. Every push and merge request automatically triggers linting and the full test suite (unit + integration).
 
 ### Pipeline Features:
 - ✅ Automated test execution (175 tests)
-- ✅ Code coverage reports (87.05% / 363 of 417 lines)
-- ✅ JUnit XML artifacts for GitLab integration
-- ✅ HTML coverage reports
+- ✅ Linting with PHP_CodeSniffer (PSR-12)
 - ✅ Composer dependency caching (~50% faster)
+- ❌ No coverage reports generated in CI (run locally)
 
 ---
 
@@ -23,89 +22,54 @@ This project uses GitLab CI/CD for automated testing and code quality verificati
 
 ### File: `.gitlab-ci.yml`
 
-The pipeline consists of 2 stages:
+The pipeline consists of 1 stage with 2 jobs:
 
-#### Stage 1: Test (Every Push/MR)
-- Runs all 175 tests
-- Generates JUnit XML report
-- Displays coverage percentage
-- Takes ~2-3 minutes
-
-#### Stage 2: Coverage (Main Branches Only)
-- Installs Xdebug for detailed coverage
-- Generates HTML coverage report
-- Creates Testdox HTML documentation
-- Takes ~3-4 minutes
-- Only runs on: main, master, develop branches
+#### Stage: Test (Every Push/MR)
+- **lint:phpcs** — PSR-12 lint for `src` and `tests`
+- **test:phpunit** — Unit + Integration tests (no coverage)
 
 ---
 
 ## ⚙️ Pipeline Stages
 
-### test:phpunit
+### lint:phpcs
 ```yaml
 stage: test
 script:
   - composer install
-  - bin/phpunit
-artifacts:
-  - tests/results/junit.xml
-coverage: '/^\s*Lines:\s*\d+\.\d+\%/'
+  - vendor/bin/phpcs --standard=PSR12 --extensions=php src tests
 ```
 
 **Triggers:** Every push, every MR  
-**Output:** JUnit XML + console coverage  
-**Artifacts:** 1 week retention
+**Output:** Lint violations in console
 
-### test:coverage
+### test:phpunit
 ```yaml
-stage: coverage
+stage: test
 script:
-  - pecl install xdebug
-  - bin/phpunit-coverage
-artifacts:
-  - tests/results/coverage/
-only:
-  - main
-  - develop
+  - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Unit --no-coverage
+  - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Integration --no-coverage
 ```
 
-**Triggers:** Push to main/develop  
-**Output:** HTML coverage report + Testdox  
-**Artifacts:** 1 month retention
+**Triggers:** Every push, every MR  
+**Output:** Console results (no coverage)
 
 ---
 
 ## 📊 Artifacts
 
-### JUnit XML Report
-- **Path:** `tests/results/junit.xml`
-- **Usage:** GitLab displays test results in MR
-- **Retention:** 1 week
-- **Size:** ~10-20 KB
-
-### HTML Coverage Report
-- **Path:** `tests/results/coverage/index.html`
-- **Usage:** Download and open in browser
-- **Retention:** 1 month
-- **Size:** ~5-10 MB
-
-### Testdox HTML
-- **Path:** `tests/results/testdox.html`
-- **Usage:** Readable test documentation
-- **Retention:** 1 month
-- **Size:** ~50-100 KB
+No test artifacts are uploaded by default. Coverage and Testdox are generated locally only.
 
 ---
 
 ## 🔧 Local Testing
 
-### Run All Tests:
+### Run All Tests (local):
 ```bash
 bin/phpunit
 ```
 
-### With Coverage (requires Xdebug):
+### With Coverage (local, requires Xdebug):
 ```bash
 bin/phpunit-coverage
 ```
@@ -137,9 +101,11 @@ Using YAML anchor for DRY configuration:
 .php_template: &php_template
   image: php:8.3-cli
   before_script:
-    - apt-get update
-    - apt-get install -y git unzip
-    - composer install
+    - apt-get update -qq
+    - apt-get install -y -qq git unzip libzip-dev zlib1g-dev libxml2-dev pkg-config build-essential autoconf libssl-dev
+    - docker-php-ext-install zip sockets
+    - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+    - composer install --no-progress --no-interaction --prefer-dist
 ```
 
 ---
@@ -147,10 +113,9 @@ Using YAML anchor for DRY configuration:
 ## 🎯 GitLab Integration
 
 ### Merge Request Features:
-1. **Test Results** - Automatic pass/fail display
-2. **Coverage Badge** - Shows current coverage %
-3. **Pipeline Status** - Red/Green indicator
-4. **Artifacts Browser** - Download reports
+1. **Pipeline Status** - Red/Green indicator
+2. **Lint Results** - PSR-12 violations in job log
+3. **Test Results** - pass/fail in job log
 
 ### Recommended MR Settings:
 ```
@@ -169,8 +134,8 @@ Settings → Merge Requests:
 ### "No tests executed"
 **Solution:** Verify `phpunit.xml.dist` path
 
-### Coverage shows 0%
-**Solution:** Ensure Xdebug is installed in coverage stage
+### Coverage shows 0% (local)
+**Solution:** Run `bin/phpunit-coverage` and ensure Xdebug is enabled locally
 
 ### Artifacts not found
 **Solution:** Check if `tests/results/` directory exists
@@ -181,18 +146,15 @@ Settings → Merge Requests:
 
 1. ✅ **Run tests locally** before pushing
 2. ✅ **Check coverage reports** after changes
-3. ✅ **Don't merge red pipelines** 
-4. ✅ **Monitor coverage trends** - don't let it drop
+3. ✅ **Don't merge red pipelines**
+4. ✅ **Monitor coverage trends** - run `bin/phpunit-coverage` after major changes
 5. ✅ **Use feature branches** - feature/* → develop → main
 
 ---
 
-## 📈 Coverage Badge
+## 📈 Coverage Badge (optional)
 
-Add to README.md:
-```markdown
-[![coverage](https://gitlab.com/{namespace}/{project}/badges/{branch}/coverage.svg)](https://gitlab.com/{namespace}/{project}/-/commits/{branch})
-```
+Coverage is not generated in CI. If you want a badge, add a coverage stage first.
 
 ---
 
