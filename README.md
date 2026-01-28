@@ -61,16 +61,29 @@ vendor/       # Composer dependencies
 
 ## 🛠️ Installation
 
-1. Create the project via Composer:
+1. Clone the repository (recommended for easy updates):
    ```bash
-   composer create-project evilstudio/homelab-assistant-tool
+   git clone https://github.com/evilstudio/homelab-assistant-tool.git
+   cd homelab-assistant-tool
    ```
-2. Copy the configuration template:
+2. Install dependencies:
+   ```bash
+   composer install
+   ```
+3. Copy the configuration template:
    ```bash
    cp config/parameters.yaml.template config/parameters.yaml
    ```
-3. Edit `config/parameters.yaml` to configure your devices, UPS, and schedules.
-4. Ensure your SSH key allows passwordless access to the managed devices.
+4. Edit `config/parameters.yaml` to configure the application.
+5. Ensure your SSH key allows passwordless access to the managed devices.
+6. Run the CLI commands (see the Commands section).
+
+## 🔄 Updating
+
+```bash
+git pull
+composer install
+```
 
 ## 💻 Commands Overview
 
