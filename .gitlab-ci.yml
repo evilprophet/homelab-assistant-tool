@@ -7,7 +7,7 @@ cache:
     - vendor/
 
 .php_template: &php_template
-  image: php:8.3-cli
+  image: php:8.4-cli
   before_script:
     - apt-get update -qq
     - apt-get install -y -qq git unzip libzip-dev zlib1g-dev libxml2-dev pkg-config build-essential autoconf libssl-dev
