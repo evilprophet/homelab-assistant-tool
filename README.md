@@ -10,25 +10,25 @@ For technical details, see [Tech Stack](./docs/tech-stack.md).
 ## ✨ Key Features
 
 - `🔌 Device operations`
-- Start, stop, check status, and SSH operations for managed devices (via CLI)
+    - Start, stop, check status, and SSH operations for managed devices (via CLI)
 
 - `🔋 UPS-aware behavior`
-- UPS monitoring support and battery-aware automation logic
+    - UPS monitoring support and battery-aware automation logic
 
 - `⏰ Scheduling`
-- Cron-based automation with schedule-to-device assignment
+    - Cron-based automation with schedule-to-device assignment
 
 - `🧾 Action logs`
-- Unified action history for `CLI`, `CRON`, and `WEB` operations
-- Log filtering and cleanup tools
+    - Unified action history for `CLI`, `CRON`, and `WEB` operations
+    - Log filtering and cleanup tools
 
 - `🌐 Web UI`
-- Management views for devices, UPS, schedules, and logs
-- Manual operational actions from the browser
+    - Management views for devices, UPS, schedules, and logs
+    - Manual operational actions from the browser
 
 - `🔐 Authentication`
-- `simple` mode (local username/password)
-- `oidc` mode (OIDC provider login)
+    - `simple` mode (local username/password)
+    - `oidc` mode (OIDC provider login)
 
 ## 📁 Project Structure
 
