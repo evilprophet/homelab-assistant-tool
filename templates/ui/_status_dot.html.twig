@@ -1,0 +1,20 @@
+{% set resolved_status = status|default('unknown') %}
+{% set dot_size_class = size|default('sm') == 'xs' ? 'w-1.5 h-1.5' : 'w-2 h-2' %}
+{% set online_class = size|default('sm') == 'xs' ? 'bg-green-400' : 'bg-green-500' %}
+{% set offline_class = size|default('sm') == 'xs' ? 'bg-red-400' : 'bg-red-500' %}
+{% set dot_class = resolved_status == 'online'
+    ? online_class
+    : (resolved_status == 'offline'
+        ? offline_class
+        : 'bg-slate-400') %}
+
+{% if with_label|default(false) %}
+    <span class="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
+        <span class="{{ dot_size_class }} rounded-full {{ dot_class }}"></span>
+        <span class="{{ uppercase_label|default(true) ? 'uppercase tracking-wide' : '' }}">
+            {{ label|default(resolved_status) }}
+        </span>
+    </span>
+{% else %}
+    <span class="{{ dot_size_class }} rounded-full {{ dot_class }}"></span>
+{% endif %}

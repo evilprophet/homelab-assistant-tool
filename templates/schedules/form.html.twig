@@ -1,0 +1,146 @@
+{% extends 'base.html.twig' %}
+
+{% block page_actions %}
+    <a href="{{ path('hat_schedules_index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium rounded-lg transition-colors hover:bg-slate-50 dark:hover:bg-slate-600">
+        Back
+    </a>
+{% endblock %}
+
+{% block body %}
+    {% include 'ui/_form_errors.html.twig' with { errors: errors } only %}
+
+    <div class="max-w-3xl mx-auto">
+        <form method="post" class="space-y-6">
+            <input
+                type="hidden"
+                name="_token"
+                value="{{ csrf_token(mode == 'edit' and schedule is defined ? 'schedule.form.edit.' ~ schedule.id : 'schedule.form.create') }}"
+            >
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
+                <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-4">Schedule Details</h3>
+
+                <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div class="sm:col-span-4">
+                        <label for="schedule-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Schedule Name</label>
+                        <input id="schedule-name" type="text" name="name" value="{{ form_data.name }}" placeholder="e.g. Nightly Shutdown" class="mt-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-slate-300 dark:border-slate-600 rounded-lg p-2.5 border bg-white dark:bg-slate-700 dark:text-white">
+                        {% include 'ui/_field_errors.html.twig' with { errors: errors, field_name: 'name' } only %}
+                    </div>
+
+                    <div class="sm:col-span-4">
+                        <label for="schedule-cron-expression" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Cron Expression</label>
+                        <input id="schedule-cron-expression" data-cron-preview-input type="text" name="cron_expression" value="{{ form_data.cron_expression }}" placeholder="0 23 * * *" class="mt-1 font-mono shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-slate-300 dark:border-slate-600 rounded-lg p-2.5 border bg-white dark:bg-slate-700 dark:text-white">
+                        {% include 'ui/_field_errors.html.twig' with { errors: errors, field_name: 'cron_expression' } only %}
+                    </div>
+
+                    <div class="sm:col-span-3">
+                        <label for="schedule-command" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Action Command</label>
+                        <select id="schedule-command" name="command" class="mt-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-slate-300 dark:border-slate-600 rounded-lg p-2.5 border bg-white dark:bg-slate-700 dark:text-white">
+                            {% for command in allowed_commands %}
+                                <option value="{{ command }}" {{ command == form_data.command ? 'selected' : '' }}>{{ command }}</option>
+                            {% endfor %}
+                        </select>
+                        {% include 'ui/_field_errors.html.twig' with { errors: errors, field_name: 'command' } only %}
+                    </div>
+
+                    <div class="sm:col-span-3 flex items-end">
+                        <label for="schedule-is-enabled" class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                            <input type="hidden" name="is_enabled" value="0">
+                            <input id="schedule-is-enabled" type="checkbox" name="is_enabled" value="1" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" {{ form_data.is_enabled ? 'checked' : '' }}>
+                            Schedule enabled
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-6">
+                <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-700 pb-4">Target Devices</h3>
+                {% if devices is empty %}
+                    <p class="text-sm text-slate-500 dark:text-slate-400">No devices available.</p>
+                {% else %}
+                    <div class="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden divide-y divide-slate-200 dark:divide-slate-700">
+                        {% for device in devices %}
+                            <label class="flex items-center px-4 py-3 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors cursor-pointer">
+                                <input type="checkbox" name="device_ids[]" value="{{ device.id }}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded" {{ device.id in form_data.device_ids ? 'checked' : '' }}>
+                                <span class="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-200 flex-1">
+                                    {{ device.name }} <span class="text-slate-400 font-normal ml-2">({{ device.ip }})</span>
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                {% include 'ui/_field_errors.html.twig' with { errors: errors, field_name: 'device_ids' } only %}
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+                <h3 class="text-lg font-medium leading-6 text-slate-900 dark:text-white">Next Runs Preview ({{ timezone_name }})</h3>
+                <p data-cron-preview-empty class="text-sm text-slate-500 dark:text-slate-400 {{ preview_next_runs is empty ? '' : 'hidden' }}">
+                    No preview available for current cron expression.
+                </p>
+                <ul data-cron-preview-list class="list-disc pl-5 text-sm text-slate-700 dark:text-slate-300 space-y-1 {{ preview_next_runs is empty ? 'hidden' : '' }}">
+                    {% for next_run in preview_next_runs %}
+                        <li>{{ next_run|date('Y-m-d H:i:s', timezone_name) }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
+                <a href="{{ path('hat_schedules_index') }}" class="bg-white dark:bg-slate-700 py-2 px-4 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600">Cancel</a>
+                <button type="submit" class="bg-blue-600 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+                    {{ mode == 'edit' ? 'Save Schedule' : 'Create Schedule' }}
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+{% block body_scripts %}
+    <script>
+        (() => {
+            const input = document.querySelector('[data-cron-preview-input]');
+            const emptyNode = document.querySelector('[data-cron-preview-empty]');
+            const listNode = document.querySelector('[data-cron-preview-list]');
+
+            if (!input || !emptyNode || !listNode) {
+                return;
+            }
+
+            const renderRuns = (runs) => {
+                listNode.innerHTML = '';
+
+                if (!Array.isArray(runs) || runs.length === 0) {
+                    listNode.classList.add('hidden');
+                    emptyNode.classList.remove('hidden');
+                    return;
+                }
+
+                runs.forEach((run) => {
+                    const item = document.createElement('li');
+                    item.textContent = String(run);
+                    listNode.appendChild(item);
+                });
+
+                emptyNode.classList.add('hidden');
+                listNode.classList.remove('hidden');
+            };
+
+            let debounceTimer = null;
+            input.addEventListener('input', () => {
+                if (debounceTimer !== null) {
+                    window.clearTimeout(debounceTimer);
+                }
+
+                debounceTimer = window.setTimeout(() => {
+                    const cronExpression = input.value.trim();
+                    const params = new URLSearchParams({ cron_expression: cronExpression });
+
+                    fetch('{{ path('hat_schedules_preview_next_runs') }}?' + params.toString(), {
+                        headers: { 'Accept': 'application/json' },
+                    })
+                        .then((response) => response.ok ? response.json() : Promise.reject())
+                        .then((payload) => renderRuns(payload.runs || []))
+                        .catch(() => renderRuns([]));
+                }, 250);
+            });
+        })();
+    </script>
+{% endblock %}

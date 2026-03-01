@@ -1,0 +1,3 @@
+doctrine_migrations:
+  migrations_paths:
+    'EvilStudio\HAT\Migration': '%kernel.project_dir%/migrations'

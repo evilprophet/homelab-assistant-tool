@@ -1,0 +1,93 @@
+<aside
+    data-sidebar
+    class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 -translate-x-full lg:translate-x-0 lg:static lg:z-auto lg:w-64 transition-all duration-300 border-r border-slate-800 dark:border-slate-700"
+>
+    {% set current_username = app.request.attributes.get('_hat_auth_username', 'admin') %}
+    {% set user_initials = current_username|slice(0, 2)|upper %}
+
+    <div data-sidebar-brand class="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+        <a href="{{ path('hat_dashboard') }}" class="text-xl font-bold text-white tracking-wider">
+            HAT <span data-sidebar-label class="text-blue-400 text-xs font-normal align-top">v2</span>
+        </a>
+        <button
+            type="button"
+            data-sidebar-mobile-close
+            class="inline-flex lg:hidden items-center justify-center h-8 w-8 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            aria-label="Close sidebar"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto py-4">
+        <ul class="space-y-1 px-3">
+            <li data-sidebar-section-title class="pt-1 pb-2 px-3 text-xs font-semibold uppercase text-slate-500 tracking-wider">Overview</li>
+            <li>
+                <a href="{{ path('hat_dashboard') }}" title="Dashboard" data-sidebar-link class="flex items-center gap-3 px-3 py-2 rounded-lg {{ current_route in ['hat_dashboard', 'hat_home'] ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'hover:bg-slate-800 hover:text-white transition-colors' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    <span data-sidebar-label>Dashboard</span>
+                </a>
+            </li>
+
+            <li data-sidebar-section-title class="pt-4 pb-2 px-3 text-xs font-semibold uppercase text-slate-500 tracking-wider">Management</li>
+            <li>
+                <a href="{{ path('hat_devices_index') }}" title="Devices" data-sidebar-link class="flex items-center gap-3 px-3 py-2 rounded-lg {{ current_route starts with 'hat_devices_' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'hover:bg-slate-800 hover:text-white transition-colors' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span data-sidebar-label>Devices</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('hat_ups_index') }}" title="UPS Units" data-sidebar-link class="flex items-center gap-3 px-3 py-2 rounded-lg {{ current_route starts with 'hat_ups_' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'hover:bg-slate-800 hover:text-white transition-colors' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span data-sidebar-label>UPS Units</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ path('hat_schedules_index') }}" title="Schedules" data-sidebar-link class="flex items-center gap-3 px-3 py-2 rounded-lg {{ current_route starts with 'hat_schedules_' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'hover:bg-slate-800 hover:text-white transition-colors' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span data-sidebar-label>Schedules</span>
+                </a>
+            </li>
+
+            <li data-sidebar-section-title class="pt-4 pb-2 px-3 text-xs font-semibold uppercase text-slate-500 tracking-wider">System</li>
+            <li>
+                <a href="{{ path('hat_logs_index') }}" title="Action Logs" data-sidebar-link class="flex items-center gap-3 px-3 py-2 rounded-lg {{ current_route starts with 'hat_logs_' ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'hover:bg-slate-800 hover:text-white transition-colors' }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span data-sidebar-label>Action Logs</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="p-4 border-t border-slate-800" data-sidebar-footer>
+        <div class="flex items-center gap-3" data-sidebar-footer-content>
+            <div class="h-8 w-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">
+                {{ user_initials }}
+            </div>
+            <div class="text-sm" data-sidebar-label>
+                <div class="font-medium text-white">{{ current_username }}</div>
+                <form action="{{ path('hat_auth_logout') }}" method="post" class="mt-1">
+                    <input type="hidden" name="_token" value="{{ csrf_token('auth.logout') }}">
+                    <button
+                        type="submit"
+                        class="text-xs text-slate-400 hover:text-white transition-colors"
+                    >
+                        Sign out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</aside>

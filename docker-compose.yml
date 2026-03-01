@@ -1,0 +1,24 @@
+services:
+  hat-app:
+    image: hat-app:local
+    container_name: hat-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    networks:
+      - hat-net
+    volumes:
+      - ./var/data:/app/var/data
+      - ./var/log:/app/var/log
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        INSTALL_XDEBUG: ${HAT_WITH_XDEBUG:-0}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  hat-net:

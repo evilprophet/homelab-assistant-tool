@@ -1,0 +1,171 @@
+{% extends 'base.html.twig' %}
+
+{% block page_actions %}
+    <a href="{{ path('hat_schedules_new') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        New Schedule
+    </a>
+{% endblock %}
+
+{% block body %}
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        {% if schedules is empty %}
+            <div class="p-6 text-sm text-slate-500 dark:text-slate-400">No schedules found.</div>
+        {% else %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-700/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Schedule Name / ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Enabled</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cron Schedule</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Command</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Target Devices</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Next Runs ({{ timezone_name }})</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                    {% for schedule in schedules %}
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="h-10 w-10 flex-shrink-0 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-slate-900 dark:text-white">{{ schedule.name }}</div>
+                                        <div class="text-xs text-slate-500 dark:text-slate-400">ID: {{ schedule.id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% set enabled_yes = schedule.enabled == 'yes' %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ enabled_yes ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300' }}">
+                                    {{ enabled_yes ? 'YES' : 'NO' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm font-mono bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-800 dark:text-slate-300">{{ schedule.cron_expression }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-700 text-xs font-medium text-blue-700 dark:text-blue-300">
+                                    {{ schedule.command|upper }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% set schedule_devices = schedule.devices is defined and schedule.devices != '-' ? schedule.devices|split(', ') : [] %}
+                                <div class="flex flex-wrap gap-1 max-w-xs">
+                                    {% for device_label in schedule_devices %}
+                                        {% set device_parts = device_label|split(':', 2) %}
+                                        {% set device_name = device_parts|length > 1 ? device_parts[1] : device_label %}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+                                            <span data-schedule-device-status="{{ device_name }}" class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                            <span class="ml-1.5">{{ device_name }}</span>
+                                        </span>
+                                    {% else %}
+                                        <span class="text-sm text-slate-500 dark:text-slate-400">-</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                {% set next_runs = next_runs_by_id[schedule.id]|default([]) %}
+                                {% if next_runs is empty %}
+                                    <span class="text-sm text-slate-500 dark:text-slate-400">-</span>
+                                {% else %}
+                                    <ul class="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                                        {% for next_run in next_runs %}
+                                            <li>{{ next_run|date('Y-m-d H:i:s', timezone_name) }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex items-center gap-3">
+                                    <a href="{{ path('hat_schedules_edit', { id: schedule.id }) }}" class="text-slate-400 hover:text-blue-600 transition-colors" title="Edit" aria-label="Edit {{ schedule.name }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </a>
+                                    <a href="{{ path('hat_schedules_remove_confirm', { id: schedule.id }) }}" class="text-slate-400 hover:text-red-500 transition-colors" title="Delete" aria-label="Delete {{ schedule.name }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% include 'ui/_pagination.html.twig' with {
+            route_name: 'hat_schedules_index',
+            page: page,
+            total_pages: total_pages,
+            total: total,
+            query: app.request.query.all
+        } only %}
+    </div>
+{% endblock %}
+
+{% block body_scripts %}
+    <script>
+        (() => {
+            const statusDots = Array.from(document.querySelectorAll('[data-schedule-device-status]'));
+            if (statusDots.length === 0) {
+                return;
+            }
+
+            const deviceNames = Array.from(new Set(
+                statusDots
+                    .map((node) => node.dataset.scheduleDeviceStatus || '')
+                    .filter((name) => name !== '')
+            ));
+            if (deviceNames.length === 0) {
+                return;
+            }
+
+            const params = new URLSearchParams();
+            deviceNames.forEach((deviceName) => {
+                params.append('device_names[]', deviceName);
+            });
+
+            const dotClassByStatus = {
+                online: 'bg-green-400',
+                offline: 'bg-red-400',
+                unknown: 'bg-slate-400',
+            };
+
+            fetch('{{ path('hat_runtime_statuses') }}?' + params.toString(), {
+                headers: { 'Accept': 'application/json' },
+            })
+                .then((response) => response.ok ? response.json() : Promise.reject())
+                .then((payload) => {
+                    const deviceStatusByName = payload.device_status_by_name || {};
+
+                    statusDots.forEach((dot) => {
+                        const deviceName = dot.dataset.scheduleDeviceStatus || '';
+                        if (deviceName === '') {
+                            return;
+                        }
+
+                        const status = typeof deviceStatusByName[deviceName] === 'string'
+                            ? deviceStatusByName[deviceName]
+                            : 'unknown';
+
+                        dot.classList.remove('bg-green-400', 'bg-red-400', 'bg-slate-400');
+                        dot.classList.add(dotClassByStatus[status] || dotClassByStatus.unknown);
+                    });
+                })
+                .catch(() => {
+                });
+        })();
+    </script>
+{% endblock %}

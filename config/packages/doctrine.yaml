@@ -1,0 +1,19 @@
+doctrine:
+  dbal:
+    driver: 'pdo_sqlite'
+    path: '%kernel.project_dir%/%sqlite_database_path%'
+    use_savepoints: true
+
+  orm:
+    auto_generate_proxy_classes: true
+    enable_lazy_ghost_objects: true
+    report_fields_where_declared: true
+    validate_xml_mapping: false
+    naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+    mappings:
+      Hat:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Entity'
+        prefix: 'EvilStudio\HAT\Entity'
+        alias: Hat

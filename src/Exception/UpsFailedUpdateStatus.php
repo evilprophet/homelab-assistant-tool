@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Exception;
 
-use Exception;
+use RuntimeException;
 
-class UpsFailedUpdateStatus extends Exception
+class UpsFailedUpdateStatus extends RuntimeException
 {
 }
