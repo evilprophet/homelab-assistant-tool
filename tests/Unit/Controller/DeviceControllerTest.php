@@ -38,6 +38,24 @@ class DeviceControllerTest extends TestCase
         $this->assertSame('node-1', $result['name']);
     }
 
+    public function testExtractFormDataMapsEmptyUsernameToNull(): void
+    {
+        $controller = $this->createTestableController();
+        $request = Request::create('/devices/new', 'POST', [
+            'name' => 'node-2',
+            'ip' => '10.0.0.11',
+            'mac' => '00:11:22:33:44:66',
+            'platform' => 'generic',
+            'username' => '  ',
+            'ups_id' => '',
+            'threshold_minutes' => '',
+        ]);
+
+        $result = $controller->callExtractFormData($request);
+
+        $this->assertNull($result['username']);
+    }
+
     public function testValidateFormDataReturnsErrorsForInvalidInputAndDuplicates(): void
     {
         $existingDevice = $this->createDeviceEntity(2, 'node-1');

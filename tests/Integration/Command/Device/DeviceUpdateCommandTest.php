@@ -61,4 +61,42 @@ class DeviceUpdateCommandTest extends TestCase
         $this->assertSame(Command::SUCCESS, $exitCode);
         $this->assertStringContainsString("Device 'node-2' updated.", $tester->getDisplay());
     }
+
+    public function testExecuteNormalizesEmptyCurrentUsernameToNullWhenUsernameOptionNotProvided(): void
+    {
+        $deviceService = $this->createMock(DeviceService::class);
+        $upsService = $this->createMock(UpsService::class);
+        $actionLogService = $this->createMock(ActionLogService::class);
+        $currentDevice = $this->createDeviceEntity(1, 'node-1');
+        $currentDevice->setUsername('');
+        $updatedDevice = $this->createDeviceEntity(1, 'node-1-updated');
+
+        $deviceService->expects($this->once())->method('getDeviceById')->with(1)->willReturn($currentDevice);
+        $deviceService->expects($this->once())
+            ->method('updateDevice')
+            ->with(
+                1,
+                'node-1-updated',
+                '10.0.0.10',
+                '00:11:22:33:44:55',
+                DevicePlatform::GENERIC->value,
+                null,
+                null,
+                null
+            )
+            ->willReturn($updatedDevice);
+
+        $actionLogService->expects($this->once())
+            ->method('createActionLog')
+            ->with(ActionLog::SOURCE_CLI, 'device.update', ActionLog::LEVEL_INFO, "Device 'node-1-updated' updated.");
+
+        $tester = new CommandTester(new DeviceUpdateCommand($deviceService, $upsService, $actionLogService));
+        $exitCode = $tester->execute([
+            'id' => '1',
+            '--name' => 'node-1-updated',
+        ], ['interactive' => false]);
+
+        $this->assertSame(Command::SUCCESS, $exitCode);
+        $this->assertStringContainsString("Device 'node-1-updated' updated.", $tester->getDisplay());
+    }
 }

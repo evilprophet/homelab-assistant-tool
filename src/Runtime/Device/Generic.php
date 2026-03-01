@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Runtime\Device;
 
-use EvilStudio\HAT\Contract\DevicePlatform;
 use EvilStudio\HAT\Contract\DeviceInterface;
+use EvilStudio\HAT\Contract\DevicePlatform;
 use EvilStudio\HAT\Exception\UnsupportedDeviceAction;
 use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Service\Infrastructure\NetworkService;
@@ -54,7 +54,7 @@ class Generic implements DeviceInterface
         $this->upsName = $upsName;
         $this->upsIdentifier = $upsIdentifier;
         $this->upsLowBatteryRuntimeThreshold = (int)$upsLowBatteryRuntimeThreshold;
-        $this->username = $username ?? $this->configuration->getDefaultSshUsername();
+        $this->username = empty($username) ? $this->configuration->getDefaultSshUsername() : $username;
 
         return $this;
     }

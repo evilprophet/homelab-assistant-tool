@@ -141,7 +141,7 @@ class DeviceUpdateCommand extends Command
             return Command::FAILURE;
         }
 
-        $username = $device->getUsername();
+        $username = $this->nullIfEmpty($device->getUsername());
         if ($input->getOption('clear-username')) {
             $username = null;
         } elseif ($input->hasParameterOption('--username')) {

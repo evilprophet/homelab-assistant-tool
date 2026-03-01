@@ -354,13 +354,14 @@ class DeviceController extends AbstractController
     protected function extractFormData(Request $request): array
     {
         $mac = str_replace('-', ':', mb_strtolower(trim((string)$request->request->get('mac', ''))));
+        $username = trim((string)$request->request->get('username', ''));
 
         return [
             'name' => trim((string)$request->request->get('name', '')),
             'ip' => trim((string)$request->request->get('ip', '')),
             'mac' => $mac,
             'platform' => trim((string)$request->request->get('platform', '')),
-            'username' => trim((string)$request->request->get('username', '')),
+            'username' => $username === '' ? null : $username,
             'ups_id' => trim((string)$request->request->get('ups_id', '')),
             'threshold_minutes' => trim((string)$request->request->get('threshold_minutes', '')),
         ];

@@ -39,6 +39,25 @@ class GenericTest extends TestCase
         $this->assertSame('10 min', $data['ups_low_battery_runtime_threshold']);
     }
 
+    public function testConfigureUsesDefaultUsernameWhenProvidedUsernameIsEmptyString(): void
+    {
+        $device = new Generic($this->createConfiguration('root'), $this->createMock(NetworkService::class));
+        $device->configure(
+            1,
+            'node-1',
+            '10.0.0.10',
+            '00:11:22:33:44:55',
+            'generic',
+            null,
+            null,
+            null,
+            null,
+            '   '
+        );
+
+        $this->assertSame('root', $device->getUsername());
+    }
+
     public function testStartReturnsFalseWhenWakeOnLanThrowsException(): void
     {
         $networkService = $this->createMock(NetworkService::class);

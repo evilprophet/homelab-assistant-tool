@@ -2,8 +2,8 @@
 
 **Project:** Homelab Assistant Tool  
 **Coverage Source:** Xdebug (Real Data)  
-**Coverage:** 78.65% (3099/3940 lines)  
-**Total Tests:** 243  
+**Coverage:** 78.85% (3110/3944 lines)  
+**Total Tests:** 246  
 **Status:** Active and maintained  
 **Last Updated:** 2026-03-01
 
@@ -11,8 +11,8 @@
 
 ## 📌 Scope At A Glance
 
-- 243 automated tests (156 Unit + 49 Integration + 38 Functional).
-- 1236 assertions.
+- 246 automated tests (158 Unit + 50 Integration + 38 Functional).
+- 1255 assertions.
 - All suites currently pass.
 - Test setup is isolated and deterministic (`.env.test`, dedicated SQLite test DB, schema reset between tests).
 
@@ -32,30 +32,30 @@
 ```text
 Classes:  27.16% (22/81)
 Methods:  67.09% (316/471)
-Lines:    78.65% (3099/3940)
+Lines:    78.85% (3110/3944)
 ```
 
 ### 🌍 Global Coverage Statistics
 
 ```text
-Tests:       243
-Assertions:  1236
+Tests:       246
+Assertions:  1255
 
-Unit:        156 tests / 675 assertions
-Integration: 49 tests / 352 assertions
+Unit:        158 tests / 677 assertions
+Integration: 50 tests / 369 assertions
 Functional:  38 tests / 209 assertions
 
-Covered:   3099 lines
-Uncovered: 841 lines (21.35%)
+Covered:   3110 lines
+Uncovered: 834 lines (21.15%)
 ```
 
 ### 📁 Coverage by Category
 
 | Category             | Methods              | Lines                  | Coverage   |
 |----------------------|----------------------|------------------------|------------|
-| **Command/**         | 49.06% (52/106)      | 68.30% (991/1451)      | 68.30%     |
+| **Command/**         | 49.06% (52/106)      | 68.78% (998/1451)      | 68.78%     |
 | **Contract/**        | 100.00% (6/6)        | 100.00% (24/24)        | 100.00%    |
-| **Controller/**      | 41.94% (26/62)       | 82.93% (816/984)       | 82.93%     |
+| **Controller/**      | 41.94% (26/62)       | 82.94% (817/985)       | 82.94%     |
 | **Entity/**          | 95.65% (66/69)       | 95.76% (113/118)       | 95.76%     |
 | **EventSubscriber/** | 46.15% (6/13)        | 89.47% (85/95)         | 89.47%     |
 | **Exception/**       | 100.00% (2/2)        | 100.00% (2/2)          | 100.00%    |
@@ -63,20 +63,20 @@ Uncovered: 841 lines (21.35%)
 | **Helper/**          | 88.89% (8/9)         | 94.74% (18/19)         | 94.74%     |
 | **Kernel.php**       | 33.33% (1/3)         | 57.69% (15/26)         | 57.69%     |
 | **Repository/**      | 88.00% (22/25)       | 96.43% (135/140)       | 96.43%     |
-| **Runtime/**         | 81.25% (39/48)       | 89.84% (168/187)       | 89.84%     |
+| **Runtime/**         | 81.25% (39/48)       | 90.00% (171/190)       | 90.00%     |
 | **Service/**         | 69.92% (86/123)      | 81.14% (684/843)       | 81.14%     |
-| **GLOBAL**           | **67.09% (316/471)** | **78.65% (3099/3940)** | **78.65%** |
+| **GLOBAL**           | **67.09% (316/471)** | **78.85% (3110/3944)** | **78.85%** |
 
 ### 🗺️ Coverage by Area
 
 | Area                        | Methods              | Lines                  | Coverage   |
 |-----------------------------|----------------------|------------------------|------------|
-| **CLI**                     | 49.06% (52/106)      | 68.30% (991/1451)      | 68.30%     |
-| **Web**                     | 42.67% (32/75)       | 83.50% (901/1079)      | 83.50%     |
+| **CLI**                     | 49.06% (52/106)      | 68.78% (998/1451)      | 68.78%     |
+| **Web**                     | 42.67% (32/75)       | 83.52% (902/1080)      | 83.52%     |
 | **Domain Model**            | 96.10% (74/77)       | 96.53% (139/144)       | 96.53%     |
-| **Application and Runtime** | 72.34% (136/188)     | 82.86% (933/1126)      | 82.86%     |
+| **Application and Runtime** | 72.34% (136/188)     | 82.91% (936/1129)      | 82.91%     |
 | **Persistence**             | 88.00% (22/25)       | 96.43% (135/140)       | 96.43%     |
-| **GLOBAL**                  | **67.09% (316/471)** | **78.65% (3099/3940)** | **78.65%** |
+| **GLOBAL**                  | **67.09% (316/471)** | **78.85% (3110/3944)** | **78.85%** |
 
 ### 📈 Visual Representation
 
@@ -85,14 +85,14 @@ Entity:          █████████████████████
 Repository:      ██████████████████████████████████████░░ 96%
 Helper:          █████████████████████████████████████░░░ 95%
 Factory:         █████████████████████████████████████░░░ 94%
-Runtime:         ████████████████████████████████████░░░░ 90%
+Runtime:         █████████████████████████████████████░░░ 90%
 EventSubscriber: ███████████████████████████████████░░░░░ 89%
 Controller:      █████████████████████████████████░░░░░░░ 83%
 Service:         ████████████████████████████████░░░░░░░░ 81%
 Command:         ███████████████████████████░░░░░░░░░░░░░ 68%
 Kernel.php:      ███████████████████████░░░░░░░░░░░░░░░░░ 58%
 
-GLOBAL:          ███████████████████████████████░░░░░░░░░ 79%
+GLOBAL:          ████████████████████████████████░░░░░░░░ 79%
 ```
 
 ---
