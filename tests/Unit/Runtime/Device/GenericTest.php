@@ -52,7 +52,7 @@ class GenericTest extends TestCase
             null,
             null,
             null,
-            '   '
+            ''
         );
 
         $this->assertSame('root', $device->getUsername());
