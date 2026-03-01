@@ -1,0 +1,16 @@
+{% for label, messages in app.flashes %}
+    {% for message in messages %}
+        {% set style = 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200' %}
+        {% if label in ['success'] %}
+            {% set style = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' %}
+        {% elseif label in ['error', 'danger'] %}
+            {% set style = 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' %}
+        {% elseif label in ['warning'] %}
+            {% set style = 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200' %}
+        {% endif %}
+
+        <div class="mb-4 border rounded-lg px-4 py-3 text-sm {{ style }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endfor %}

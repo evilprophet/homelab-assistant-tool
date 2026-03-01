@@ -3,22 +3,16 @@ services:
     autowire: true
     autoconfigure: true
     bind:
-      string $version: '1.1.0'
-      string $logDirectory: '%log_directory%'
+      string $applicationDirectory: '%kernel.project_dir%'
+      string $sqliteDatabasePath: '%sqlite_database_path%'
       array $configuration: '%configuration%'
-      array $devicesData: '%devices%'
-      array $upsData: '%ups%'
-      array $schedulesData: '%schedules%'
-
-  _instanceof:
-    Symfony\Component\Console\Command\Command:
-      tags: [ 'command' ]
+      Psr\Log\LoggerInterface $webLogger: '@monolog.logger.web'
 
   EvilStudio\HAT\:
     resource: '../src/'
-    exclude: [ '../src/Model/Generic/*', '../src/Model/Schedule' ]
+    exclude:
+      - '../src/DependencyInjection/'
+      - '../src/Entity/'
+      - '../src/Kernel.php'
 
-  EvilStudio\HAT\Application:
-    public: true
-    arguments:
-      - !tagged command
+  Symfony\Component\Filesystem\Filesystem: ~

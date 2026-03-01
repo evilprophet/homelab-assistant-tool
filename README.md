@@ -2,120 +2,140 @@
 
 ## Introduction
 
-Homelab Assistant Tool is a command-line application designed to simplify the management of a home lab environment. Its primary goal is to automate power management for physical and virtual machines, helping to save energy and ensure system
-stability during power outages.
+Homelab Assistant Tool is an application for homelab operations and automation.
+It combines a CLI interface with a Web UI for managing devices, UPS units, schedules, and operational logs.
 
-While initially created for a Proxmox-based homelab, the tool is designed to be generic and extensible, allowing other users to adapt it to their own setups.
+For technical details, see [Tech Stack](./docs/tech-stack.md).
 
 ## ✨ Key Features
 
-- **🔌 Remote Device Management**:
-    - Start devices remotely using Wake-on-LAN (WOL).
-    - Gracefully shut down Linux-based servers via SSH.
-    - Check the online status of devices using ping.
-    - Direct SSH access to devices through a simple command.
+- `🔌 Device operations`
+- Start, stop, check status, and SSH operations for managed devices (via CLI)
 
-- **🔋 Power Outage Protection**:
-    - Monitor the status of a UPS (Uninterruptible Power Supply).
-    - Automatically shut down designated devices when the UPS battery is low, ensuring data integrity.
+- `🔋 UPS-aware behavior`
+- UPS monitoring support and battery-aware automation logic
 
-- **⏰ Scheduled Automation (Cron)**:
-    - Execute tasks based on a predefined schedule.
-    - A typical use case is starting a backup server at night and shutting it down in the morning to conserve power.
-    - Periodically check the status of critical servers and ensure they are running.
+- `⏰ Scheduling`
+- Cron-based automation with schedule-to-device assignment
 
-- **⚙️ Flexible Configuration**:
-    - All devices, UPS settings, and schedules are configured in a central `parameters.yaml` file, making it easy for technical users to manage the setup.
+- `🧾 Action logs`
+- Unified action history for `CLI`, `CRON`, and `WEB` operations
+- Log filtering and cleanup tools
 
-For more details about the technologies used in this project, please see the [**Tech Stack documentation**](./docs/tech-stack.md).
+- `🌐 Web UI`
+- Management views for devices, UPS, schedules, and logs
+- Manual operational actions from the browser
 
-## 🚀 Future Development Plan
-
-- [x] **Implement Unit & Integration Tests**: Establish a solid testing foundation to ensure code quality and prevent regressions.
-- [ ] **Proxmox VE Integration Enhancement**: Add support for managing **LXC containers** (start, stop, status).
-- [ ] **User Interface and Configuration**:
-    - [ ] Develop a simple **web-based User Interface (UI)**.
-    - [ ] Migrate configuration from `parameters.yaml` to a **SQLite database**.
-- [ ] **Improved Power Management**: Enhance the UPS integration to automatically restart systems when power is safely restored.
-- [ ] **Extensibility**: Add support for other virtualization platforms and notification systems.
+- `🔐 Authentication`
+- `simple` mode (local username/password)
+- `oidc` mode (OIDC provider login)
 
 ## 📁 Project Structure
 
-The project follows a structured layout to separate concerns and make navigation easier.
-
+```text
+.
+├── bin/             # CLI entrypoints and helper scripts
+├── config/          # Symfony and app configuration
+├── docs/            # Main technical documentation
+├── migrations/      # Doctrine migrations
+├── public/          # Web entrypoint and built assets
+├── src/             # Application source code
+│   ├── Command/         # CLI commands (setup, CRUD, runtime, users)
+│   ├── Contract/        # Runtime contracts and enums
+│   ├── Controller/      # Web controllers
+│   ├── Entity/          # Doctrine entities
+│   ├── EventSubscriber/ # Request/auth/log subscribers
+│   ├── Factory/         # Runtime factories/adapters
+│   ├── Helper/          # Configuration and helpers
+│   ├── Repository/      # Doctrine repositories
+│   ├── Runtime/         # Runtime models
+│   └── Service/         # Application, runtime, auth, infrastructure services
+├── templates/       # Twig templates (dashboard, devices, ups, schedules, logs, auth)
+├── tests/           # Unit, integration, and functional test suites
+└── var/             # Runtime data, cache, logs, SQLite files
 ```
-bin/          # Executable console script
-config/       # Application configuration files (services, parameters)
-docs/         # Project documentation
-src/          # All PHP source code
-├── Api/      # Interfaces for core components (Device, UPS, etc.)
-├── Command/  # All Symfony Console commands
-├── Exception/  # Custom exceptions
-├── Helper/     # Helper classes and utilities
-├── Model/      # Core logic and data models (Device, UPS, Schedule)
-├── Provider/   # Service providers that supply data to commands
-└── Service/    # Core services like Cron and Logger
-var/          # Temporary files, logs, and cache
-vendor/       # Composer dependencies
-```
 
-## 🛠️ Installation
+## 🚀 Quick Start
 
-1. Clone the repository (recommended for easy updates):
-   ```bash
-   git clone https://github.com/evilstudio/homelab-assistant-tool.git
-   cd homelab-assistant-tool
-   ```
-2. Install dependencies:
-   ```bash
-   composer install
-   ```
-3. Copy the configuration template:
-   ```bash
-   cp config/parameters.yaml.template config/parameters.yaml
-   ```
-4. Edit `config/parameters.yaml` to configure the application.
-5. Ensure your SSH key allows passwordless access to the managed devices.
-6. Run the CLI commands (see the Commands section).
-
-## 🔄 Updating
+### 1. Clone and install
 
 ```bash
-git pull
+git clone https://github.com/evilstudio/homelab-assistant-tool.git
+cd homelab-assistant-tool
 composer install
+cp .env.example .env
+```
+
+### 2. Update `.env`
+
+Set values for your environment (application/auth settings, and OIDC values when using `HAT_AUTH_MODE=oidc`).
+
+### 3. Configure application settings
+
+```bash
+php bin/console hat:setup:configure
+```
+
+### 4. Initialize database
+
+```bash
+php bin/console hat:setup:db --init
+```
+
+### 5. Create first user (simple auth mode)
+
+```bash
+php bin/console hat:user:create
+```
+
+### 6. Run Web UI (Docker Compose)
+
+```bash
+docker compose up -d --build
+```
+
+Open: `http://localhost:8080`
+
+### 7. Run CLI commands
+
+```bash
+php bin/console list
 ```
 
 ## 💻 Commands Overview
 
 Here is a list of commands available in HAT.
 
-| Command                   | Description                                                                         |
-|---------------------------|-------------------------------------------------------------------------------------|
-| `hat:device:show-all`     | Show a list of all configured devices. Use `--with-status` to include their status. |
-| `hat:device:check-status` | Check the status of a specified device.                                             |
-| `hat:device:ssh`          | SSH into a specified device.                                                        |
-| `hat:device:start`        | Start a specified device via Wake-on-LAN.                                           |
-| `hat:device:stop`         | Stop a specified device.                                                            |
-| `hat:schedule:show`       | Show all configured schedules.                                                      |
-| `hat:ups:show`            | Show the current UPS status and parameters.                                         |
-| `hat:cron:run`            | Execute scheduled tasks. Intended to be run by a system cron job.                   |
+| Command                                  | Description                              |
+|------------------------------------------|------------------------------------------|
+| `hat:setup:configure`                    | Configure app technical settings.        |
+| `hat:setup:db`                           | Initialize/migrate SQLite database.      |
+| `hat:setup:init`                         | Run full setup flow.                     |
+| `hat:device:create/update/remove/list`   | Manage devices.                          |
+| `hat:ups:create/update/remove/list`      | Manage UPS entries.                      |
+| `hat:schedule:create/update/remove/list` | Manage schedules.                        |
+| `hat:device:check-status`                | Check runtime status for a device.       |
+| `hat:device:ssh`                         | Open SSH session to a device.            |
+| `hat:device:start`                       | Start a device.                          |
+| `hat:device:stop`                        | Stop a device.                           |
+| `hat:cron:execute`                       | Execute scheduled tasks and maintenance. |
+| `hat:logs:list`                          | List action logs stored in DB.           |
+| `hat:logs:cleanup`                       | Remove old/all action logs from DB.      |
+| `hat:user:create`                        | Create local user for simple auth mode.  |
+| `hat:user:remove`                        | Remove local user in simple auth mode.   |
+| `hat:user:reset-password`                | Reset local user password (simple mode). |
 
-**_NOTE:_** Device-related commands (`check-status`, `ssh`, `start`, `stop`) can accept an optional `name` argument. If omitted, you will be prompted to select a device from a list.
+## 🧭 Notes
 
-**_NOTE:_** Logs for cron jobs can be found in `var/log/cron.log`.
-
----
+- Business data is stored in SQLite.
+- Integration/functional tests use separate SQLite DB (`var/data/hat_test.sqlite`).
+- Runtime settings are configured in `config/parameters.yaml`.
+- Web logs are written to `var/log/web.log`.
 
 ## 🧪 Testing & Quality
 
-✅ **175 automated tests** | ✅ **87.05% code coverage (363/417 lines)** | ✅ **100% success rate**
-
-This project has comprehensive test coverage with automated quality checks:
-- **122 Unit Tests** - Testing individual components in isolation
-- **53 Integration Tests** - Testing component interactions
-- **All tests passing** - Production ready
-
 ### Quick Start:
+
 ```bash
 # Run all tests (Xdebug off)
 bin/phpunit
@@ -125,8 +145,6 @@ bin/phpunit-coverage
 ```
 
 ### 📚 Documentation:
-- 📖 [Test Implementation Summary](./docs/test-implementation-summary.md) - Complete overview
-- 📊 [Coverage Analysis](./docs/test-coverage-analysis.md) - Detailed coverage data
-- 🚀 [CI/CD Guide](./docs/test-ci-cd-guide.md) - GitLab pipeline setup
-- 📋 [Test Plan](./docs/test-plan.md) - Testing strategy
-- 🔮 [Future Improvements](./docs/future-refactoring-plan.md) - Optional enhancements (87-88% coverage)
+
+- 📖 **[Test Implementation Summary](./docs/test-implementation-summary.md)** - Overview and current scope
+- 🚀 **[CI/CD Guide](./docs/test-ci-cd-guide.md)** - GitLab pipeline setup

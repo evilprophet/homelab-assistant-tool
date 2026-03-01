@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default('Dashboard') }} - Homelab Assistant</title>
+    <link rel="stylesheet" href="/assets/app.css">
+    <style>
+        @media (min-width: 1024px) {
+            body[data-sidebar-collapsed='true'] [data-sidebar] [data-sidebar-label],
+            body[data-sidebar-collapsed='true'] [data-sidebar] [data-sidebar-section-title] {
+                display: none;
+            }
+
+            body[data-sidebar-collapsed='true'] [data-sidebar] [data-sidebar-link] {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            body[data-sidebar-collapsed='true'] [data-sidebar] [data-sidebar-brand],
+            body[data-sidebar-collapsed='true'] [data-sidebar] [data-sidebar-footer] {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased h-screen flex overflow-hidden" data-sidebar-collapsed="false">
+    {% include 'ui/_sidebar.html.twig' with { current_route: app.request.attributes.get('_route') } only %}
+    <button type="button" data-sidebar-overlay class="hidden fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden" aria-label="Close navigation"></button>
+
+    <main class="flex-1 min-w-0 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-900">
+        <header class="h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+            <div class="flex items-center gap-3">
+                <button type="button" data-sidebar-mobile-open class="inline-flex lg:hidden items-center justify-center h-9 w-9 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" aria-label="Open navigation">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <button type="button" data-sidebar-desktop-toggle class="hidden lg:inline-flex items-center justify-center h-9 w-9 rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" aria-label="Collapse sidebar">
+                    <svg data-sidebar-desktop-collapse-icon xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M20 19l-7-7 7-7" />
+                    </svg>
+                    <svg data-sidebar-desktop-expand-icon xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M4 5l7 7-7 7" />
+                    </svg>
+                </button>
+                <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800 dark:text-white">{{ page_title|default('Dashboard') }}</h2>
+            </div>
+            <div class="flex gap-4 items-center">
+                {% block page_actions %}{% endblock %}
+                <button type="button" data-theme-toggle aria-label="Toggle color theme" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    <svg class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+            {% include 'ui/_flash_messages.html.twig' %}
+            {% block body %}{% endblock %}
+        </div>
+    </main>
+
+    <script>
+        (() => {
+            const html = document.documentElement;
+            const body = document.body;
+            const themeToggleButton = document.querySelector('[data-theme-toggle]');
+            const sidebar = document.querySelector('[data-sidebar]');
+            const sidebarOverlay = document.querySelector('[data-sidebar-overlay]');
+            const mobileOpenButton = document.querySelector('[data-sidebar-mobile-open]');
+            const mobileCloseButtons = document.querySelectorAll('[data-sidebar-mobile-close], [data-sidebar-overlay]');
+            const desktopToggleButton = document.querySelector('[data-sidebar-desktop-toggle]');
+            const desktopCollapseIcon = document.querySelector('[data-sidebar-desktop-collapse-icon]');
+            const desktopExpandIcon = document.querySelector('[data-sidebar-desktop-expand-icon]');
+            const SIDEBAR_STORAGE_KEY = 'sidebar.desktop.collapsed';
+            const getStoredTheme = () => {
+                try {
+                    return localStorage.getItem('theme');
+                } catch (error) {
+                    return null;
+                }
+            };
+
+            const setStoredTheme = (theme) => {
+                try {
+                    localStorage.setItem('theme', theme);
+                } catch (error) {
+                }
+            };
+
+            const readDesktopSidebarState = () => {
+                try {
+                    return localStorage.getItem(SIDEBAR_STORAGE_KEY) === '1';
+                } catch (error) {
+                    return false;
+                }
+            };
+
+            const storeDesktopSidebarState = (isCollapsed) => {
+                try {
+                    localStorage.setItem(SIDEBAR_STORAGE_KEY, isCollapsed ? '1' : '0');
+                } catch (error) {
+                }
+            };
+
+            const applyTheme = (theme) => {
+                const shouldUseDark = theme === 'dark' || (theme === null && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                if (shouldUseDark) {
+                    html.classList.add('dark');
+                } else {
+                    html.classList.remove('dark');
+                }
+            };
+
+            const toggleTheme = () => {
+                if (html.classList.contains('dark')) {
+                    html.classList.remove('dark');
+                    setStoredTheme('light');
+                } else {
+                    html.classList.add('dark');
+                    setStoredTheme('dark');
+                }
+            };
+
+            const applyDesktopSidebarState = (isCollapsed) => {
+                if (!sidebar || !desktopCollapseIcon || !desktopExpandIcon) {
+                    return;
+                }
+
+                body.dataset.sidebarCollapsed = isCollapsed ? 'true' : 'false';
+                sidebar.classList.toggle('lg:w-20', isCollapsed);
+                sidebar.classList.toggle('lg:w-64', !isCollapsed);
+                desktopCollapseIcon.classList.toggle('hidden', isCollapsed);
+                desktopExpandIcon.classList.toggle('hidden', !isCollapsed);
+
+                if (desktopToggleButton) {
+                    desktopToggleButton.setAttribute('aria-label', isCollapsed ? 'Expand sidebar' : 'Collapse sidebar');
+                }
+            };
+
+            const openMobileSidebar = () => {
+                if (!sidebar || !sidebarOverlay) {
+                    return;
+                }
+
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.remove('hidden');
+                body.classList.add('overflow-hidden');
+            };
+
+            const closeMobileSidebar = () => {
+                if (!sidebar || !sidebarOverlay) {
+                    return;
+                }
+
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.add('hidden');
+                body.classList.remove('overflow-hidden');
+            };
+
+            applyTheme(getStoredTheme());
+            if (themeToggleButton) {
+                themeToggleButton.addEventListener('click', toggleTheme);
+            }
+
+            applyDesktopSidebarState(readDesktopSidebarState());
+
+            if (desktopToggleButton) {
+                desktopToggleButton.addEventListener('click', () => {
+                    const isCollapsed = body.dataset.sidebarCollapsed === 'true';
+                    const nextState = !isCollapsed;
+                    applyDesktopSidebarState(nextState);
+                    storeDesktopSidebarState(nextState);
+                });
+            }
+
+            if (mobileOpenButton) {
+                mobileOpenButton.addEventListener('click', openMobileSidebar);
+            }
+
+            mobileCloseButtons.forEach((button) => {
+                button.addEventListener('click', closeMobileSidebar);
+            });
+
+            window.addEventListener('resize', () => {
+                if (window.matchMedia('(min-width: 1024px)').matches) {
+                    closeMobileSidebar();
+                }
+            });
+        })();
+    </script>
+    {% block body_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default('Login') }} - Homelab Assistant</title>
+    <link rel="stylesheet" href="/assets/app.css">
+    <script>
+        (() => {
+            try {
+                const storedTheme = localStorage.getItem('theme');
+                const shouldUseDark = storedTheme === 'dark'
+                    || (storedTheme === null && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+                if (shouldUseDark) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (error) {
+            }
+        })();
+    </script>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased h-screen flex items-center justify-center p-4">
+    <button type="button" data-theme-toggle aria-label="Toggle color theme" class="fixed top-4 right-4 p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <svg class="w-6 h-6 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <svg class="w-6 h-6 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+    </button>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700">
+        <div class="bg-slate-900 px-8 py-6 text-center">
+            <h1 class="text-2xl font-bold text-white tracking-wider">
+                HAT <span class="text-blue-400 text-sm font-normal align-top">v2</span>
+            </h1>
+            <p class="text-slate-400 text-sm mt-1">Homelab Assistant Tool</p>
+        </div>
+
+        <div class="p-8">
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    {% set style = 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200' %}
+                    {% if label in ['success'] %}
+                        {% set style = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' %}
+                    {% elseif label in ['error', 'danger'] %}
+                        {% set style = 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' %}
+                    {% elseif label in ['warning'] %}
+                        {% set style = 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200' %}
+                    {% endif %}
+
+                    <div class="mb-4 border rounded-lg px-4 py-3 text-sm {{ style }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            {% if error_message is not null %}
+                <div class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">
+                    <strong class="font-bold">Error:</strong>
+                    <span class="block sm:inline">{{ error_message }}</span>
+                </div>
+            {% endif %}
+
+            {% if auth_mode == 'simple' %}
+                <form action="{{ path('hat_auth_login') }}" method="post" class="space-y-6">
+                    <input type="hidden" name="next" value="{{ next_path }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('auth.login') }}">
+
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Username</label>
+                        <div class="mt-1">
+                            <input
+                                id="username"
+                                name="username"
+                                type="text"
+                                autocomplete="username"
+                                required
+                                class="appearance-none block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 dark:text-white"
+                                placeholder="admin"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+                        <div class="mt-1">
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                autocomplete="current-password"
+                                required
+                                class="appearance-none block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white dark:bg-slate-700 dark:text-white"
+                                placeholder="••••••••"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <button
+                            type="submit"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        >
+                            Sign in
+                        </button>
+                    </div>
+                </form>
+            {% elseif auth_mode == 'oidc' %}
+                <a
+                    href="{{ path('hat_auth_login', { oidc: 1, next: next_path }) }}"
+                    class="w-full flex justify-center items-center gap-3 px-4 py-2 border border-slate-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-lg text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                >
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22C17.523 22 22 17.523 22 12C22 6.477 17.523 2 12 2Z" fill="#24292F" class="dark:fill-white" />
+                        <path d="M12 4C14.21 4 16 5.79 16 8C16 10.21 14.21 12 12 12C9.79 12 8 10.21 8 8C8 5.79 9.79 4 12 4ZM12 14C16.42 14 20 15.79 20 18V20H4V18C4 15.79 7.58 14 12 14Z" fill="white" class="dark:fill-slate-900" />
+                    </svg>
+                    Sign in with {{ oidc_provider_name }}
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="bg-slate-50 dark:bg-slate-900/50 px-8 py-4 border-t border-slate-200 dark:border-slate-700 text-center">
+            <p class="text-xs text-slate-500 dark:text-slate-400">&copy; 2026 Evil Studio. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            const html = document.documentElement;
+            const themeToggleButton = document.querySelector('[data-theme-toggle]');
+
+            const setStoredTheme = (theme) => {
+                try {
+                    localStorage.setItem('theme', theme);
+                } catch (error) {
+                }
+            };
+
+            const toggleTheme = () => {
+                if (html.classList.contains('dark')) {
+                    html.classList.remove('dark');
+                    setStoredTheme('light');
+                } else {
+                    html.classList.add('dark');
+                    setStoredTheme('dark');
+                }
+            };
+
+            if (themeToggleButton) {
+                themeToggleButton.addEventListener('click', toggleTheme);
+            }
+        })();
+    </script>
+</body>
+</html>

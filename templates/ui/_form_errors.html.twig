@@ -1,0 +1,7 @@
+{% if errors['_global']|default([]) is not empty %}
+    <div class="mb-6 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3 text-sm text-red-800 dark:text-red-200">
+        {% for error in errors['_global'] %}
+            <p>{{ error }}</p>
+        {% endfor %}
+    </div>
+{% endif %}

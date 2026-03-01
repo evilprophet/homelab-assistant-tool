@@ -27,3 +27,4 @@ test:phpunit:
   script:
     - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Unit --no-coverage
     - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Integration --no-coverage
+    - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Functional --no-coverage

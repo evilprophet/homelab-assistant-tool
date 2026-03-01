@@ -1,0 +1,248 @@
+{% extends 'base.html.twig' %}
+
+{% block page_actions %}
+    <a href="{{ path('hat_devices_new') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        New Device
+    </a>
+{% endblock %}
+
+{% block body %}
+    {% set platform_badge_classes = {
+        'linux': 'border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300',
+        'debian': 'border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300',
+        'ubuntu': 'border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300',
+        'proxmox_dm': 'border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300',
+        'proxmox_bs': 'border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300',
+        'proxmox_ve': 'border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300',
+        'synology_dsm': 'border-cyan-200 dark:border-cyan-700 text-cyan-700 dark:text-cyan-300',
+        'generic': 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300'
+    } %}
+
+    <div class="mb-6 flex items-center justify-end">
+        <form method="get" class="flex items-center gap-2">
+            <label for="platform-filter" class="text-sm text-slate-500 dark:text-slate-400">Platform</label>
+            <select
+                id="platform-filter"
+                data-platform-filter
+                name="platform"
+                class="block pl-3 pr-10 py-2 text-sm border-slate-300 dark:border-slate-600 rounded-lg border bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+            >
+                <option value="">All Platforms</option>
+                {% for platform in available_platforms %}
+                    <option value="{{ platform }}" {{ selected_platform == platform ? 'selected' : '' }}>
+                        {{ platform_labels[platform]|default(platform) }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if selected_platform is not null %}
+                <a href="{{ path('hat_devices_index') }}" class="px-3 py-2 text-xs rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
+                    Reset
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        {% if devices is empty %}
+            <div class="p-6 text-sm text-slate-500 dark:text-slate-400">No devices found.</div>
+        {% else %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                    <thead class="bg-slate-50 dark:bg-slate-700/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name / ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Network</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Platform</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">UPS Link</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">UPS Low Runtime Threshold</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
+                        {% for device in devices %}
+                            {% set status = status_by_name[device.name]|default('unknown') %}
+                            {% set platform_key = device.platform_key|default(device.platform) %}
+                            {% set is_linux_runtime = platform_linux_runtime[platform_key]|default(false) %}
+                            {% set icon_variant = platform_key == 'synology_dsm' ? 'nas' : (is_linux_runtime ? 'linux' : 'default') %}
+                            {% set icon_colors = icon_variant == 'nas'
+                                ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300'
+                                : (icon_variant == 'linux'
+                                    ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400') %}
+                            {% set platform_class = platform_badge_classes[platform_key]|default(platform_badge_classes['generic']) %}
+                            <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="h-10 w-10 flex-shrink-0 rounded-full flex items-center justify-center {{ icon_colors }}">
+                                            {% if icon_variant == 'nas' %}
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6.75c0 2.485 4.03 4.5 9 4.5s9-2.015 9-4.5M3 6.75C3 4.265 7.03 2.25 12 2.25s9 2.015 9 4.5M3 6.75v10.5c0 2.485 4.03 4.5 9 4.5s9-2.015 9-4.5V6.75M3 12c0 2.485 4.03 4.5 9 4.5s9-2.015 9-4.5" />
+                                                </svg>
+                                            {% elseif icon_variant == 'linux' %}
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                                                </svg>
+                                            {% else %}
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7.5A2.25 2.25 0 015.25 5.25h13.5A2.25 2.25 0 0121 7.5v9a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 16.5v-9zM7.5 9.75h9m-9 3h9m-9 3h6" />
+                                                </svg>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-slate-900 dark:text-white">{{ device.name }}</div>
+                                            <div class="text-xs text-slate-500 dark:text-slate-400">ID: {{ device.id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-slate-900 dark:text-white">{{ device.ip }}</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400">{{ device.mac }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full border {{ platform_class }}">
+                                        {{ device.platform }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if device.ups is defined and device.ups != '-' %}
+                                        {% set ups_parts = device.ups|split(':', 2) %}
+                                        {% set ups_name = ups_parts|length > 1 ? ups_parts[1] : device.ups %}
+                                        <span class="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300">
+                                            {{ ups_name }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-sm text-slate-400 dark:text-slate-500">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{{ device.ups_low_battery_runtime_threshold|default('-') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300" data-device-status="{{ device.name }}">
+                                        <span data-status-dot class="w-2 h-2 rounded-full {{ status == 'online' ? 'bg-green-500' : (status == 'offline' ? 'bg-red-500' : 'bg-slate-400') }}"></span>
+                                        <span data-status-label class="uppercase tracking-wide">{{ status }}</span>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex items-center gap-3">
+                                        <a href="{{ path('hat_devices_edit', { id: device.id }) }}" class="text-slate-400 hover:text-blue-600 transition-colors" title="Edit" aria-label="Edit {{ device.name }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </a>
+                                        <a href="{{ path('hat_devices_remove_confirm', { id: device.id }) }}" class="text-slate-400 hover:text-red-500 transition-colors" title="Delete" aria-label="Delete {{ device.name }}">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </a>
+                                        <span class="h-4 w-px bg-slate-300 dark:bg-slate-600"></span>
+                                        <form method="post" action="{{ path('hat_devices_start', { id: device.id }) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('device.start.' ~ device.id) }}">
+                                            <button type="submit" class="text-slate-400 hover:text-green-600 transition-colors" title="Start" aria-label="Start {{ device.name }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{{ path('hat_devices_stop', { id: device.id }) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('device.stop.' ~ device.id) }}">
+                                            <button type="submit" class="text-slate-400 hover:text-amber-600 transition-colors" title="Stop" aria-label="Stop {{ device.name }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
+        {% include 'ui/_pagination.html.twig' with {
+            route_name: 'hat_devices_index',
+            page: page,
+            total_pages: total_pages,
+            total: total,
+            query: app.request.query.all
+        } only %}
+    </div>
+{% endblock %}
+
+{% block body_scripts %}
+    <script>
+        (() => {
+            const platformFilter = document.querySelector('[data-platform-filter]');
+            if (platformFilter && platformFilter.form) {
+                platformFilter.addEventListener('change', () => {
+                    platformFilter.form.submit();
+                });
+            }
+
+            const deviceStatusNodes = Array.from(document.querySelectorAll('[data-device-status]'));
+            if (deviceStatusNodes.length === 0) {
+                return;
+            }
+
+            const deviceNames = Array.from(new Set(
+                deviceStatusNodes
+                    .map((node) => node.dataset.deviceStatus || '')
+                    .filter((name) => name !== '')
+            ));
+            if (deviceNames.length === 0) {
+                return;
+            }
+
+            const buildDotClass = (status) => {
+                if (status === 'online') {
+                    return 'bg-green-500';
+                }
+                if (status === 'offline') {
+                    return 'bg-red-500';
+                }
+
+                return 'bg-slate-400';
+            };
+
+            const params = new URLSearchParams();
+            deviceNames.forEach((deviceName) => {
+                params.append('device_names[]', deviceName);
+            });
+
+            fetch('{{ path('hat_runtime_statuses') }}?' + params.toString(), {
+                headers: { 'Accept': 'application/json' },
+            })
+                .then((response) => response.ok ? response.json() : Promise.reject())
+                .then((payload) => {
+                    const statusByName = payload.device_status_by_name || {};
+
+                    deviceStatusNodes.forEach((node) => {
+                        const deviceName = node.dataset.deviceStatus || '';
+                        if (deviceName === '') {
+                            return;
+                        }
+
+                        const status = typeof statusByName[deviceName] === 'string' ? statusByName[deviceName] : 'unknown';
+                        const dot = node.querySelector('[data-status-dot]');
+                        const label = node.querySelector('[data-status-label]');
+
+                        if (dot) {
+                            dot.classList.remove('bg-green-500', 'bg-red-500', 'bg-slate-400');
+                            dot.classList.add(buildDotClass(status));
+                        }
+
+                        if (label) {
+                            label.textContent = status;
+                        }
+                    });
+                })
+                .catch(() => {
+                });
+        })();
+    </script>
+{% endblock %}

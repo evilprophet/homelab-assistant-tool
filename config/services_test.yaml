@@ -1,0 +1,10 @@
+parameters:
+  sqlite_database_path: var/data/hat_test.sqlite
+
+  configuration:
+    cron: true
+    ups_mode: true
+    ssh_key_path: /tmp/id_ed25519
+    default_ssh_username: root
+    timezone: UTC
+
