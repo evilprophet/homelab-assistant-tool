@@ -24,6 +24,7 @@ class ConfigurationTest extends TestCase
         $this->assertSame('admin', $configuration->getDefaultSshUsername());
         $this->assertSame('Europe/Warsaw', $configuration->getTimezone());
         $this->assertSame('Europe/Warsaw', $configuration->getCurrentDateTime()->getTimezone()->getName());
+        $this->assertSame(90, $configuration->getActionLogRetentionDays());
     }
 
     public function testReadsSshKeyFromConfiguredPath(): void

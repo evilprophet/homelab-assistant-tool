@@ -7,3 +7,4 @@ parameters:
     ssh_key_path: # Path to SSH key
     default_ssh_username: # Default SSH username for devices
     timezone: # Timezone for the server
+    action_log_retention_days: 90 # Default retention period (days) for automatic and CLI action log cleanup.

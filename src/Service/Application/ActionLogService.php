@@ -13,7 +13,6 @@ use InvalidArgumentException;
 
 class ActionLogService extends AbstractDatabaseService
 {
-    public const int DEFAULT_RETENTION_DAYS = 90;
     public const int DEFAULT_LIST_LIMIT = 25;
 
     protected const array ALLOWED_SOURCES = [

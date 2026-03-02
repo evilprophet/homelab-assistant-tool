@@ -19,6 +19,7 @@ class SetupConfigureCommand extends Command
     protected const string DEFAULT_SSH_KEY_PATH = '/root/.ssh/id_ed25519';
     protected const string DEFAULT_SSH_USERNAME = 'root';
     protected const string DEFAULT_SQLITE_DATABASE_PATH = 'var/data/hat.sqlite';
+    protected const int DEFAULT_ACTION_LOG_RETENTION_DAYS = 90;
 
     public function __construct(
         protected Filesystem $filesystem,
@@ -64,6 +65,21 @@ class SetupConfigureCommand extends Command
             'SQLite database path (relative to project root)',
             (string)($existingConfig['sqlite_database_path'] ?? self::DEFAULT_SQLITE_DATABASE_PATH)
         );
+        $actionLogDefaultRetentionDays = (int)$io->ask(
+            'Default action log retention in days',
+            (string)(
+                $configuration['action_log_retention_days']
+                ?? self::DEFAULT_ACTION_LOG_RETENTION_DAYS
+            ),
+            static function (mixed $value): int {
+                $parsed = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+                if ($parsed === false) {
+                    throw new \InvalidArgumentException('Action log retention days must be a positive integer.');
+                }
+
+                return (int)$parsed;
+            }
+        );
 
         $parameters = [
             'sqlite_database_path' => $sqliteDatabasePath,
@@ -73,6 +89,7 @@ class SetupConfigureCommand extends Command
                 'ssh_key_path' => $sshKeyPath,
                 'default_ssh_username' => $defaultSshUsername,
                 'timezone' => $timezone,
+                'action_log_retention_days' => $actionLogDefaultRetentionDays,
             ],
         ];
 

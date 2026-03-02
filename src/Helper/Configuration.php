@@ -16,6 +16,7 @@ class Configuration
     protected string $sshKeyPath;
     protected string $defaultSshUsername;
     protected string $timezone;
+    protected int $actionLogRetentionDays;
     protected string $applicationDirectory;
 
     public function __construct(array $configuration, string $applicationDirectory = '')
@@ -25,6 +26,7 @@ class Configuration
         $this->sshKeyPath = $configuration['ssh_key_path'];
         $this->defaultSshUsername = $configuration['default_ssh_username'];
         $this->timezone = $configuration['timezone'];
+        $this->actionLogRetentionDays = max(1, (int)($configuration['action_log_retention_days'] ?? 90));
         $this->applicationDirectory = rtrim($applicationDirectory, '/\\');
     }
 
@@ -58,6 +60,11 @@ class Configuration
     public function getTimezone(): string
     {
         return $this->timezone;
+    }
+
+    public function getActionLogRetentionDays(): int
+    {
+        return $this->actionLogRetentionDays;
     }
 
     protected function resolveSshKeyPath(string $sshKeyPath): string

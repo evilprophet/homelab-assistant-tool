@@ -127,7 +127,7 @@ class LogsController extends AbstractController
         }
 
         $retention = trim(
-            (string)$request->request->get('retention', (string)ActionLogService::DEFAULT_RETENTION_DAYS)
+            (string)$request->request->get('retention', (string)$this->configuration->getActionLogRetentionDays())
         );
         $levelFilterRaw = trim((string)$request->request->get('level', 'all'));
         $isAll = $retention === '0' || mb_strtolower($retention) === 'all';

@@ -6,6 +6,7 @@ namespace EvilStudio\HAT\Command\Logs;
 
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
+use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,7 +22,8 @@ class LogsCleanupCommand extends Command
     protected const string ALL_LOGS_CONFIRMATION = 'This will permanently remove all action logs. Continue?';
 
     public function __construct(
-        protected ActionLogService $actionLogService
+        protected ActionLogService $actionLogService,
+        protected Configuration $configuration
     ) {
         parent::__construct();
     }
@@ -34,7 +36,7 @@ class LogsCleanupCommand extends Command
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Retention in days',
-                (string)ActionLogService::DEFAULT_RETENTION_DAYS
+                (string)$this->configuration->getActionLogRetentionDays()
             )
             ->addOption('all', 'a', InputOption::VALUE_NONE, 'Remove all action logs')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip confirmation for --all');

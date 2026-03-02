@@ -20,7 +20,15 @@ class SetupConfigureCommandTest extends TestCase
 
         $command = new SetupConfigureCommand($filesystem, $applicationDirectory);
         $tester = new CommandTester($command);
-        $tester->setInputs(['yes', 'no', 'Europe/Warsaw', '/tmp/id_ed25519', 'admin', 'var/data/app.sqlite']);
+        $tester->setInputs([
+            'yes',
+            'no',
+            'Europe/Warsaw',
+            '/tmp/id_ed25519',
+            'admin',
+            'var/data/app.sqlite',
+            '120',
+        ]);
 
         $exitCode = $tester->execute([], ['interactive' => true]);
 
@@ -37,6 +45,7 @@ class SetupConfigureCommandTest extends TestCase
         $this->assertSame('Europe/Warsaw', $parameters['configuration']['timezone'] ?? null);
         $this->assertSame('/tmp/id_ed25519', $parameters['configuration']['ssh_key_path'] ?? null);
         $this->assertSame('admin', $parameters['configuration']['default_ssh_username'] ?? null);
+        $this->assertSame(120, $parameters['configuration']['action_log_retention_days'] ?? null);
     }
 
     public function testExecuteReturnsFailureWhenConfigExistsInNonInteractiveMode(): void

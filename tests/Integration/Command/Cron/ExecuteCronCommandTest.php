@@ -47,10 +47,11 @@ class ExecuteCronCommandTest extends TestCase
         $actionLogService = $this->createMock(ActionLogService::class);
 
         $configuration->expects($this->once())->method('isCronEnabled')->willReturn(true);
+        $configuration->expects($this->exactly(2))->method('getActionLogRetentionDays')->willReturn(90);
         $cron->expects($this->once())->method('execute');
         $actionLogService->expects($this->once())
             ->method('cleanupOlderThanDays')
-            ->with(ActionLogService::DEFAULT_RETENTION_DAYS)
+            ->with(90)
             ->willReturn(4);
 
         $actionLogService->expects($this->once())

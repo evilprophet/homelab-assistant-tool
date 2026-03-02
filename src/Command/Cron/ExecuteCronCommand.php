@@ -47,7 +47,7 @@ class ExecuteCronCommand extends Command
             $this->cron->execute();
 
             $removedActionLogsCount = $this->actionLogService->cleanupOlderThanDays(
-                ActionLogService::DEFAULT_RETENTION_DAYS
+                $this->configuration->getActionLogRetentionDays()
             );
             if ($removedActionLogsCount > 0) {
                 $this->actionLogService->createActionLog(
@@ -57,7 +57,7 @@ class ExecuteCronCommand extends Command
                     sprintf(
                         'Automatic cleanup removed %d action logs older than %d days.',
                         $removedActionLogsCount,
-                        ActionLogService::DEFAULT_RETENTION_DAYS
+                        $this->configuration->getActionLogRetentionDays()
                     )
                 );
             }

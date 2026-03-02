@@ -6,6 +6,7 @@ namespace EvilStudio\HAT\Tests\Integration\Command\Logs;
 
 use EvilStudio\HAT\Command\Logs\LogsCleanupCommand;
 use EvilStudio\HAT\Entity\ActionLog;
+use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
@@ -16,6 +17,8 @@ class LogsCleanupCommandTest extends TestCase
     public function testExecuteCleansByDaysAndCreatesActionLog(): void
     {
         $actionLogService = $this->createMock(ActionLogService::class);
+        $configuration = $this->createMock(Configuration::class);
+        $configuration->method('getActionLogRetentionDays')->willReturn(90);
 
         $actionLogService->expects($this->once())->method('cleanupOlderThanDays')->with(30)->willReturn(12);
         $actionLogService->expects($this->once())
@@ -28,7 +31,7 @@ class LogsCleanupCommandTest extends TestCase
             );
         $actionLogService->expects($this->never())->method('cleanupAll');
 
-        $tester = new CommandTester(new LogsCleanupCommand($actionLogService));
+        $tester = new CommandTester(new LogsCleanupCommand($actionLogService, $configuration));
         $exitCode = $tester->execute(['--days' => '30'], ['interactive' => false]);
 
         $this->assertSame(Command::SUCCESS, $exitCode);
@@ -38,12 +41,14 @@ class LogsCleanupCommandTest extends TestCase
     public function testExecuteCleansAllWhenForced(): void
     {
         $actionLogService = $this->createMock(ActionLogService::class);
+        $configuration = $this->createMock(Configuration::class);
+        $configuration->method('getActionLogRetentionDays')->willReturn(90);
 
         $actionLogService->expects($this->once())->method('cleanupAll')->with()->willReturn(15);
         $actionLogService->expects($this->never())->method('cleanupOlderThanDays');
         $actionLogService->expects($this->never())->method('createActionLog');
 
-        $tester = new CommandTester(new LogsCleanupCommand($actionLogService));
+        $tester = new CommandTester(new LogsCleanupCommand($actionLogService, $configuration));
         $exitCode = $tester->execute(['--all' => true, '--force' => true], ['interactive' => false]);
 
         $this->assertSame(Command::SUCCESS, $exitCode);
@@ -53,10 +58,12 @@ class LogsCleanupCommandTest extends TestCase
     public function testExecuteReturnsFailureWhenAllAndDaysAreUsedTogether(): void
     {
         $actionLogService = $this->createMock(ActionLogService::class);
+        $configuration = $this->createMock(Configuration::class);
+        $configuration->method('getActionLogRetentionDays')->willReturn(90);
         $actionLogService->expects($this->never())->method('cleanupAll');
         $actionLogService->expects($this->never())->method('cleanupOlderThanDays');
 
-        $tester = new CommandTester(new LogsCleanupCommand($actionLogService));
+        $tester = new CommandTester(new LogsCleanupCommand($actionLogService, $configuration));
         $exitCode = $tester->execute(['--all' => true, '--days' => '30'], ['interactive' => false]);
 
         $this->assertSame(Command::FAILURE, $exitCode);
