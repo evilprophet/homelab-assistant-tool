@@ -5,7 +5,10 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    network_mode: host
+    ports:
+      - "8080:8080"
+    networks:
+      - hat-net
     volumes:
       - ./var/data:/app/var/data
       - ./var/log:/app/var/log
@@ -16,3 +19,6 @@ services:
         INSTALL_XDEBUG: ${HAT_WITH_XDEBUG:-0}
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+networks:
+  hat-net:
