@@ -108,6 +108,8 @@ class LogsController extends AbstractController
             'total' => $total,
             'total_pages' => $totalPages,
             'timezone_name' => $timezone->getName(),
+            'cleanup_retention_options' => $this->buildCleanupRetentionOptions(),
+            'cleanup_default_retention_days' => $this->configuration->getActionLogRetentionDays(),
         ]);
     }
 
@@ -233,5 +235,29 @@ class LogsController extends AbstractController
             $this->actionLogService->createActionLog(ActionLog::SOURCE_WEB, $resolvedAction, $level, $message);
         } catch (Throwable) {
         }
+    }
+
+    protected function buildCleanupRetentionOptions(): array
+    {
+        $defaultRetentionDays = max(1, $this->configuration->getActionLogRetentionDays());
+        $options = [];
+
+        if ($defaultRetentionDays > 14) {
+            $options[] = $defaultRetentionDays;
+        }
+
+        for ($days = $defaultRetentionDays - 30; $days >= 30; $days -= 30) {
+            $options[] = $days;
+        }
+
+        foreach ([14, 7, 1, 0] as $days) {
+            if (in_array($days, $options, true)) {
+                continue;
+            }
+
+            $options[] = $days;
+        }
+
+        return $options;
     }
 }
