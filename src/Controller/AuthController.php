@@ -6,19 +6,20 @@ namespace EvilStudio\HAT\Controller;
 
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
-use EvilStudio\HAT\EventSubscriber\AuthRequestSubscriber;
+use EvilStudio\HAT\Security\SimpleLoginFormAuthenticator;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Auth\AuthModeResolver;
 use EvilStudio\HAT\Service\Auth\AuthUserService;
-use EvilStudio\HAT\Service\Auth\JwtTokenService;
 use EvilStudio\HAT\Service\Auth\OidcClient;
 use Random\RandomException;
 use Throwable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 
 #[Route('/auth')]
 class AuthController extends AbstractController
@@ -27,81 +28,33 @@ class AuthController extends AbstractController
     protected const string OIDC_SESSION_STATE_KEY = '_hat_oidc_state';
     protected const string OIDC_SESSION_NEXT_KEY = '_hat_oidc_next';
     protected const string NEXT_QUERY_KEY = 'next';
-    protected const string CSRF_TOKEN_LOGIN = 'auth.login';
-    protected const string CSRF_TOKEN_LOGOUT = 'auth.logout';
+    protected const string FIREWALL_TARGET_PATH_KEY = '_security.main.target_path';
 
     public function __construct(
         protected AuthModeResolver $authModeResolver,
         protected AuthUserService $authUserService,
-        protected JwtTokenService $jwtTokenService,
         protected OidcClient $oidcClient,
-        protected ActionLogService $actionLogService
+        protected ActionLogService $actionLogService,
+        protected Security $security
     ) {
     }
 
     #[Route(path: '/login', name: 'hat_auth_login', methods: ['GET', 'POST'])]
-    public function login(Request $request): Response
+    public function login(Request $request, AuthenticationUtils $authenticationUtils): Response
     {
-        if ($request->attributes->has(AuthRequestSubscriber::AUTHENTICATED_USER_ATTRIBUTE)) {
+        if ($this->getUser() !== null) {
             return $this->redirectToRoute('hat_dashboard');
         }
 
         $mode = $this->authModeResolver->getMode();
-        $nextPath = $this->normalizeNextPath((string)$request->query->get(self::NEXT_QUERY_KEY, '/'));
-        $errorMessage = null;
+        $nextPath = $this->resolveNextPath($request);
 
-        if ($this->authModeResolver->isOidcMode()) {
-            if ($request->query->getBoolean(self::OIDC_QUERY_FLAG)) {
-                return $this->startOidcLogin($request, $nextPath);
-            }
-        } elseif ($request->isMethod(Request::METHOD_POST)) {
-            $nextPath = $this->normalizeNextPath((string)$request->request->get(self::NEXT_QUERY_KEY, '/'));
-            $csrfToken = (string)$request->request->get('_token', '');
-            if (!$this->isCsrfTokenValid(self::CSRF_TOKEN_LOGIN, $csrfToken)) {
-                $errorMessage = 'Invalid CSRF token.';
-                $this->safeCreateWebLog(
-                    ActionLogAction::AUTH_LOGIN,
-                    ActionLog::LEVEL_WARNING,
-                    'Simple login failed: invalid CSRF token.'
-                );
-
-                return $this->render('auth/login.html.twig', [
-                    'page_title' => 'Login',
-                    'auth_mode' => $mode,
-                    'oidc_provider_name' => $this->oidcClient->getProviderName(),
-                    'next_path' => $nextPath,
-                    'error_message' => $errorMessage,
-                ])->setStatusCode(Response::HTTP_FORBIDDEN);
-            }
-
-            $username = trim((string)$request->request->get('username', ''));
-            $password = (string)$request->request->get('password', '');
-
-            $user = $this->authUserService->authenticateSimple($username, $password);
-            if ($user !== null) {
-                $issuedToken = $this->jwtTokenService->issueToken($user);
-
-                $response = new RedirectResponse($nextPath);
-                $response->headers->setCookie(
-                    $this->jwtTokenService->createAuthCookie($issuedToken, $request->isSecure())
-                );
-
-                $this->safeCreateWebLog(
-                    ActionLogAction::AUTH_LOGIN,
-                    ActionLog::LEVEL_INFO,
-                    sprintf("Simple login success for user '%s'.", $user->getUsername())
-                );
-
-                return $response;
-            }
-
-            $errorMessage = 'Invalid credentials.';
-            $this->safeCreateWebLog(
-                ActionLogAction::AUTH_LOGIN,
-                ActionLog::LEVEL_WARNING,
-                sprintf("Simple login failed for username '%s'.", $username === '' ? '<empty>' : $username)
-            );
+        if ($this->authModeResolver->isOidcMode() && $request->query->getBoolean(self::OIDC_QUERY_FLAG)) {
+            return $this->startOidcLogin($request, $nextPath);
         }
+
+        $error = $authenticationUtils->getLastAuthenticationError();
+        $errorMessage = $error === null ? null : 'Invalid credentials.';
 
         $response = $this->render('auth/login.html.twig', [
             'page_title' => 'Login',
@@ -109,6 +62,7 @@ class AuthController extends AbstractController
             'oidc_provider_name' => $this->oidcClient->getProviderName(),
             'next_path' => $nextPath,
             'error_message' => $errorMessage,
+            'last_username' => $authenticationUtils->getLastUsername(),
         ]);
 
         if ($errorMessage !== null) {
@@ -169,7 +123,8 @@ class AuthController extends AbstractController
             return $this->redirectToRoute('hat_auth_login');
         }
 
-        $nextPath = $this->normalizeNextPath((string)$session->get(self::OIDC_SESSION_NEXT_KEY, '/'));
+        $nextPath = $this->normalizeNextPath((string)$session->get(self::OIDC_SESSION_NEXT_KEY, '/'))
+            ?? $this->generateUrl('hat_dashboard');
         $session->remove(self::OIDC_SESSION_NEXT_KEY);
 
         try {
@@ -183,20 +138,9 @@ class AuthController extends AbstractController
             }
 
             $user = $this->authUserService->createOrUpdateFromOidc($subject, $preferredUsername);
-            $issuedToken = $this->jwtTokenService->issueToken($user);
+            $this->security->login($user, SimpleLoginFormAuthenticator::class, 'main');
 
-            $response = new RedirectResponse($nextPath);
-            $response->headers->setCookie(
-                $this->jwtTokenService->createAuthCookie($issuedToken, $request->isSecure())
-            );
-
-            $this->safeCreateWebLog(
-                ActionLogAction::AUTH_CALLBACK,
-                ActionLog::LEVEL_INFO,
-                sprintf("OIDC login success for user '%s'.", $user->getUsername())
-            );
-
-            return $response;
+            return new RedirectResponse($nextPath);
         } catch (Throwable $exception) {
             $this->addFlash('error', sprintf('OIDC login failed: %s', $exception->getMessage()));
             $this->safeCreateWebLog(
@@ -210,26 +154,9 @@ class AuthController extends AbstractController
     }
 
     #[Route(path: '/logout', name: 'hat_auth_logout', methods: ['POST'])]
-    public function logout(Request $request): Response
+    public function logout(): never
     {
-        $csrfToken = (string)$request->request->get('_token', '');
-        if (!$this->isCsrfTokenValid(self::CSRF_TOKEN_LOGOUT, $csrfToken)) {
-            $this->addFlash('error', 'Invalid CSRF token.');
-            $this->safeCreateWebLog(
-                ActionLogAction::AUTH_LOGOUT,
-                ActionLog::LEVEL_WARNING,
-                'Logout blocked: invalid CSRF token.'
-            );
-
-            return $this->redirectToRoute('hat_dashboard');
-        }
-
-        $response = $this->redirectToRoute('hat_auth_login');
-        $response->headers->setCookie($this->jwtTokenService->createClearedCookie($request->isSecure()));
-
-        $this->safeCreateWebLog(ActionLogAction::AUTH_LOGOUT, ActionLog::LEVEL_INFO, 'User logged out.');
-
-        return $response;
+        throw new \LogicException('Logout is handled by Symfony Security firewall.');
     }
 
     protected function startOidcLogin(Request $request, string $nextPath): Response
@@ -266,10 +193,27 @@ class AuthController extends AbstractController
         }
     }
 
-    protected function normalizeNextPath(string $candidate): string
+    protected function resolveNextPath(Request $request): string
+    {
+        $queryNextPath = $this->normalizeNextPath((string)$request->query->get(self::NEXT_QUERY_KEY, ''));
+        if ($queryNextPath !== null) {
+            return $queryNextPath;
+        }
+
+        if ($request->hasSession()) {
+            $targetPath = $this->normalizeNextPath((string)$request->getSession()->get(self::FIREWALL_TARGET_PATH_KEY, ''));
+            if ($targetPath !== null) {
+                return $targetPath;
+            }
+        }
+
+        return $this->generateUrl('hat_dashboard');
+    }
+
+    protected function normalizeNextPath(string $candidate): ?string
     {
         if ($candidate === '' || !str_starts_with($candidate, '/') || str_starts_with($candidate, '//')) {
-            return $this->generateUrl('hat_dashboard');
+            return null;
         }
 
         return $candidate;

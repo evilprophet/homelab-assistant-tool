@@ -11,13 +11,14 @@ use EvilStudio\HAT\Exception\EntityNotFound;
 use EvilStudio\HAT\Repository\UserRepository;
 use EvilStudio\HAT\Service\Application\AbstractDatabaseService;
 use InvalidArgumentException;
-use RuntimeException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AuthUserService extends AbstractDatabaseService
 {
     public function __construct(
         EntityManagerInterface $entityManager,
-        protected UserRepository $userRepository
+        protected UserRepository $userRepository,
+        protected UserPasswordHasherInterface $userPasswordHasher
     ) {
         parent::__construct($entityManager);
     }
@@ -42,12 +43,10 @@ class AuthUserService extends AbstractDatabaseService
             throw new EntityAlreadyExists(sprintf("User with username '%s' already exists.", $normalizedUsername));
         }
 
-        $passwordHash = $this->hashPassword($password);
-
         $user = (new User())
             ->setUsername($normalizedUsername)
-            ->setPasswordHash($passwordHash)
             ->setOidcSubject(null);
+        $user->setPasswordHash($this->hashPassword($user, $password));
 
         $this->persist($user);
         $this->flush();
@@ -87,7 +86,7 @@ class AuthUserService extends AbstractDatabaseService
             throw EntityNotFound::forField('User', 'username', $normalizedUsername);
         }
 
-        $user->setPasswordHash($this->hashPassword($newPassword));
+        $user->setPasswordHash($this->hashPassword($user, $newPassword));
         $this->persist($user);
         $this->flush();
 
@@ -111,7 +110,7 @@ class AuthUserService extends AbstractDatabaseService
             return null;
         }
 
-        if (!password_verify($password, $passwordHash)) {
+        if (!$this->userPasswordHasher->isPasswordValid($user, $password)) {
             return null;
         }
 
@@ -184,13 +183,8 @@ class AuthUserService extends AbstractDatabaseService
         return trim($username);
     }
 
-    protected function hashPassword(string $plainPassword): string
+    protected function hashPassword(User $user, string $plainPassword): string
     {
-        $passwordHash = password_hash($plainPassword, PASSWORD_DEFAULT);
-        if ($passwordHash === false) {
-            throw new RuntimeException('Failed to generate password hash.');
-        }
-
-        return $passwordHash;
+        return $this->userPasswordHasher->hashPassword($user, $plainPassword);
     }
 }

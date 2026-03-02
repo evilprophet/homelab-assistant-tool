@@ -8,13 +8,15 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Table(name: 'users')]
 #[ORM\Index(name: 'idx_users_username', columns: ['username'])]
 #[ORM\Index(name: 'idx_users_oidc_subject', columns: ['oidc_subject'])]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -67,11 +69,30 @@ class User
         return $this->username;
     }
 
+    public function getUserIdentifier(): string
+    {
+        return $this->username;
+    }
+
+    public function getRoles(): array
+    {
+        return ['ROLE_USER'];
+    }
+
+    public function eraseCredentials(): void
+    {
+    }
+
     public function setUsername(string $username): self
     {
         $this->username = $username;
 
         return $this;
+    }
+
+    public function getPassword(): ?string
+    {
+        return $this->passwordHash;
     }
 
     public function getPasswordHash(): ?string

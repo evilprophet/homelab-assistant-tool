@@ -70,7 +70,7 @@ Important runtime binaries:
 
 - Local mode (`simple`) with username/password users
 - OIDC mode (`oidc`) with provider integration
-- JWT cookie session handling via application services
+- Symfony Security firewall with session-based authentication
 
 ## 🌐 Web UI and Frontend
 

@@ -8,6 +8,7 @@ use EvilStudio\HAT\Exception\EntityNotFound;
 use EvilStudio\HAT\Repository\UserRepository;
 use EvilStudio\HAT\Service\Auth\AuthUserService;
 use EvilStudio\HAT\Tests\Integration\Support\DatabaseIntegrationTestCase;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AuthUserServiceDatabaseIntegrationTest extends DatabaseIntegrationTestCase
 {
@@ -17,7 +18,11 @@ class AuthUserServiceDatabaseIntegrationTest extends DatabaseIntegrationTestCase
     {
         parent::setUp();
 
-        $this->authUserService = new AuthUserService($this->entityManager, new UserRepository($this->entityManager));
+        $this->authUserService = new AuthUserService(
+            $this->entityManager,
+            new UserRepository($this->entityManager),
+            static::getContainer()->get(UserPasswordHasherInterface::class)
+        );
     }
 
     public function testCreateResetAuthenticateAndRemoveSimpleUser(): void

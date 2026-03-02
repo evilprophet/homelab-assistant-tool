@@ -2,7 +2,7 @@
     data-sidebar
     class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 -translate-x-full lg:translate-x-0 lg:static lg:z-auto lg:w-64 transition-all duration-300 border-r border-slate-800 dark:border-slate-700"
 >
-    {% set current_username = app.request.attributes.get('_hat_auth_username', 'admin') %}
+    {% set current_username = app.user ? app.user.userIdentifier : 'admin' %}
     {% set user_initials = current_username|slice(0, 2)|upper %}
 
     <div data-sidebar-brand class="h-16 flex items-center justify-between px-4 border-b border-slate-800">

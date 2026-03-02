@@ -72,7 +72,7 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
         );
     }
 
-    public function testOidcLoginAndCallbackSuccessSetsAuthCookieAndCreatesUser(): void
+    public function testOidcLoginAndCallbackSuccessAuthenticatesSessionAndCreatesUser(): void
     {
         $oidcClient = $this->createMock(OidcClient::class);
         $oidcClient->method('getProviderName')->willReturn('Test OIDC');
@@ -109,7 +109,6 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
         );
         $this->assertSame(Response::HTTP_FOUND, $callbackResponse->getStatusCode());
         $this->assertSame('/devices', $callbackResponse->headers->get('Location'));
-        $this->assertNotNull($this->getCookieValue($this->getJwtCookieName()));
 
         $devicesResponse = $this->request('GET', '/devices');
         $this->assertSame(Response::HTTP_OK, $devicesResponse->getStatusCode());

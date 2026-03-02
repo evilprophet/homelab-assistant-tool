@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace EvilStudio\HAT\Tests\Functional\Support;
 
 use EvilStudio\HAT\Service\Auth\AuthUserService;
-use EvilStudio\HAT\Service\Auth\JwtTokenService;
 use EvilStudio\HAT\Tests\Integration\Support\DatabaseIntegrationTestCase;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
@@ -72,16 +71,6 @@ abstract class HttpFunctionalTestCase extends DatabaseIntegrationTestCase
             'password' => $password,
             'next' => $nextPath,
         ]);
-    }
-
-    protected function getJwtCookieName(): string
-    {
-        return static::getContainer()->get(JwtTokenService::class)->getCookieName();
-    }
-
-    protected function getCookieValue(string $name): ?string
-    {
-        return $this->cookies[$name] ?? null;
     }
 
     protected function storeResponseCookies(Response $response): void

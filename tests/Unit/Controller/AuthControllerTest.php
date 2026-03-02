@@ -9,9 +9,9 @@ use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Auth\AuthModeResolver;
 use EvilStudio\HAT\Service\Auth\AuthUserService;
-use EvilStudio\HAT\Service\Auth\JwtTokenService;
 use EvilStudio\HAT\Service\Auth\OidcClient;
 use PHPUnit\Framework\TestCase;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class AuthControllerTest extends TestCase
@@ -25,13 +25,13 @@ class AuthControllerTest extends TestCase
         $this->assertSame('/devices', $result);
     }
 
-    public function testNormalizeNextPathFallsBackToDashboardForInvalidValue(): void
+    public function testNormalizeNextPathReturnsNullForInvalidValue(): void
     {
         $controller = $this->createTestableController();
 
-        $this->assertSame('/dashboard', $controller->callNormalizeNextPath(''));
-        $this->assertSame('/dashboard', $controller->callNormalizeNextPath('//evil'));
-        $this->assertSame('/dashboard', $controller->callNormalizeNextPath('http://external'));
+        $this->assertNull($controller->callNormalizeNextPath(''));
+        $this->assertNull($controller->callNormalizeNextPath('//evil'));
+        $this->assertNull($controller->callNormalizeNextPath('http://external'));
     }
 
     public function testSafeCreateWebLogSwallowsLoggingExceptions(): void
@@ -53,11 +53,11 @@ class AuthControllerTest extends TestCase
         return new class (
             $this->createMock(AuthModeResolver::class),
             $this->createMock(AuthUserService::class),
-            $this->createMock(JwtTokenService::class),
             $this->createMock(OidcClient::class),
-            $actionLogService ?? $this->createMock(ActionLogService::class)
+            $actionLogService ?? $this->createMock(ActionLogService::class),
+            $this->createMock(Security::class)
         ) extends AuthController {
-            public function callNormalizeNextPath(string $candidate): string
+            public function callNormalizeNextPath(string $candidate): ?string
             {
                 return $this->normalizeNextPath($candidate);
             }

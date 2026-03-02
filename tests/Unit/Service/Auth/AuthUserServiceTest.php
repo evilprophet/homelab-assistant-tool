@@ -13,6 +13,7 @@ use EvilStudio\HAT\Service\Auth\AuthUserService;
 use EvilStudio\HAT\Tests\Support\EntityTestHelperTrait;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AuthUserServiceTest extends TestCase
 {
@@ -22,7 +23,8 @@ class AuthUserServiceTest extends TestCase
     {
         $service = new AuthUserService(
             $this->createMock(EntityManagerInterface::class),
-            $this->createMock(UserRepository::class)
+            $this->createMock(UserRepository::class),
+            $this->createMock(UserPasswordHasherInterface::class)
         );
 
         $this->expectException(InvalidArgumentException::class);
@@ -35,13 +37,14 @@ class AuthUserServiceTest extends TestCase
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $repository = $this->createMock(UserRepository::class);
+        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
         $existingUser = (new User())->setUsername('admin');
         $this->setEntityId($existingUser, 1);
 
         $repository->expects($this->once())->method('findByUsername')->with('admin')->willReturn($existingUser);
         $entityManager->expects($this->never())->method('persist');
 
-        $service = new AuthUserService($entityManager, $repository);
+        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
 
         $this->expectException(EntityAlreadyExists::class);
         $this->expectExceptionMessage("User with username 'admin' already exists.");
@@ -53,17 +56,21 @@ class AuthUserServiceTest extends TestCase
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $repository = $this->createMock(UserRepository::class);
+        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
 
         $repository->expects($this->once())->method('findByUsername')->with('admin')->willReturn(null);
+        $passwordHasher->expects($this->once())
+            ->method('hashPassword')
+            ->with($this->isInstanceOf(User::class), 'secret')
+            ->willReturn('hashed-secret');
         $entityManager->expects($this->once())->method('persist')->with($this->isInstanceOf(User::class));
         $entityManager->expects($this->once())->method('flush');
 
-        $service = new AuthUserService($entityManager, $repository);
+        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
         $user = $service->createSimpleUser(' admin ', 'secret');
 
         $this->assertSame('admin', $user->getUsername());
-        $this->assertNotNull($user->getPasswordHash());
-        $this->assertTrue(password_verify('secret', (string)$user->getPasswordHash()));
+        $this->assertSame('hashed-secret', $user->getPasswordHash());
         $this->assertNull($user->getOidcSubject());
     }
 
@@ -71,13 +78,18 @@ class AuthUserServiceTest extends TestCase
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $repository = $this->createMock(UserRepository::class);
+        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
         $user = (new User())
             ->setUsername('admin')
-            ->setPasswordHash(password_hash('secret', PASSWORD_BCRYPT));
+            ->setPasswordHash('stored-hash');
 
         $repository->expects($this->once())->method('findByUsername')->with('admin')->willReturn($user);
+        $passwordHasher->expects($this->once())
+            ->method('isPasswordValid')
+            ->with($user, 'secret')
+            ->willReturn(true);
 
-        $service = new AuthUserService($entityManager, $repository);
+        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
 
         $this->assertSame($user, $service->authenticateSimple('admin', 'secret'));
     }
@@ -86,6 +98,7 @@ class AuthUserServiceTest extends TestCase
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $repository = $this->createMock(UserRepository::class);
+        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
         $subjectUser = (new User())
             ->setUsername('old-name')
             ->setOidcSubject('oidc-1');
@@ -96,7 +109,7 @@ class AuthUserServiceTest extends TestCase
         $entityManager->expects($this->once())->method('persist')->with($subjectUser);
         $entityManager->expects($this->once())->method('flush');
 
-        $service = new AuthUserService($entityManager, $repository);
+        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
         $result = $service->createOrUpdateFromOidc('oidc-1', 'new-name');
 
         $this->assertSame($subjectUser, $result);
@@ -107,6 +120,7 @@ class AuthUserServiceTest extends TestCase
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $repository = $this->createMock(UserRepository::class);
+        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
         $usernameUser = (new User())
             ->setUsername('admin')
             ->setOidcSubject(null);
@@ -117,7 +131,7 @@ class AuthUserServiceTest extends TestCase
         $entityManager->expects($this->once())->method('persist')->with($usernameUser);
         $entityManager->expects($this->once())->method('flush');
 
-        $service = new AuthUserService($entityManager, $repository);
+        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
         $result = $service->createOrUpdateFromOidc('oidc-1', 'admin');
 
         $this->assertSame($usernameUser, $result);
@@ -128,6 +142,7 @@ class AuthUserServiceTest extends TestCase
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $repository = $this->createMock(UserRepository::class);
+        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
         $usernameUser = (new User())
             ->setUsername('admin')
             ->setOidcSubject('other-subject');
@@ -136,7 +151,7 @@ class AuthUserServiceTest extends TestCase
         $repository->expects($this->once())->method('findByUsername')->with('admin')->willReturn($usernameUser);
         $entityManager->expects($this->never())->method('persist');
 
-        $service = new AuthUserService($entityManager, $repository);
+        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
 
         $this->expectException(EntityAlreadyExists::class);
         $this->expectExceptionMessage("Username 'admin' is already linked to a different OIDC subject.");
@@ -148,13 +163,14 @@ class AuthUserServiceTest extends TestCase
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $repository = $this->createMock(UserRepository::class);
+        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
         $user = (new User())->setUsername('admin');
 
         $repository->expects($this->once())->method('findByUsername')->with('admin')->willReturn($user);
         $entityManager->expects($this->once())->method('remove')->with($user);
         $entityManager->expects($this->once())->method('flush');
 
-        $service = new AuthUserService($entityManager, $repository);
+        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
         $service->removeSimpleUser('admin');
 
         $this->addToAssertionCount(1);
@@ -164,11 +180,12 @@ class AuthUserServiceTest extends TestCase
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $repository = $this->createMock(UserRepository::class);
+        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
 
         $repository->expects($this->once())->method('findByUsername')->with('admin')->willReturn(null);
         $entityManager->expects($this->never())->method('remove');
 
-        $service = new AuthUserService($entityManager, $repository);
+        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
 
         $this->expectException(EntityNotFound::class);
         $this->expectExceptionMessage("User with username 'admin' not found.");
@@ -180,16 +197,21 @@ class AuthUserServiceTest extends TestCase
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $repository = $this->createMock(UserRepository::class);
+        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
         $user = (new User())->setUsername('admin')->setPasswordHash('legacy-hash');
 
         $repository->expects($this->once())->method('findByUsername')->with('admin')->willReturn($user);
+        $passwordHasher->expects($this->once())
+            ->method('hashPassword')
+            ->with($user, 'new-secret')
+            ->willReturn('new-hash');
         $entityManager->expects($this->once())->method('persist')->with($user);
         $entityManager->expects($this->once())->method('flush');
 
-        $service = new AuthUserService($entityManager, $repository);
+        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
         $updatedUser = $service->resetSimpleUserPassword('admin', 'new-secret');
 
         $this->assertSame($user, $updatedUser);
-        $this->assertTrue(password_verify('new-secret', (string)$updatedUser->getPasswordHash()));
+        $this->assertSame('new-hash', $updatedUser->getPasswordHash());
     }
 }

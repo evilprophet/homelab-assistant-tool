@@ -2,17 +2,17 @@
 
 **Project:** Homelab Assistant Tool  
 **Coverage Source:** Xdebug (Real Data)  
-**Coverage:** 78.85% (3110/3944 lines)  
-**Total Tests:** 246  
+**Coverage:** 79.24% (3053/3853 lines)  
+**Total Tests:** 234  
 **Status:** Active and maintained  
-**Last Updated:** 2026-03-01
+**Last Updated:** 2026-03-02
 
 ---
 
 ## 📌 Scope At A Glance
 
-- 246 automated tests (158 Unit + 50 Integration + 38 Functional).
-- 1255 assertions.
+- 234 automated tests (146 Unit + 50 Integration + 38 Functional).
+- 1226 assertions.
 - All suites currently pass.
 - Test setup is isolated and deterministic (`.env.test`, dedicated SQLite test DB, schema reset between tests).
 
@@ -30,67 +30,68 @@
 ## 📊 Coverage Overview
 
 ```text
-Classes:  27.16% (22/81)
+Classes:  25.00% (20/80)
 Methods:  67.09% (316/471)
-Lines:    78.85% (3110/3944)
+Lines:    79.24% (3053/3853)
 ```
 
 ### 🌍 Global Coverage Statistics
 
 ```text
-Tests:       246
-Assertions:  1255
+Tests:       234
+Assertions:  1226
 
-Unit:        158 tests / 677 assertions
-Integration: 50 tests / 369 assertions
+Unit:        146 tests / 647 assertions
+Integration: 50 tests / 370 assertions
 Functional:  38 tests / 209 assertions
 
-Covered:   3110 lines
-Uncovered: 834 lines (21.15%)
+Covered:   3053 lines
+Uncovered: 800 lines (20.76%)
 ```
 
 ### 📁 Coverage by Category
 
 | Category             | Methods              | Lines                  | Coverage   |
 |----------------------|----------------------|------------------------|------------|
-| **Command/**         | 49.06% (52/106)      | 68.78% (998/1451)      | 68.78%     |
+| **Command/**         | 49.06% (52/106)      | 69.01% (1011/1465)     | 69.01%     |
 | **Contract/**        | 100.00% (6/6)        | 100.00% (24/24)        | 100.00%    |
-| **Controller/**      | 41.94% (26/62)       | 82.94% (817/985)       | 82.94%     |
-| **Entity/**          | 95.65% (66/69)       | 95.76% (113/118)       | 95.76%     |
-| **EventSubscriber/** | 46.15% (6/13)        | 89.47% (85/95)         | 89.47%     |
+| **Controller/**      | 41.27% (26/63)       | 83.87% (785/936)       | 83.87%     |
+| **Entity/**          | 95.89% (70/73)       | 95.90% (117/122)       | 95.90%     |
+| **EventSubscriber/** | 64.29% (9/14)        | 93.68% (89/95)         | 93.68%     |
 | **Exception/**       | 100.00% (2/2)        | 100.00% (2/2)          | 100.00%    |
 | **Factory/**         | 40.00% (2/5)         | 94.12% (48/51)         | 94.12%     |
-| **Helper/**          | 88.89% (8/9)         | 94.74% (18/19)         | 94.74%     |
-| **Kernel.php**       | 33.33% (1/3)         | 57.69% (15/26)         | 57.69%     |
-| **Repository/**      | 88.00% (22/25)       | 96.43% (135/140)       | 96.43%     |
-| **Runtime/**         | 81.25% (39/48)       | 90.00% (171/190)       | 90.00%     |
-| **Service/**         | 69.92% (86/123)      | 81.14% (684/843)       | 81.14%     |
-| **GLOBAL**           | **67.09% (316/471)** | **78.85% (3110/3944)** | **78.85%** |
+| **Helper/**          | 90.00% (9/10)        | 95.24% (20/21)         | 95.24%     |
+| **Kernel.php**       | 66.67% (2/3)         | 96.15% (25/26)         | 96.15%     |
+| **Repository/**      | 84.00% (21/25)       | 95.00% (133/140)       | 95.00%     |
+| **Runtime/**         | 81.25% (39/48)       | 89.84% (168/187)       | 89.84%     |
+| **Security/**        | 37.50% (3/8)         | 87.50% (35/40)         | 87.50%     |
+| **Service/**         | 69.44% (75/108)      | 80.11% (596/744)       | 80.11%     |
+| **GLOBAL**           | **67.09% (316/471)** | **79.24% (3053/3853)** | **79.24%** |
 
 ### 🗺️ Coverage by Area
 
 | Area                        | Methods              | Lines                  | Coverage   |
 |-----------------------------|----------------------|------------------------|------------|
-| **CLI**                     | 49.06% (52/106)      | 68.78% (998/1451)      | 68.78%     |
-| **Web**                     | 42.67% (32/75)       | 83.52% (902/1080)      | 83.52%     |
-| **Domain Model**            | 96.10% (74/77)       | 96.53% (139/144)       | 96.53%     |
-| **Application and Runtime** | 72.34% (136/188)     | 82.91% (936/1129)      | 82.91%     |
-| **Persistence**             | 88.00% (22/25)       | 96.43% (135/140)       | 96.43%     |
-| **GLOBAL**                  | **67.09% (316/471)** | **78.85% (3110/3944)** | **78.85%** |
+| **CLI**                     | 49.06% (52/106)      | 69.01% (1011/1465)     | 69.01%     |
+| **Web**                     | 44.71% (38/85)       | 84.87% (909/1071)      | 84.87%     |
+| **Domain Model**            | 96.30% (78/81)       | 96.62% (143/148)       | 96.62%     |
+| **Application and Runtime** | 72.99% (127/174)     | 83.29% (857/1029)      | 83.29%     |
+| **Persistence**             | 84.00% (21/25)       | 95.00% (133/140)       | 95.00%     |
+| **GLOBAL**                  | **67.09% (316/471)** | **79.24% (3053/3853)** | **79.24%** |
 
 ### 📈 Visual Representation
 
 ```text
-Entity:          ██████████████████████████████████████░░ 96%
-Repository:      ██████████████████████████████████████░░ 96%
-Helper:          █████████████████████████████████████░░░ 95%
+Kernel.php:      ██████████████████████████████████████░░ 96%
+Domain Model:    ██████████████████████████████████████░░ 96%
+Helper:          ██████████████████████████████████████░░ 95%
+Repository:      █████████████████████████████████████░░░ 95%
 Factory:         █████████████████████████████████████░░░ 94%
-Runtime:         █████████████████████████████████████░░░ 90%
-EventSubscriber: ███████████████████████████████████░░░░░ 89%
-Controller:      █████████████████████████████████░░░░░░░ 83%
-Service:         ████████████████████████████████░░░░░░░░ 81%
-Command:         ███████████████████████████░░░░░░░░░░░░░ 68%
-Kernel.php:      ███████████████████████░░░░░░░░░░░░░░░░░ 58%
+Runtime:         ████████████████████████████████████░░░░ 90%
+Security:        ███████████████████████████████████░░░░░ 88%
+Web:             █████████████████████████████████░░░░░░░ 85%
+Service:         ████████████████████████████████░░░░░░░░ 80%
+CLI:             ████████████████████████████░░░░░░░░░░░░ 69%
 
 GLOBAL:          ████████████████████████████████░░░░░░░░ 79%
 ```
@@ -104,7 +105,7 @@ GLOBAL:          █████████████████████
 Unit tests cover core logic with mocked infrastructure boundaries.
 
 - Application services: `DeviceService`, `UpsService`, `ScheduleService`, `ActionLogService`.
-- Auth services: `AuthModeResolver`, `AuthUserService`, `JwtTokenService`.
+- Auth services: `AuthModeResolver`, `AuthUserService`, Symfony Security authenticators.
 - Runtime services: `Cron`, `RuntimeStatusResolver`, `DeviceOperationsService`, selected runtime helpers.
 - Domain/support pieces: entities, helper logic, factories, and validation branches.
 

@@ -30,12 +30,15 @@ class AuthControllerFunctionalTest extends HttpFunctionalTestCase
             'next' => '/',
         ]);
 
-        $this->assertSame(Response::HTTP_UNAUTHORIZED, $response->getStatusCode());
-        $this->assertStringContainsString('Invalid credentials.', (string)$response->getContent());
-        $this->assertNull($this->getCookieValue($this->getJwtCookieName()));
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        $this->assertSame('/auth/login?next=/', $response->headers->get('Location'));
+
+        $loginResponse = $this->request('GET', '/auth/login?next=/');
+        $this->assertSame(Response::HTTP_UNAUTHORIZED, $loginResponse->getStatusCode());
+        $this->assertStringContainsString('Invalid credentials.', (string)$loginResponse->getContent());
     }
 
-    public function testLoginAndLogoutManageAuthCookie(): void
+    public function testLoginAndLogoutManageSessionAuthentication(): void
     {
         $this->createSimpleUser('admin', 'secret-1');
 
@@ -47,14 +50,16 @@ class AuthControllerFunctionalTest extends HttpFunctionalTestCase
 
         $this->assertSame(Response::HTTP_FOUND, $loginResponse->getStatusCode());
         $this->assertSame('/devices', $loginResponse->headers->get('Location'));
-        $this->assertNotNull($this->getCookieValue($this->getJwtCookieName()));
 
         $devicesResponse = $this->request('GET', '/devices');
         $this->assertSame(Response::HTTP_OK, $devicesResponse->getStatusCode());
 
         $logoutResponse = $this->request('POST', '/auth/logout');
         $this->assertSame(Response::HTTP_FOUND, $logoutResponse->getStatusCode());
-        $this->assertSame('/auth/login', $logoutResponse->headers->get('Location'));
-        $this->assertNull($this->getCookieValue($this->getJwtCookieName()));
+        $this->assertSame('http://localhost/', $logoutResponse->headers->get('Location'));
+
+        $guestResponse = $this->request('GET', '/devices');
+        $this->assertSame(Response::HTTP_FOUND, $guestResponse->getStatusCode());
+        $this->assertStringContainsString('/auth/login', (string)$guestResponse->headers->get('Location'));
     }
 }
