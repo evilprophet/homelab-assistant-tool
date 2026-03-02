@@ -1,0 +1,44 @@
+security:
+    password_hashers:
+        EvilStudio\HAT\Entity\User: 'auto'
+
+    providers:
+        hat_user_provider:
+            entity:
+                class: EvilStudio\HAT\Entity\User
+                property: username
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt|error)|assets|build)/
+            security: false
+
+        main:
+            lazy: true
+            provider: hat_user_provider
+            custom_authenticators:
+                - EvilStudio\HAT\Security\SimpleLoginFormAuthenticator
+            entry_point: EvilStudio\HAT\Security\SimpleLoginFormAuthenticator
+            logout:
+                path: hat_auth_logout
+                csrf_parameter: _token
+                csrf_token_id: auth.logout
+                invalidate_session: true
+
+    access_control:
+        - { path: ^/auth/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/auth/callback$, roles: PUBLIC_ACCESS }
+        - { path: ^/assets/, roles: PUBLIC_ACCESS }
+        - { path: ^/build/, roles: PUBLIC_ACCESS }
+        - { path: ^/_(profiler|wdt|error)/, roles: PUBLIC_ACCESS }
+        - { path: ^/favicon\.ico$, roles: PUBLIC_ACCESS }
+        - { path: ^/, roles: ROLE_USER }
+
+when@test:
+    security:
+        password_hashers:
+            EvilStudio\HAT\Entity\User:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10
