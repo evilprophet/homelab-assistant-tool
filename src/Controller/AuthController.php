@@ -201,7 +201,9 @@ class AuthController extends AbstractController
         }
 
         if ($request->hasSession()) {
-            $targetPath = $this->normalizeNextPath((string)$request->getSession()->get(self::FIREWALL_TARGET_PATH_KEY, ''));
+            $targetPath = $this->normalizeNextPath(
+                (string)$request->getSession()->get(self::FIREWALL_TARGET_PATH_KEY, '')
+            );
             if ($targetPath !== null) {
                 return $targetPath;
             }
