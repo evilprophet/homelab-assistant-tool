@@ -143,14 +143,8 @@
                                     <div class="mt-4">
                                         <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Delete logs older than</label>
                                         <select name="retention" class="mt-1 block w-full rounded-md border-slate-300 dark:border-slate-600 py-2 pl-3 pr-10 text-base sm:text-sm border bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200">
-                                            {% for retention_days in cleanup_retention_options %}
-                                                {% if retention_days == 0 %}
-                                                    <option value="0">All Time (Clear Everything)</option>
-                                                {% else %}
-                                                    <option value="{{ retention_days }}">
-                                                        {{ retention_days }} {{ retention_days == 1 ? 'Day' : 'Days' }}{% if retention_days == cleanup_default_retention_days %} (Configured default){% endif %}
-                                                    </option>
-                                                {% endif %}
+                                            {% for cleanup_retention_option in cleanup_retention_options %}
+                                                <option value="{{ cleanup_retention_option.value }}">{{ cleanup_retention_option.label }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>

@@ -109,7 +109,6 @@ class LogsController extends AbstractController
             'total_pages' => $totalPages,
             'timezone_name' => $timezone->getName(),
             'cleanup_retention_options' => $this->buildCleanupRetentionOptions(),
-            'cleanup_default_retention_days' => $this->configuration->getActionLogRetentionDays(),
         ]);
     }
 
@@ -240,23 +239,31 @@ class LogsController extends AbstractController
     protected function buildCleanupRetentionOptions(): array
     {
         $defaultRetentionDays = max(1, $this->configuration->getActionLogRetentionDays());
+        $daysOptions = [];
+
+        for ($days = $defaultRetentionDays; $days >= 30; $days -= 30) {
+            $daysOptions[] = $days;
+        }
+        $daysOptions[] = 7;
+        $daysOptions = array_values(array_unique($daysOptions));
+
         $options = [];
-
-        if ($defaultRetentionDays > 14) {
-            $options[] = $defaultRetentionDays;
-        }
-
-        for ($days = $defaultRetentionDays - 30; $days >= 30; $days -= 30) {
-            $options[] = $days;
-        }
-
-        foreach ([14, 7, 1, 0] as $days) {
-            if (in_array($days, $options, true)) {
-                continue;
+        foreach ($daysOptions as $days) {
+            $label = sprintf('%d Days', $days);
+            if ($days === $defaultRetentionDays) {
+                $label .= ' (Configured default)';
             }
 
-            $options[] = $days;
+            $options[] = [
+                'value' => (string)$days,
+                'label' => $label,
+            ];
         }
+
+        $options[] = [
+            'value' => '0',
+            'label' => 'All Time (Clear Everything)',
+        ];
 
         return $options;
     }
