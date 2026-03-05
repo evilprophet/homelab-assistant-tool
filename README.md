@@ -96,6 +96,12 @@ docker compose up -d --build
 
 Open: `http://localhost:8080`
 
+For local development with Xdebug and dedicated compose config:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --build
+```
+
 ### 7. Run CLI commands
 
 ```bash
