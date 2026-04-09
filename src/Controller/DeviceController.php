@@ -63,7 +63,9 @@ class DeviceController extends AbstractController
     {
         $selectedPlatform = $this->resolvePlatformFilter(trim((string)$request->query->get('platform', '')));
         $sortBy = $this->resolveSortBy((string)$request->query->get('sort_by', self::SORT_BY_NETWORK));
-        $sortDirection = $this->resolveSortDirection((string)$request->query->get('sort_dir', self::SORT_DIRECTION_ASC));
+        $sortDirection = $this->resolveSortDirection(
+            (string)$request->query->get('sort_dir', self::SORT_DIRECTION_ASC)
+        );
         $page = max(1, (int)$request->query->get('page', 1));
         $perPage = ActionLogService::DEFAULT_LIST_LIMIT;
 
