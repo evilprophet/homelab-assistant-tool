@@ -6,6 +6,7 @@ namespace EvilStudio\HAT\Service\Runtime;
 
 use Cron\CronExpression;
 use EvilStudio\HAT\Contract\ActionLogAction;
+use EvilStudio\HAT\Contract\DeviceAction;
 use EvilStudio\HAT\Contract\ScheduleInterface;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Entity\Device;
@@ -61,7 +62,8 @@ class Cron
                 $batteryRuntime = $ups->getBatteryRuntime();
 
                 if ($ups->isBatteryRuntimeLow()) {
-                    $this->deviceOperationsService->stopDevice($device->getName());
+                    $this->deviceOperationsService->assertDeviceActionSupported($device, DeviceAction::STOP);
+                    $device->stop();
                     $this->logInfo(
                         sprintf("Device '%s' stopped - UPS '%s' has low battery.", $device->getName(), $upsIdentifier)
                     );
@@ -80,7 +82,8 @@ class Cron
                             )
                         );
                     } elseif ($deviceRuntimeThreshold > $batteryRuntime) {
-                        $this->deviceOperationsService->stopDevice($device->getName());
+                        $this->deviceOperationsService->assertDeviceActionSupported($device, DeviceAction::STOP);
+                        $device->stop();
                         $this->logInfo(
                             sprintf(
                                 "Device '%s' stopped - UPS '%s' has too low battery for this device.",
@@ -188,7 +191,8 @@ class Cron
                     }
                 }
 
-                $this->deviceOperationsService->startDevice($deviceName);
+                $this->deviceOperationsService->assertDeviceActionSupported($device, DeviceAction::START);
+                $device->start();
                 $this->logInfo(sprintf("Device '%s' started.", $deviceName));
             } catch (UnsupportedDeviceAction $e) {
                 $this->logInfo(
@@ -212,7 +216,8 @@ class Cron
                     continue;
                 }
 
-                $this->deviceOperationsService->stopDevice($deviceName);
+                $this->deviceOperationsService->assertDeviceActionSupported($device, DeviceAction::STOP);
+                $device->stop();
                 $this->logInfo(sprintf("Device '%s' stopped.", $deviceName));
             } catch (UnsupportedDeviceAction $e) {
                 $this->logInfo(

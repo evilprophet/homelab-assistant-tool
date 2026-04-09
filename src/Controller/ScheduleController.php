@@ -189,6 +189,15 @@ class ScheduleController extends AbstractController
 
         return $this->render('schedules/form.html.twig', [
             'page_title' => sprintf('Edit Schedule #%d', $id),
+            'breadcrumbs' => [
+                [
+                    'label' => 'Schedules',
+                    'href' => $this->generateUrl('hat_schedules_index'),
+                ],
+                [
+                    'label' => sprintf('Edit Schedule #%d', $id),
+                ],
+            ],
             'mode' => 'edit',
             'schedule' => $schedule,
             'form_data' => $formData,

@@ -156,6 +156,15 @@ class UpsController extends AbstractController
 
         return $this->render('ups/form.html.twig', [
             'page_title' => sprintf('Edit UPS #%d', $id),
+            'breadcrumbs' => [
+                [
+                    'label' => 'UPS Units',
+                    'href' => $this->generateUrl('hat_ups_index'),
+                ],
+                [
+                    'label' => sprintf('Edit UPS #%d', $id),
+                ],
+            ],
             'mode' => 'edit',
             'ups' => $ups,
             'form_data' => $formData,

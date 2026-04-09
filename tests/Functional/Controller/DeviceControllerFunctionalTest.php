@@ -184,6 +184,46 @@ class DeviceControllerFunctionalTest extends HttpFunctionalTestCase
         $this->assertStringNotContainsString('node-filter-28', $content);
     }
 
+    public function testIndexSortsByNetworkByDefaultAndSupportsNameIdSortDirection(): void
+    {
+        $this->createSimpleUser('admin', 'secret-1');
+        $this->loginAsSimpleUser('admin', 'secret-1', '/devices');
+
+        $deviceService = static::getContainer()->get(DeviceService::class);
+        $deviceService->createDevice(
+            'node-net-20',
+            '10.55.0.20',
+            '00:aa:bb:cc:dd:20',
+            DevicePlatform::GENERIC->value
+        );
+        $deviceService->createDevice(
+            'node-net-3',
+            '10.55.0.3',
+            '00:aa:bb:cc:dd:03',
+            DevicePlatform::GENERIC->value
+        );
+        $deviceService->createDevice(
+            'node-net-100',
+            '10.55.0.100',
+            '00:aa:bb:cc:dd:64',
+            DevicePlatform::GENERIC->value
+        );
+
+        $defaultResponse = $this->request('GET', '/devices');
+        $this->assertSame(Response::HTTP_OK, $defaultResponse->getStatusCode());
+        $this->assertDevicesOrder(
+            (string)$defaultResponse->getContent(),
+            ['node-net-3', 'node-net-20', 'node-net-100']
+        );
+
+        $explicitSortResponse = $this->request('GET', '/devices?sort_by=name_id&sort_dir=desc');
+        $this->assertSame(Response::HTTP_OK, $explicitSortResponse->getStatusCode());
+        $this->assertDevicesOrder(
+            (string)$explicitSortResponse->getContent(),
+            ['node-net-100', 'node-net-3', 'node-net-20']
+        );
+    }
+
     public function testStartShowsWarningFlashWhenRuntimeStartReturnsFalse(): void
     {
         $this->createSimpleUser('admin', 'secret-1');
@@ -212,5 +252,20 @@ class DeviceControllerFunctionalTest extends HttpFunctionalTestCase
         $this->assertSame(Response::HTTP_OK, $indexResponse->getStatusCode());
         $content = html_entity_decode((string)$indexResponse->getContent(), ENT_QUOTES);
         $this->assertStringContainsString("Device 'node-start-warning' started: no.", $content);
+    }
+
+    protected function assertDevicesOrder(string $content, array $orderedDeviceNames): void
+    {
+        $previousPosition = -1;
+        foreach ($orderedDeviceNames as $deviceName) {
+            $position = strpos($content, $deviceName);
+            $this->assertNotFalse($position, sprintf("Device '%s' not found in response content.", $deviceName));
+            $this->assertGreaterThan(
+                $previousPosition,
+                $position,
+                sprintf("Device '%s' is not in expected order.", $deviceName)
+            );
+            $previousPosition = $position;
+        }
     }
 }

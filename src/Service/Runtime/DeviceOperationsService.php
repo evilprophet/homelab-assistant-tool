@@ -51,7 +51,7 @@ class DeviceOperationsService
     public function startDevice(string $name): bool
     {
         $device = $this->getDevice($name);
-        $this->assertActionSupported($device, DeviceAction::START);
+        $this->assertDeviceActionSupported($device, DeviceAction::START);
 
         return $device->start();
     }
@@ -59,7 +59,7 @@ class DeviceOperationsService
     public function stopDevice(string $name): bool
     {
         $device = $this->getDevice($name);
-        $this->assertActionSupported($device, DeviceAction::STOP);
+        $this->assertDeviceActionSupported($device, DeviceAction::STOP);
 
         return $device->stop();
     }
@@ -67,12 +67,12 @@ class DeviceOperationsService
     public function sshIntoDevice(string $name, OutputInterface $output): void
     {
         $device = $this->getDevice($name);
-        $this->assertActionSupported($device, DeviceAction::SSH);
+        $this->assertDeviceActionSupported($device, DeviceAction::SSH);
 
         $device->ssh($output);
     }
 
-    protected function assertActionSupported(DeviceInterface $device, DeviceAction $action): void
+    public function assertDeviceActionSupported(DeviceInterface $device, DeviceAction $action): void
     {
         $platform = $device->getPlatform();
         $resolvedPlatform = DevicePlatform::tryFrom($platform);

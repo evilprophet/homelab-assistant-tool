@@ -89,10 +89,15 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 {% set linked_devices = ups.linked_device is defined and ups.linked_device != '-' ? ups.linked_device|split(', ') : [] %}
+                                {% set linked_device_names = [] %}
+                                {% for linked_device in linked_devices %}
+                                    {% set device_parts = linked_device|split(':', 2) %}
+                                    {% set device_name = device_parts|length > 1 ? device_parts[1] : linked_device %}
+                                    {% set linked_device_names = linked_device_names|merge([device_name]) %}
+                                {% endfor %}
+                                {% set linked_device_names = linked_device_names|sort %}
                                 <div class="flex flex-wrap gap-1 max-w-xs">
-                                    {% for linked_device in linked_devices %}
-                                        {% set device_parts = linked_device|split(':', 2) %}
-                                        {% set device_name = device_parts|length > 1 ? device_parts[1] : linked_device %}
+                                    {% for device_name in linked_device_names %}
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
                                             <span data-linked-device-status="{{ device_name }}" class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                             <span class="ml-1.5">{{ device_name }}</span>

@@ -7,6 +7,7 @@ namespace EvilStudio\HAT\Tests\Unit\Service\Runtime;
 use DateTime;
 use DateTimeZone;
 use EvilStudio\HAT\Contract\ActionLogAction;
+use EvilStudio\HAT\Contract\DeviceAction;
 use EvilStudio\HAT\Contract\DeviceInterface;
 use EvilStudio\HAT\Contract\ScheduleInterface;
 use EvilStudio\HAT\Contract\UpsInterface;
@@ -51,8 +52,11 @@ class CronTest extends TestCase
             ->willReturn($runtimeUps);
         $runtimeUps->expects($this->once())->method('updateStatus');
         $runtimeUps->expects($this->once())->method('isBatteryRuntimeLow')->willReturn(true);
-        $runtimeDevice->expects($this->exactly(2))->method('getName')->willReturn('node-1');
-        $deviceOperations->expects($this->once())->method('stopDevice')->with('node-1');
+        $runtimeDevice->expects($this->once())->method('getName')->willReturn('node-1');
+        $deviceOperations->expects($this->once())
+            ->method('assertDeviceActionSupported')
+            ->with($runtimeDevice, DeviceAction::STOP);
+        $runtimeDevice->expects($this->once())->method('stop');
         $scheduleService->expects($this->never())->method('listEnabledSchedules');
 
         $cron = new Cron($deviceOperations, $upsRuntimeService, $scheduleService, $configuration, $actionLogService);
@@ -90,7 +94,10 @@ class CronTest extends TestCase
         $runtimeDevice->expects($this->once())->method('checkStatus');
         $runtimeDevice->expects($this->once())->method('getStatus')->willReturn(false);
         $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn(null);
-        $deviceOperations->expects($this->once())->method('startDevice')->with('node-1')->willReturn(true);
+        $deviceOperations->expects($this->once())
+            ->method('assertDeviceActionSupported')
+            ->with($runtimeDevice, DeviceAction::START);
+        $runtimeDevice->expects($this->once())->method('start')->willReturn(true);
 
         $cron = new Cron($deviceOperations, $upsRuntimeService, $scheduleService, $configuration, $actionLogService);
         $cron->execute();
@@ -133,8 +140,11 @@ class CronTest extends TestCase
         $runtimeUps->expects($this->once())->method('isBatteryRuntimeLow')->willReturn(false);
         $runtimeDevice->expects($this->once())->method('getUpsLowBatteryRuntimeThreshold')->willReturn(1200);
         $runtimeUps->expects($this->once())->method('getBatteryRuntime')->willReturn(600);
-        $runtimeDevice->expects($this->exactly(2))->method('getName')->willReturn('node-2');
-        $deviceOperations->expects($this->once())->method('stopDevice')->with('node-2');
+        $runtimeDevice->expects($this->once())->method('getName')->willReturn('node-2');
+        $deviceOperations->expects($this->once())
+            ->method('assertDeviceActionSupported')
+            ->with($runtimeDevice, DeviceAction::STOP);
+        $runtimeDevice->expects($this->once())->method('stop');
         $scheduleService->expects($this->never())->method('listEnabledSchedules');
 
         $cron = new Cron($deviceOperations, $upsRuntimeService, $scheduleService, $configuration, $actionLogService);
@@ -208,11 +218,12 @@ class CronTest extends TestCase
             ->willReturn($runtimeUps);
         $runtimeUps->expects($this->once())->method('updateStatus');
         $runtimeUps->expects($this->once())->method('isBatteryRuntimeLow')->willReturn(true);
-        $runtimeDevice->expects($this->exactly(2))->method('getName')->willReturn('node-unsupported');
+        $runtimeDevice->expects($this->once())->method('getName')->willReturn('node-unsupported');
         $deviceOperations->expects($this->once())
-            ->method('stopDevice')
-            ->with('node-unsupported')
+            ->method('assertDeviceActionSupported')
+            ->with($runtimeDevice, DeviceAction::STOP)
             ->willThrowException(new UnsupportedDeviceAction("Stop action is not supported on 'synology_dsm' device."));
+        $runtimeDevice->expects($this->never())->method('stop');
         $scheduleService->expects($this->never())->method('listEnabledSchedules');
 
         $cron = new Cron($deviceOperations, $upsRuntimeService, $scheduleService, $configuration, $actionLogService);

@@ -59,10 +59,15 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 {% set schedule_devices = schedule.devices is defined and schedule.devices != '-' ? schedule.devices|split(', ') : [] %}
+                                {% set schedule_device_names = [] %}
+                                {% for device_label in schedule_devices %}
+                                    {% set device_parts = device_label|split(':', 2) %}
+                                    {% set device_name = device_parts|length > 1 ? device_parts[1] : device_label %}
+                                    {% set schedule_device_names = schedule_device_names|merge([device_name]) %}
+                                {% endfor %}
+                                {% set schedule_device_names = schedule_device_names|sort %}
                                 <div class="flex flex-wrap gap-1 max-w-xs">
-                                    {% for device_label in schedule_devices %}
-                                        {% set device_parts = device_label|split(':', 2) %}
-                                        {% set device_name = device_parts|length > 1 ? device_parts[1] : device_label %}
+                                    {% for device_name in schedule_device_names %}
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
                                             <span data-schedule-device-status="{{ device_name }}" class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                                             <span class="ml-1.5">{{ device_name }}</span>

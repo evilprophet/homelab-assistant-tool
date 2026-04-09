@@ -7,6 +7,7 @@ namespace EvilStudio\HAT\Tests\Integration\Service\Runtime;
 use DateTime;
 use DateTimeZone;
 use EvilStudio\HAT\Contract\ActionLogAction;
+use EvilStudio\HAT\Contract\DeviceAction;
 use EvilStudio\HAT\Contract\DeviceInterface;
 use EvilStudio\HAT\Contract\DevicePlatform;
 use EvilStudio\HAT\Contract\ScheduleInterface;
@@ -81,6 +82,9 @@ class CronDatabaseIntegrationTest extends DatabaseIntegrationTestCase
         $runtimeDevice->expects($this->once())->method('checkStatus');
         $runtimeDevice->expects($this->once())->method('getStatus')->willReturn(false);
         $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn(null);
+        $deviceOperationsService->expects($this->once())
+            ->method('assertDeviceActionSupported')
+            ->with($runtimeDevice, DeviceAction::START);
         $runtimeDevice->expects($this->once())->method('start')->willReturn(true);
 
         $cron = new Cron(
@@ -138,6 +142,9 @@ class CronDatabaseIntegrationTest extends DatabaseIntegrationTestCase
         $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn('ups-main');
         $runtimeDevice->expects($this->once())->method('getUpsLowBatteryRuntimeThreshold')->willReturn(1200);
         $runtimeDevice->expects($this->once())->method('getName')->willReturn('node-4');
+        $deviceOperationsService->expects($this->once())
+            ->method('assertDeviceActionSupported')
+            ->with($runtimeDevice, DeviceAction::STOP);
         $runtimeDevice->expects($this->once())->method('stop')->willReturn(true);
 
         $upsRuntimeService->expects($this->once())

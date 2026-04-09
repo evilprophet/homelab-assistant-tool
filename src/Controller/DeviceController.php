@@ -31,6 +31,22 @@ class DeviceController extends AbstractController
     protected const string CSRF_DEVICE_REMOVE_PREFIX = 'device.remove.';
     protected const string CSRF_DEVICE_START_PREFIX = 'device.start.';
     protected const string CSRF_DEVICE_STOP_PREFIX = 'device.stop.';
+    protected const string SORT_BY_NAME_ID = 'name_id';
+    protected const string SORT_BY_NETWORK = 'network';
+    protected const string SORT_BY_PLATFORM = 'platform';
+    protected const string SORT_BY_UPS = 'ups';
+    protected const string SORT_DIRECTION_ASC = 'asc';
+    protected const string SORT_DIRECTION_DESC = 'desc';
+    protected const ALLOWED_SORT_BY = [
+        self::SORT_BY_NAME_ID,
+        self::SORT_BY_NETWORK,
+        self::SORT_BY_PLATFORM,
+        self::SORT_BY_UPS,
+    ];
+    protected const ALLOWED_SORT_DIRECTIONS = [
+        self::SORT_DIRECTION_ASC,
+        self::SORT_DIRECTION_DESC,
+    ];
 
     public function __construct(
         protected DeviceService $deviceService,
@@ -46,6 +62,8 @@ class DeviceController extends AbstractController
     public function index(Request $request): Response
     {
         $selectedPlatform = $this->resolvePlatformFilter(trim((string)$request->query->get('platform', '')));
+        $sortBy = $this->resolveSortBy((string)$request->query->get('sort_by', self::SORT_BY_NETWORK));
+        $sortDirection = $this->resolveSortDirection((string)$request->query->get('sort_dir', self::SORT_DIRECTION_ASC));
         $page = max(1, (int)$request->query->get('page', 1));
         $perPage = ActionLogService::DEFAULT_LIST_LIMIT;
 
@@ -59,6 +77,7 @@ class DeviceController extends AbstractController
                 static fn (array $device): bool => ($device['platform_key'] ?? '') === $selectedPlatform
             ));
         }
+        $this->sortDevices($devices, $sortBy, $sortDirection);
 
         $total = count($devices);
         $totalPages = max(1, (int)ceil($total / $perPage));
@@ -81,6 +100,8 @@ class DeviceController extends AbstractController
             'per_page' => $perPage,
             'total' => $total,
             'total_pages' => $totalPages,
+            'current_sort_by' => $sortBy,
+            'current_sort_dir' => $sortDirection,
         ]);
     }
 
@@ -180,6 +201,15 @@ class DeviceController extends AbstractController
 
         return $this->render('devices/form.html.twig', [
             'page_title' => sprintf('Edit Device #%d', $id),
+            'breadcrumbs' => [
+                [
+                    'label' => 'Devices',
+                    'href' => $this->generateUrl('hat_devices_index'),
+                ],
+                [
+                    'label' => sprintf('Edit Device #%d', $id),
+                ],
+            ],
             'mode' => 'edit',
             'device' => $device,
             'form_data' => $formData,
@@ -444,6 +474,148 @@ class DeviceController extends AbstractController
         }
 
         return in_array($platform, DevicePlatform::values(), true) ? $platform : null;
+    }
+
+    protected function resolveSortBy(string $sortBy): string
+    {
+        return in_array($sortBy, self::ALLOWED_SORT_BY, true) ? $sortBy : self::SORT_BY_NETWORK;
+    }
+
+    protected function resolveSortDirection(string $sortDirection): string
+    {
+        return in_array($sortDirection, self::ALLOWED_SORT_DIRECTIONS, true)
+            ? $sortDirection
+            : self::SORT_DIRECTION_ASC;
+    }
+
+    protected function sortDevices(array &$devices, string $sortBy, string $sortDirection): void
+    {
+        usort(
+            $devices,
+            function (array $left, array $right) use ($sortBy, $sortDirection): int {
+                $comparison = match ($sortBy) {
+                    self::SORT_BY_NAME_ID => $this->compareDevicesByNameId($left, $right),
+                    self::SORT_BY_PLATFORM => $this->compareDevicesByPlatform($left, $right),
+                    self::SORT_BY_UPS => $this->compareDevicesByUps($left, $right),
+                    default => $this->compareDevicesByNetwork($left, $right),
+                };
+
+                if ($comparison === 0 && $sortBy !== self::SORT_BY_NAME_ID) {
+                    $comparison = $this->compareDevicesByNameId($left, $right);
+                }
+
+                if ($sortDirection === self::SORT_DIRECTION_DESC) {
+                    return -$comparison;
+                }
+
+                return $comparison;
+            }
+        );
+    }
+
+    protected function compareDevicesByNameId(array $left, array $right): int
+    {
+        $leftId = $this->resolveDeviceIdForSorting($left);
+        $rightId = $this->resolveDeviceIdForSorting($right);
+        $idComparison = $leftId <=> $rightId;
+        if ($idComparison !== 0) {
+            return $idComparison;
+        }
+
+        return strcasecmp((string)($left['name'] ?? ''), (string)($right['name'] ?? ''));
+    }
+
+    protected function compareDevicesByNetwork(array $left, array $right): int
+    {
+        $leftIp = trim((string)($left['ip'] ?? ''));
+        $rightIp = trim((string)($right['ip'] ?? ''));
+        $leftIpBinary = inet_pton($leftIp);
+        $rightIpBinary = inet_pton($rightIp);
+
+        if ($leftIpBinary !== false && $rightIpBinary !== false) {
+            $lengthComparison = strlen($leftIpBinary) <=> strlen($rightIpBinary);
+            if ($lengthComparison !== 0) {
+                return $lengthComparison;
+            }
+
+            $binaryComparison = strcmp($leftIpBinary, $rightIpBinary);
+            if ($binaryComparison !== 0) {
+                return $binaryComparison;
+            }
+        }
+
+        return strcasecmp($leftIp, $rightIp);
+    }
+
+    protected function compareDevicesByPlatform(array $left, array $right): int
+    {
+        $leftPlatformKey = (string)($left['platform_key'] ?? '');
+        $rightPlatformKey = (string)($right['platform_key'] ?? '');
+        $platformComparison = strcasecmp($leftPlatformKey, $rightPlatformKey);
+        if ($platformComparison !== 0) {
+            return $platformComparison;
+        }
+
+        return strcasecmp((string)($left['platform'] ?? ''), (string)($right['platform'] ?? ''));
+    }
+
+    protected function compareDevicesByUps(array $left, array $right): int
+    {
+        $leftUps = $this->resolveUpsSortData((string)($left['ups'] ?? '-'));
+        $rightUps = $this->resolveUpsSortData((string)($right['ups'] ?? '-'));
+
+        $leftHasUps = $leftUps['has_ups'];
+        $rightHasUps = $rightUps['has_ups'];
+        if ($leftHasUps !== $rightHasUps) {
+            return $leftHasUps ? -1 : 1;
+        }
+
+        $upsNameComparison = strcasecmp($leftUps['name'], $rightUps['name']);
+        if ($upsNameComparison !== 0) {
+            return $upsNameComparison;
+        }
+
+        return $leftUps['id'] <=> $rightUps['id'];
+    }
+
+    protected function resolveDeviceIdForSorting(array $device): int
+    {
+        $deviceId = filter_var(
+            $device['id'] ?? null,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+        if ($deviceId === false) {
+            return PHP_INT_MAX;
+        }
+
+        return (int)$deviceId;
+    }
+
+    protected function resolveUpsSortData(string $upsLink): array
+    {
+        $normalizedUpsLink = trim($upsLink);
+        if ($normalizedUpsLink === '' || $normalizedUpsLink === '-') {
+            return [
+                'has_ups' => false,
+                'id' => 0,
+                'name' => '',
+            ];
+        }
+
+        $parts = explode(':', $normalizedUpsLink, 2);
+        $upsId = filter_var(
+            $parts[0] ?? null,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+        $upsName = $parts[1] ?? $normalizedUpsLink;
+
+        return [
+            'has_ups' => true,
+            'id' => $upsId === false ? 0 : (int)$upsId,
+            'name' => trim($upsName),
+        ];
     }
 
     protected function safeCreateWebLog(string|ActionLogAction $action, string $level, string $message): void

@@ -23,9 +23,18 @@
         'generic': 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300'
     } %}
     {% set nas_platforms = ['synology_dsm', 'asustor_adm', 'qnap_qts'] %}
+    {% set sort_by = current_sort_by|default('network') %}
+    {% set sort_dir = current_sort_dir|default('asc') %}
+    {% set current_query = app.request.query.all %}
+    {% set name_id_next_dir = sort_by == 'name_id' and sort_dir == 'asc' ? 'desc' : 'asc' %}
+    {% set network_next_dir = sort_by == 'network' and sort_dir == 'asc' ? 'desc' : 'asc' %}
+    {% set platform_next_dir = sort_by == 'platform' and sort_dir == 'asc' ? 'desc' : 'asc' %}
+    {% set ups_next_dir = sort_by == 'ups' and sort_dir == 'asc' ? 'desc' : 'asc' %}
 
     <div class="mb-6 flex items-center justify-end">
         <form method="get" class="flex items-center gap-2">
+            <input type="hidden" name="sort_by" value="{{ sort_by }}">
+            <input type="hidden" name="sort_dir" value="{{ sort_dir }}">
             <label for="platform-filter" class="text-sm text-slate-500 dark:text-slate-400">Platform</label>
             <select
                 id="platform-filter"
@@ -41,7 +50,7 @@
                 {% endfor %}
             </select>
             {% if selected_platform is not null %}
-                <a href="{{ path('hat_devices_index') }}" class="px-3 py-2 text-xs rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
+                <a href="{{ path('hat_devices_index', { sort_by: sort_by, sort_dir: sort_dir }) }}" class="px-3 py-2 text-xs rounded border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700">
                     Reset
                 </a>
             {% endif %}
@@ -56,10 +65,38 @@
                 <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
                     <thead class="bg-slate-50 dark:bg-slate-700/50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name / ID</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Network</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Platform</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">UPS Link</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                <a href="{{ path('hat_devices_index', current_query|merge({ sort_by: 'name_id', sort_dir: name_id_next_dir, page: 1 })) }}" class="inline-flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200">
+                                    Name / ID
+                                    {% if sort_by == 'name_id' %}
+                                        <span class="text-[10px]">{{ sort_dir == 'asc' ? 'ASC' : 'DESC' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                <a href="{{ path('hat_devices_index', current_query|merge({ sort_by: 'network', sort_dir: network_next_dir, page: 1 })) }}" class="inline-flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200">
+                                    Network
+                                    {% if sort_by == 'network' %}
+                                        <span class="text-[10px]">{{ sort_dir == 'asc' ? 'ASC' : 'DESC' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                <a href="{{ path('hat_devices_index', current_query|merge({ sort_by: 'platform', sort_dir: platform_next_dir, page: 1 })) }}" class="inline-flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200">
+                                    Platform
+                                    {% if sort_by == 'platform' %}
+                                        <span class="text-[10px]">{{ sort_dir == 'asc' ? 'ASC' : 'DESC' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                <a href="{{ path('hat_devices_index', current_query|merge({ sort_by: 'ups', sort_dir: ups_next_dir, page: 1 })) }}" class="inline-flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200">
+                                    UPS Link
+                                    {% if sort_by == 'ups' %}
+                                        <span class="text-[10px]">{{ sort_dir == 'asc' ? 'ASC' : 'DESC' }}</span>
+                                    {% endif %}
+                                </a>
+                            </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">UPS Low Runtime Threshold</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
