@@ -47,27 +47,27 @@
                 </button>
                 <div class="min-w-0">
                     {% if breadcrumbs is defined and breadcrumbs is not empty %}
-                        <nav aria-label="Breadcrumb" class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800 dark:text-white truncate">
                             {% for breadcrumb in breadcrumbs %}
                                 {% if not loop.first %}
-                                    <span class="mx-1">-></span>
+                                    <span class="mx-1 text-slate-500 dark:text-slate-400">&gt;</span>
                                 {% endif %}
 
                                 {% set breadcrumb_label = breadcrumb.label|default('') %}
                                 {% set breadcrumb_href = breadcrumb.href|default('') %}
 
                                 {% if breadcrumb_href != '' and not loop.last %}
-                                    <a href="{{ breadcrumb_href }}" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                    <a href="{{ breadcrumb_href }}" class="text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                                         {{ breadcrumb_label }}
                                     </a>
                                 {% else %}
-                                    <span class="text-slate-500 dark:text-slate-400">{{ breadcrumb_label }}</span>
+                                    <span>{{ breadcrumb_label }}</span>
                                 {% endif %}
                             {% endfor %}
-                        </nav>
+                        </h2>
+                    {% else %}
+                        <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800 dark:text-white">{{ page_title|default('Dashboard') }}</h2>
                     {% endif %}
-
-                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-slate-800 dark:text-white">{{ page_title|default('Dashboard') }}</h2>
                 </div>
             </div>
             <div class="flex gap-4 items-center">
