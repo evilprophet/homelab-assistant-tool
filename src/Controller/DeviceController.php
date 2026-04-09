@@ -25,7 +25,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/devices')]
 class DeviceController extends AbstractController
 {
-    protected const string MAC_PATTERN = '/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/';
+    protected const string MAC_PATTERN = '/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i';
     protected const string CSRF_DEVICE_FORM_CREATE = 'device.form.create';
     protected const string CSRF_DEVICE_FORM_EDIT_PREFIX = 'device.form.edit.';
     protected const string CSRF_DEVICE_REMOVE_PREFIX = 'device.remove.';
@@ -353,7 +353,7 @@ class DeviceController extends AbstractController
 
     protected function extractFormData(Request $request): array
     {
-        $mac = str_replace('-', ':', mb_strtolower(trim((string)$request->request->get('mac', ''))));
+        $mac = str_replace('-', ':', trim((string)$request->request->get('mac', '')));
         $username = trim((string)$request->request->get('username', ''));
 
         return [

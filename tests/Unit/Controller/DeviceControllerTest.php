@@ -34,7 +34,7 @@ class DeviceControllerTest extends TestCase
 
         $result = $controller->callExtractFormData($request);
 
-        $this->assertSame('aa:bb:cc:dd:ee:ff', $result['mac']);
+        $this->assertSame('AA:BB:CC:DD:EE:FF', $result['mac']);
         $this->assertSame('node-1', $result['name']);
     }
 

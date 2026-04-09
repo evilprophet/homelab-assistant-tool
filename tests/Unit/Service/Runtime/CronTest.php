@@ -11,6 +11,7 @@ use EvilStudio\HAT\Contract\DeviceInterface;
 use EvilStudio\HAT\Contract\ScheduleInterface;
 use EvilStudio\HAT\Contract\UpsInterface;
 use EvilStudio\HAT\Entity\ActionLog;
+use EvilStudio\HAT\Exception\UnsupportedDeviceAction;
 use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Application\ScheduleService;
@@ -50,8 +51,8 @@ class CronTest extends TestCase
             ->willReturn($runtimeUps);
         $runtimeUps->expects($this->once())->method('updateStatus');
         $runtimeUps->expects($this->once())->method('isBatteryRuntimeLow')->willReturn(true);
-        $runtimeDevice->expects($this->once())->method('stop');
-        $runtimeDevice->expects($this->once())->method('getName')->willReturn('node-1');
+        $runtimeDevice->expects($this->exactly(2))->method('getName')->willReturn('node-1');
+        $deviceOperations->expects($this->once())->method('stopDevice')->with('node-1');
         $scheduleService->expects($this->never())->method('listEnabledSchedules');
 
         $cron = new Cron($deviceOperations, $upsRuntimeService, $scheduleService, $configuration, $actionLogService);
@@ -89,7 +90,7 @@ class CronTest extends TestCase
         $runtimeDevice->expects($this->once())->method('checkStatus');
         $runtimeDevice->expects($this->once())->method('getStatus')->willReturn(false);
         $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn(null);
-        $runtimeDevice->expects($this->once())->method('start')->willReturn(true);
+        $deviceOperations->expects($this->once())->method('startDevice')->with('node-1')->willReturn(true);
 
         $cron = new Cron($deviceOperations, $upsRuntimeService, $scheduleService, $configuration, $actionLogService);
         $cron->execute();
@@ -132,8 +133,8 @@ class CronTest extends TestCase
         $runtimeUps->expects($this->once())->method('isBatteryRuntimeLow')->willReturn(false);
         $runtimeDevice->expects($this->once())->method('getUpsLowBatteryRuntimeThreshold')->willReturn(1200);
         $runtimeUps->expects($this->once())->method('getBatteryRuntime')->willReturn(600);
-        $runtimeDevice->expects($this->once())->method('stop');
-        $runtimeDevice->expects($this->once())->method('getName')->willReturn('node-2');
+        $runtimeDevice->expects($this->exactly(2))->method('getName')->willReturn('node-2');
+        $deviceOperations->expects($this->once())->method('stopDevice')->with('node-2');
         $scheduleService->expects($this->never())->method('listEnabledSchedules');
 
         $cron = new Cron($deviceOperations, $upsRuntimeService, $scheduleService, $configuration, $actionLogService);
@@ -178,6 +179,48 @@ class CronTest extends TestCase
         $this->assertContains('[UPS Battery Mode enabled]', array_column($capturedLogs, 'message'));
         $this->assertContains(
             "Error processing device 'node-3': ups unavailable.",
+            array_column($capturedLogs, 'message')
+        );
+    }
+
+    public function testExecuteInBatteryModeSkipsUnsupportedStopAction(): void
+    {
+        $deviceOperations = $this->createMock(DeviceOperationsService::class);
+        $upsRuntimeService = $this->createMock(UpsRuntimeService::class);
+        $scheduleService = $this->createMock(ScheduleService::class);
+        $configuration = $this->createMock(Configuration::class);
+        $actionLogService = $this->createMock(ActionLogService::class);
+        $runtimeDevice = $this->createMock(DeviceInterface::class);
+        $runtimeUps = $this->createMock(UpsInterface::class);
+        $capturedLogs = [];
+
+        $this->captureLogs($actionLogService, $capturedLogs, 2);
+
+        $upsRuntimeService->expects($this->once())->method('updateAllUpsStatus');
+        $configuration->expects($this->once())->method('isUpsModeEnabled')->willReturn(true);
+        $upsRuntimeService->expects($this->once())->method('isAnyUpsOnBattery')->willReturn(true);
+        $deviceOperations->expects($this->once())->method('listDevices')->with(true)->willReturn([$runtimeDevice]);
+        $runtimeDevice->expects($this->once())->method('getStatus')->willReturn(true);
+        $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn('ups-main');
+        $upsRuntimeService->expects($this->once())
+            ->method('getRuntimeUpsByIdentifier')
+            ->with('ups-main')
+            ->willReturn($runtimeUps);
+        $runtimeUps->expects($this->once())->method('updateStatus');
+        $runtimeUps->expects($this->once())->method('isBatteryRuntimeLow')->willReturn(true);
+        $runtimeDevice->expects($this->exactly(2))->method('getName')->willReturn('node-unsupported');
+        $deviceOperations->expects($this->once())
+            ->method('stopDevice')
+            ->with('node-unsupported')
+            ->willThrowException(new UnsupportedDeviceAction("Stop action is not supported on 'synology_dsm' device."));
+        $scheduleService->expects($this->never())->method('listEnabledSchedules');
+
+        $cron = new Cron($deviceOperations, $upsRuntimeService, $scheduleService, $configuration, $actionLogService);
+        $cron->execute();
+
+        $this->assertContains('[UPS Battery Mode enabled]', array_column($capturedLogs, 'message'));
+        $this->assertContains(
+            "Device 'node-unsupported' action skipped: Stop action is not supported on 'synology_dsm' device.",
             array_column($capturedLogs, 'message')
         );
     }

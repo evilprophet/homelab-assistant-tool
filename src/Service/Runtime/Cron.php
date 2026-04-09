@@ -9,6 +9,7 @@ use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Contract\ScheduleInterface;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Entity\Device;
+use EvilStudio\HAT\Exception\UnsupportedDeviceAction;
 use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Application\ScheduleService;
@@ -60,7 +61,7 @@ class Cron
                 $batteryRuntime = $ups->getBatteryRuntime();
 
                 if ($ups->isBatteryRuntimeLow()) {
-                    $device->stop();
+                    $this->deviceOperationsService->stopDevice($device->getName());
                     $this->logInfo(
                         sprintf("Device '%s' stopped - UPS '%s' has low battery.", $device->getName(), $upsIdentifier)
                     );
@@ -79,7 +80,7 @@ class Cron
                             )
                         );
                     } elseif ($deviceRuntimeThreshold > $batteryRuntime) {
-                        $device->stop();
+                        $this->deviceOperationsService->stopDevice($device->getName());
                         $this->logInfo(
                             sprintf(
                                 "Device '%s' stopped - UPS '%s' has too low battery for this device.",
@@ -100,6 +101,10 @@ class Cron
                         $upsIdentifier,
                         $runtimeInfo
                     )
+                );
+            } catch (UnsupportedDeviceAction $e) {
+                $this->logInfo(
+                    sprintf("Device '%s' action skipped: %s", $device->getName(), $e->getMessage())
                 );
             } catch (Exception $e) {
                 $this->logError(
@@ -183,8 +188,12 @@ class Cron
                     }
                 }
 
-                $device->start();
+                $this->deviceOperationsService->startDevice($deviceName);
                 $this->logInfo(sprintf("Device '%s' started.", $deviceName));
+            } catch (UnsupportedDeviceAction $e) {
+                $this->logInfo(
+                    sprintf("Device '%s' action skipped: %s", $deviceName, $e->getMessage())
+                );
             } catch (Exception $e) {
                 $this->logError($e->getMessage());
             }
@@ -203,8 +212,12 @@ class Cron
                     continue;
                 }
 
-                $device->stop();
+                $this->deviceOperationsService->stopDevice($deviceName);
                 $this->logInfo(sprintf("Device '%s' stopped.", $deviceName));
+            } catch (UnsupportedDeviceAction $e) {
+                $this->logInfo(
+                    sprintf("Device '%s' action skipped: %s", $deviceName, $e->getMessage())
+                );
             } catch (Exception $e) {
                 $this->logError($e->getMessage());
             }

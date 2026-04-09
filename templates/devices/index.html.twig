@@ -18,8 +18,11 @@
         'proxmox_bs': 'border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300',
         'proxmox_ve': 'border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300',
         'synology_dsm': 'border-cyan-200 dark:border-cyan-700 text-cyan-700 dark:text-cyan-300',
+        'asustor_adm': 'border-cyan-200 dark:border-cyan-700 text-cyan-700 dark:text-cyan-300',
+        'qnap_qts': 'border-cyan-200 dark:border-cyan-700 text-cyan-700 dark:text-cyan-300',
         'generic': 'border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300'
     } %}
+    {% set nas_platforms = ['synology_dsm', 'asustor_adm', 'qnap_qts'] %}
 
     <div class="mb-6 flex items-center justify-end">
         <form method="get" class="flex items-center gap-2">
@@ -67,7 +70,7 @@
                             {% set status = status_by_name[device.name]|default('unknown') %}
                             {% set platform_key = device.platform_key|default(device.platform) %}
                             {% set is_linux_runtime = platform_linux_runtime[platform_key]|default(false) %}
-                            {% set icon_variant = platform_key == 'synology_dsm' ? 'nas' : (is_linux_runtime ? 'linux' : 'default') %}
+                            {% set icon_variant = platform_key in nas_platforms ? 'nas' : (is_linux_runtime ? 'linux' : 'default') %}
                             {% set icon_colors = icon_variant == 'nas'
                                 ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300'
                                 : (icon_variant == 'linux'

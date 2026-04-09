@@ -95,7 +95,7 @@ class Device
 
     public function setMac(string $mac): self
     {
-        $this->mac = $mac;
+        $this->mac = str_replace('-', ':', mb_strtoupper(trim($mac)));
 
         return $this;
     }
@@ -148,11 +148,11 @@ class Device
         }
 
         $previousUps = $this->ups;
-        $this->ups = $ups;
-
-        if ($previousUps !== null && $previousUps->getDevices()->contains($this)) {
+        if ($previousUps !== null) {
             $previousUps->getDevices()->removeElement($this);
         }
+
+        $this->ups = $ups;
 
         if ($ups !== null && !$ups->getDevices()->contains($this)) {
             $ups->getDevices()->add($this);

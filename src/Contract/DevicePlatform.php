@@ -8,6 +8,8 @@ enum DevicePlatform: string
 {
     case GENERIC = 'generic';
     case SYNOLOGY_DSM = 'synology_dsm';
+    case ASUSTOR_ADM = 'asustor_adm';
+    case QNAP_QTS = 'qnap_qts';
     case LINUX = 'linux';
     case DEBIAN = 'debian';
     case UBUNTU = 'ubuntu';
@@ -35,6 +37,8 @@ enum DevicePlatform: string
         return match ($this) {
             self::GENERIC => 'Generic',
             self::SYNOLOGY_DSM => 'Synology DSM',
+            self::ASUSTOR_ADM => 'Asustor ADM',
+            self::QNAP_QTS => 'QNAP QTS',
             self::LINUX => 'Linux',
             self::DEBIAN => 'Debian',
             self::UBUNTU => 'Ubuntu',
@@ -60,5 +64,22 @@ enum DevicePlatform: string
             self::LINUX, self::DEBIAN, self::UBUNTU, self::PROXMOX_DM, self::PROXMOX_BS, self::PROXMOX_VE => true,
             default => false
         };
+    }
+
+    public function supportedActions(): array
+    {
+        return match ($this) {
+            self::LINUX, self::DEBIAN, self::UBUNTU, self::PROXMOX_DM, self::PROXMOX_BS, self::PROXMOX_VE => [
+                DeviceAction::START,
+                DeviceAction::STOP,
+                DeviceAction::SSH,
+            ],
+            default => [DeviceAction::START],
+        };
+    }
+
+    public function supportsAction(DeviceAction $action): bool
+    {
+        return in_array($action, $this->supportedActions(), true);
     }
 }

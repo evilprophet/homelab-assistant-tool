@@ -116,7 +116,7 @@ class DeviceControllerFunctionalTest extends HttpFunctionalTestCase
         $updatedDevice = static::getContainer()->get(DeviceService::class)->getDeviceById((int)$device->getId());
         $this->assertSame('node-1-renamed', $updatedDevice->getName());
         $this->assertSame('10.0.0.20', $updatedDevice->getIp());
-        $this->assertSame('aa:bb:cc:dd:ee:ff', $updatedDevice->getMac());
+        $this->assertSame('AA:BB:CC:DD:EE:FF', $updatedDevice->getMac());
         $this->assertSame(DevicePlatform::LINUX->value, $updatedDevice->getPlatform());
         $this->assertSame('admin', $updatedDevice->getUsername());
         $this->assertNotNull($updatedDevice->getUps());

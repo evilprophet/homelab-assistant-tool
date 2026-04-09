@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Service\Runtime;
 
+use EvilStudio\HAT\Contract\DeviceAction;
 use EvilStudio\HAT\Contract\DeviceInterface;
+use EvilStudio\HAT\Contract\DevicePlatform;
+use EvilStudio\HAT\Exception\UnsupportedDeviceAction;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class DeviceOperationsService
@@ -47,16 +50,43 @@ class DeviceOperationsService
 
     public function startDevice(string $name): bool
     {
-        return $this->getDevice($name)->start();
+        $device = $this->getDevice($name);
+        $this->assertActionSupported($device, DeviceAction::START);
+
+        return $device->start();
     }
 
     public function stopDevice(string $name): bool
     {
-        return $this->getDevice($name)->stop();
+        $device = $this->getDevice($name);
+        $this->assertActionSupported($device, DeviceAction::STOP);
+
+        return $device->stop();
     }
 
     public function sshIntoDevice(string $name, OutputInterface $output): void
     {
-        $this->getDevice($name)->ssh($output);
+        $device = $this->getDevice($name);
+        $this->assertActionSupported($device, DeviceAction::SSH);
+
+        $device->ssh($output);
+    }
+
+    protected function assertActionSupported(DeviceInterface $device, DeviceAction $action): void
+    {
+        $platform = $device->getPlatform();
+        $resolvedPlatform = DevicePlatform::tryFrom($platform);
+
+        if ($resolvedPlatform !== null && $resolvedPlatform->supportsAction($action)) {
+            return;
+        }
+
+        if ($resolvedPlatform === null && $action === DeviceAction::START) {
+            return;
+        }
+
+        throw new UnsupportedDeviceAction(
+            sprintf("%s action is not supported on '%s' device.", $action->label(), $platform)
+        );
     }
 }

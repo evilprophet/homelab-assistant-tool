@@ -15,6 +15,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Throwable;
 
 #[AsCommand(name: 'hat:device:stop', description: 'Stop device')]
 class StopDeviceCommand extends AbstractDeviceCommand
@@ -43,7 +44,14 @@ class StopDeviceCommand extends AbstractDeviceCommand
             return Command::FAILURE;
         }
 
-        $result = $this->deviceOperationsService->stopDevice($device->getName());
+        try {
+            $result = $this->deviceOperationsService->stopDevice($device->getName());
+        } catch (Throwable $exception) {
+            $outputHelper->error($exception->getMessage());
+
+            return Command::FAILURE;
+        }
+
         $message = sprintf("Device '%s' stopped: %s.", $device->getName(), $result ? 'yes' : 'no');
         $outputHelper->note($message);
 
