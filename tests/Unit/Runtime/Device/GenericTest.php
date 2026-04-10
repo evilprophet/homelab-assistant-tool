@@ -90,7 +90,19 @@ class GenericTest extends TestCase
     public function testStopAndSshThrowUnsupportedAction(): void
     {
         $device = new Generic($this->createConfiguration('root'), $this->createMock(NetworkService::class));
-        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'generic', null, null, null, 'admin', null, true);
+        $device->configure(
+            1,
+            'node-1',
+            '10.0.0.10',
+            '00:11:22:33:44:55',
+            'generic',
+            null,
+            null,
+            null,
+            'admin',
+            null,
+            true
+        );
 
         $this->expectException(UnsupportedDeviceAction::class);
         $this->expectExceptionMessage("Stop action is not supported on 'generic' device.");
@@ -100,7 +112,19 @@ class GenericTest extends TestCase
     public function testSshThrowsUnsupportedAction(): void
     {
         $device = new Generic($this->createConfiguration('root'), $this->createMock(NetworkService::class));
-        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'generic', null, null, null, 'admin', null, true);
+        $device->configure(
+            1,
+            'node-1',
+            '10.0.0.10',
+            '00:11:22:33:44:55',
+            'generic',
+            null,
+            null,
+            null,
+            'admin',
+            null,
+            true
+        );
 
         $this->expectException(UnsupportedDeviceAction::class);
         $this->expectExceptionMessage("SSH action is not supported on 'generic' device.");
