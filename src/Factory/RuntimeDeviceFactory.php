@@ -31,8 +31,9 @@ class RuntimeDeviceFactory
             $ups?->getId(),
             $ups?->getName(),
             $ups?->getIdentifier(),
+            $device->getUsername(),
             $device->getUpsLowBatteryRuntimeThreshold(),
-            $device->getUsername()
+            $device->isAutoStopAllowed()
         );
 
         return $runtimeDevice;

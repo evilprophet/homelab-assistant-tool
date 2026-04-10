@@ -26,8 +26,9 @@ class GenericTest extends TestCase
             2,
             'Main UPS',
             'ups-main',
+            null,
             600,
-            null
+            true
         );
         $networkService->expects($this->once())->method('ping')->with('10.0.0.10')->willReturn(true);
 
@@ -36,6 +37,7 @@ class GenericTest extends TestCase
 
         $this->assertSame('root', $device->getUsername());
         $this->assertSame('online', $data['status']);
+        $this->assertSame('yes', $data['auto_stop']);
         $this->assertSame('10 min', $data['ups_low_battery_runtime_threshold']);
     }
 
@@ -51,8 +53,9 @@ class GenericTest extends TestCase
             null,
             null,
             null,
+            '',
             null,
-            ''
+            true
         );
 
         $this->assertSame('root', $device->getUsername());
@@ -76,8 +79,9 @@ class GenericTest extends TestCase
             null,
             null,
             null,
+            'admin',
             null,
-            'admin'
+            true
         );
 
         $this->assertFalse($device->start());
@@ -86,7 +90,7 @@ class GenericTest extends TestCase
     public function testStopAndSshThrowUnsupportedAction(): void
     {
         $device = new Generic($this->createConfiguration('root'), $this->createMock(NetworkService::class));
-        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'generic', null, null, null, null, 'admin');
+        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'generic', null, null, null, 'admin', null, true);
 
         $this->expectException(UnsupportedDeviceAction::class);
         $this->expectExceptionMessage("Stop action is not supported on 'generic' device.");
@@ -96,7 +100,7 @@ class GenericTest extends TestCase
     public function testSshThrowsUnsupportedAction(): void
     {
         $device = new Generic($this->createConfiguration('root'), $this->createMock(NetworkService::class));
-        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'generic', null, null, null, null, 'admin');
+        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'generic', null, null, null, 'admin', null, true);
 
         $this->expectException(UnsupportedDeviceAction::class);
         $this->expectExceptionMessage("SSH action is not supported on 'generic' device.");

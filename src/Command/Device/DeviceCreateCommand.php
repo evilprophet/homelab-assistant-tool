@@ -53,12 +53,20 @@ class DeviceCreateCommand extends Command
                 null,
                 InputOption::VALUE_REQUIRED,
                 'UPS low battery runtime threshold in seconds'
-            );
+            )
+            ->addOption('allow-auto-stop', null, InputOption::VALUE_NONE, 'Allow automatic shutdown by cron')
+            ->addOption('disallow-auto-stop', null, InputOption::VALUE_NONE, 'Disable automatic shutdown by cron');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        if ($input->getOption('allow-auto-stop') && $input->getOption('disallow-auto-stop')) {
+            $io->error('Use either --allow-auto-stop or --disallow-auto-stop, not both.');
+
+            return Command::FAILURE;
+        }
 
         $name = $this->resolveRequiredArgument($input, $io, 'name', 'Device name');
         if ($name === null) {
@@ -121,6 +129,15 @@ class DeviceCreateCommand extends Command
             }
         }
 
+        $autoStopAllowed = true;
+        if ($input->getOption('allow-auto-stop')) {
+            $autoStopAllowed = true;
+        } elseif ($input->getOption('disallow-auto-stop')) {
+            $autoStopAllowed = false;
+        } elseif ($input->isInteractive()) {
+            $autoStopAllowed = $io->confirm('Auto stop allowed?', true);
+        }
+
         try {
             $device = $this->deviceService->createDevice(
                 $name,
@@ -129,7 +146,8 @@ class DeviceCreateCommand extends Command
                 $platform,
                 $username,
                 $upsLowBatteryRuntimeThreshold,
-                $upsId
+                $upsId,
+                $autoStopAllowed
             );
         } catch (EntityAlreadyExists | EntityNotFound $exception) {
             $io->error($exception->getMessage());

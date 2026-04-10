@@ -139,6 +139,7 @@ class CronDatabaseIntegrationTest extends DatabaseIntegrationTestCase
         $deviceOperationsService->expects($this->never())->method('getDevice');
 
         $runtimeDevice->expects($this->once())->method('getStatus')->willReturn(true);
+        $runtimeDevice->expects($this->once())->method('isAutoStopAllowed')->willReturn(true);
         $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn('ups-main');
         $runtimeDevice->expects($this->once())->method('getUpsLowBatteryRuntimeThreshold')->willReturn(1200);
         $runtimeDevice->expects($this->once())->method('getName')->willReturn('node-4');

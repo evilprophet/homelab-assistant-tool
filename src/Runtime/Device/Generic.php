@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Runtime\Device;
 
+use EvilStudio\HAT\Contract\DeviceAction;
 use EvilStudio\HAT\Contract\DeviceInterface;
 use EvilStudio\HAT\Contract\DevicePlatform;
 use EvilStudio\HAT\Exception\UnsupportedDeviceAction;
@@ -29,8 +30,9 @@ class Generic implements DeviceInterface
     protected ?int $upsId;
     protected ?string $upsName;
     protected ?string $upsIdentifier;
-    protected int $upsLowBatteryRuntimeThreshold;
     protected string $username;
+    protected int $upsLowBatteryRuntimeThreshold;
+    protected bool $autoStopAllowed = true;
     protected ?bool $status = null;
 
     public function configure(
@@ -42,8 +44,9 @@ class Generic implements DeviceInterface
         ?int $upsId,
         ?string $upsName,
         ?string $upsIdentifier,
+        ?string $username,
         ?int $upsLowBatteryRuntimeThreshold,
-        ?string $username
+        bool $autoStopAllowed
     ): DeviceInterface {
         $this->id = $id;
         $this->name = $name;
@@ -53,8 +56,9 @@ class Generic implements DeviceInterface
         $this->upsId = $upsId;
         $this->upsName = $upsName;
         $this->upsIdentifier = $upsIdentifier;
-        $this->upsLowBatteryRuntimeThreshold = (int)$upsLowBatteryRuntimeThreshold;
         $this->username = empty($username) ? $this->configuration->getDefaultSshUsername() : $username;
+        $this->upsLowBatteryRuntimeThreshold = (int)$upsLowBatteryRuntimeThreshold;
+        $this->autoStopAllowed = $autoStopAllowed;
 
         return $this;
     }
@@ -84,7 +88,8 @@ class Generic implements DeviceInterface
             'platform' => $platformLabel,
             'platform_key' => $platformKey,
             'ups' => $upsLink,
-            'ups_low_battery_runtime_threshold' => $upsLowBatteryRuntimeThreshold
+            'ups_low_battery_runtime_threshold' => $upsLowBatteryRuntimeThreshold,
+            'auto_stop' => $this->isAutoStopAllowed() ? 'yes' : 'no',
         ];
 
         if ($this->getStatus() !== null) {
@@ -119,14 +124,19 @@ class Generic implements DeviceInterface
         return $this->upsIdentifier;
     }
 
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
+
     public function getUpsLowBatteryRuntimeThreshold(): int
     {
         return $this->upsLowBatteryRuntimeThreshold;
     }
 
-    public function getUsername(): ?string
+    public function isAutoStopAllowed(): bool
     {
-        return $this->username;
+        return $this->autoStopAllowed;
     }
 
     public function getStatus(): ?bool
@@ -156,15 +166,11 @@ class Generic implements DeviceInterface
 
     public function stop(): bool
     {
-        throw new UnsupportedDeviceAction(
-            sprintf("Stop action is not supported on '%s' device.", $this->getPlatform())
-        );
+        throw UnsupportedDeviceAction::forPlatform(DeviceAction::STOP, $this->getPlatform());
     }
 
     public function ssh(OutputInterface $output): void
     {
-        throw new UnsupportedDeviceAction(
-            sprintf("SSH action is not supported on '%s' device.", $this->getPlatform())
-        );
+        throw UnsupportedDeviceAction::forPlatform(DeviceAction::SSH, $this->getPlatform());
     }
 }

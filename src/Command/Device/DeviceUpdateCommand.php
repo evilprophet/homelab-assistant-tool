@@ -64,7 +64,9 @@ class DeviceUpdateCommand extends Command
                 null,
                 InputOption::VALUE_NONE,
                 'Clear UPS low battery runtime threshold'
-            );
+            )
+            ->addOption('allow-auto-stop', null, InputOption::VALUE_NONE, 'Allow automatic shutdown by cron')
+            ->addOption('disallow-auto-stop', null, InputOption::VALUE_NONE, 'Disable automatic shutdown by cron');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -90,6 +92,12 @@ class DeviceUpdateCommand extends Command
             $io->error(
                 'Use either --ups-low-battery-runtime-threshold or --clear-ups-low-battery-runtime-threshold, not both.'
             );
+
+            return Command::FAILURE;
+        }
+
+        if ($input->getOption('allow-auto-stop') && $input->getOption('disallow-auto-stop')) {
+            $io->error('Use either --allow-auto-stop or --disallow-auto-stop, not both.');
 
             return Command::FAILURE;
         }
@@ -180,6 +188,15 @@ class DeviceUpdateCommand extends Command
             }
         }
 
+        $autoStopAllowed = null;
+        if ($input->getOption('allow-auto-stop')) {
+            $autoStopAllowed = true;
+        } elseif ($input->getOption('disallow-auto-stop')) {
+            $autoStopAllowed = false;
+        } elseif ($input->isInteractive()) {
+            $autoStopAllowed = $io->confirm('Auto stop allowed?', $device->isAutoStopAllowed());
+        }
+
         try {
             $updatedDevice = $this->deviceService->updateDevice(
                 $deviceId,
@@ -189,7 +206,8 @@ class DeviceUpdateCommand extends Command
                 $platform,
                 $username,
                 $upsLowBatteryRuntimeThreshold,
-                $upsId
+                $upsId,
+                $autoStopAllowed
             );
         } catch (EntityAlreadyExists | EntityNotFound $exception) {
             $io->error($exception->getMessage());

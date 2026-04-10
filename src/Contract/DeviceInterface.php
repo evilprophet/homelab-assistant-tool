@@ -17,8 +17,9 @@ interface DeviceInterface
         ?int $upsId,
         ?string $upsName,
         ?string $upsIdentifier,
+        ?string $username,
         ?int $upsLowBatteryRuntimeThreshold,
-        ?string $username
+        bool $autoStopAllowed
     ): DeviceInterface;
 
     public function toArray(): array;
@@ -33,9 +34,11 @@ interface DeviceInterface
 
     public function getUpsIdentifier(): ?string;
 
+    public function getUsername(): ?string;
+
     public function getUpsLowBatteryRuntimeThreshold(): int;
 
-    public function getUsername(): ?string;
+    public function isAutoStopAllowed(): bool;
 
     public function getStatus(): ?bool;
 

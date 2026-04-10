@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EvilStudio\HAT\Controller;
 
 use EvilStudio\HAT\Contract\ActionLogAction;
+use EvilStudio\HAT\Contract\DeviceAction;
 use EvilStudio\HAT\Contract\DevicePlatform;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Entity\Device;
@@ -131,7 +132,8 @@ class DeviceController extends AbstractController
                         $formData['platform'],
                         $formData['username'],
                         $this->resolveThresholdSeconds($formData['threshold_minutes']),
-                        $this->resolveUpsId($formData['ups_id'])
+                        $this->resolveUpsId($formData['ups_id']),
+                        $formData['allow_auto_stop']
                     );
 
                     $message = sprintf("Device '%s' created with ID %d.", $device->getName(), (int)$device->getId());
@@ -152,6 +154,7 @@ class DeviceController extends AbstractController
             'errors' => $errors,
             'platforms' => DevicePlatform::values(),
             'platform_labels' => DevicePlatform::labels(),
+            'platform_supported_actions' => $this->buildPlatformSupportedActions(),
             'ups_collection' => $this->upsService->listUps(),
         ]);
     }
@@ -187,7 +190,8 @@ class DeviceController extends AbstractController
                         $formData['platform'],
                         $formData['username'],
                         $this->resolveThresholdSeconds($formData['threshold_minutes']),
-                        $this->resolveUpsId($formData['ups_id'])
+                        $this->resolveUpsId($formData['ups_id']),
+                        $formData['allow_auto_stop']
                     );
 
                     $message = sprintf("Device '%s' updated.", $updatedDevice->getName());
@@ -218,6 +222,7 @@ class DeviceController extends AbstractController
             'errors' => $errors,
             'platforms' => DevicePlatform::values(),
             'platform_labels' => DevicePlatform::labels(),
+            'platform_supported_actions' => $this->buildPlatformSupportedActions(),
             'ups_collection' => $this->upsService->listUps(),
         ]);
     }
@@ -365,6 +370,7 @@ class DeviceController extends AbstractController
             'username' => '',
             'ups_id' => '',
             'threshold_minutes' => '',
+            'allow_auto_stop' => true,
         ];
     }
 
@@ -380,6 +386,7 @@ class DeviceController extends AbstractController
             'username' => $device->getUsername() ?? '',
             'ups_id' => $device->getUps()?->getId() === null ? '' : (string)$device->getUps()->getId(),
             'threshold_minutes' => $thresholdSeconds === null ? '' : (string)max(0, (int)floor($thresholdSeconds / 60)),
+            'allow_auto_stop' => $device->isAutoStopAllowed(),
         ];
     }
 
@@ -387,6 +394,10 @@ class DeviceController extends AbstractController
     {
         $mac = str_replace('-', ':', trim((string)$request->request->get('mac', '')));
         $username = trim((string)$request->request->get('username', ''));
+        $hasAutoStopField = $request->request->has('allow_auto_stop_present');
+        $allowAutoStop = $hasAutoStopField
+            ? $request->request->getBoolean('allow_auto_stop', false)
+            : true;
 
         return [
             'name' => trim((string)$request->request->get('name', '')),
@@ -396,6 +407,7 @@ class DeviceController extends AbstractController
             'username' => $username === '' ? null : $username,
             'ups_id' => trim((string)$request->request->get('ups_id', '')),
             'threshold_minutes' => trim((string)$request->request->get('threshold_minutes', '')),
+            'allow_auto_stop' => $allowAutoStop,
         ];
     }
 
@@ -476,6 +488,19 @@ class DeviceController extends AbstractController
         }
 
         return in_array($platform, DevicePlatform::values(), true) ? $platform : null;
+    }
+
+    protected function buildPlatformSupportedActions(): array
+    {
+        $supportedActions = [];
+        foreach (DevicePlatform::cases() as $platform) {
+            $supportedActions[$platform->value] = array_map(
+                static fn (DeviceAction $action): string => $action->value,
+                $platform->supportedActions()
+            );
+        }
+
+        return $supportedActions;
     }
 
     protected function resolveSortBy(string $sortBy): string

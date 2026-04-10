@@ -27,6 +27,7 @@ class DeviceListCommandTest extends TestCase
             'platform' => 'generic',
             'platform_key' => 'generic',
             'ups' => '2:Main UPS',
+            'auto_stop' => 'yes',
             'ups_low_battery_runtime_threshold' => '5 min',
         ]);
 
@@ -36,6 +37,7 @@ class DeviceListCommandTest extends TestCase
         $this->assertSame(Command::SUCCESS, $exitCode);
         $this->assertStringContainsString('node-1', $tester->getDisplay());
         $this->assertStringContainsString('2:Main UPS', $tester->getDisplay());
+        $this->assertStringContainsString('yes', $tester->getDisplay());
         $this->assertStringContainsString('5 min', $tester->getDisplay());
     }
 }

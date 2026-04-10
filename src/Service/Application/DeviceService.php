@@ -57,7 +57,8 @@ class DeviceService extends AbstractDatabaseService
         string $platform,
         ?string $username = null,
         ?int $upsLowBatteryRuntimeThreshold = null,
-        ?int $upsId = null
+        ?int $upsId = null,
+        bool $autoStopAllowed = true
     ): Device {
         $this->ensureNameIsUnique($name);
         $this->assertSupportedPlatform($platform);
@@ -70,6 +71,7 @@ class DeviceService extends AbstractDatabaseService
             ->setPlatform($platform)
             ->setUsername($username)
             ->setUpsLowBatteryRuntimeThreshold($upsLowBatteryRuntimeThreshold)
+            ->setAutoStopAllowed($autoStopAllowed)
             ->setUps($this->resolveUps($upsId));
 
         $this->persist($device);
@@ -86,7 +88,8 @@ class DeviceService extends AbstractDatabaseService
         string $platform,
         ?string $username = null,
         ?int $upsLowBatteryRuntimeThreshold = null,
-        ?int $upsId = null
+        ?int $upsId = null,
+        ?bool $autoStopAllowed = null
     ): Device {
         $device = $this->getDeviceById($deviceId);
         $this->ensureNameIsUnique($name, $deviceId);
@@ -99,6 +102,7 @@ class DeviceService extends AbstractDatabaseService
             ->setPlatform($platform)
             ->setUsername($username)
             ->setUpsLowBatteryRuntimeThreshold($upsLowBatteryRuntimeThreshold)
+            ->setAutoStopAllowed($autoStopAllowed ?? $device->isAutoStopAllowed())
             ->setUps($this->resolveUps($upsId));
 
         $this->flush();

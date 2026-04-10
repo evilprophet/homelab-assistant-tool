@@ -38,7 +38,8 @@ class DeviceUpdateCommandTest extends TestCase
                 DevicePlatform::LINUX->value,
                 'admin',
                 120,
-                2
+                2,
+                null
             )
             ->willReturn($updatedDevice);
 
@@ -82,6 +83,7 @@ class DeviceUpdateCommandTest extends TestCase
                 DevicePlatform::GENERIC->value,
                 null,
                 null,
+                null,
                 null
             )
             ->willReturn($updatedDevice);
@@ -98,5 +100,47 @@ class DeviceUpdateCommandTest extends TestCase
 
         $this->assertSame(Command::SUCCESS, $exitCode);
         $this->assertStringContainsString("Device 'node-1-updated' updated.", $tester->getDisplay());
+    }
+
+    public function testExecuteUpdatesDeviceWithAutoStopDisabled(): void
+    {
+        $deviceService = $this->createMock(DeviceService::class);
+        $upsService = $this->createMock(UpsService::class);
+        $actionLogService = $this->createMock(ActionLogService::class);
+        $currentDevice = $this->createDeviceEntity(1, 'node-3');
+        $updatedDevice = $this->createDeviceEntity(1, 'node-3');
+
+        $deviceService->expects($this->once())->method('getDeviceById')->with(1)->willReturn($currentDevice);
+        $deviceService->expects($this->once())
+            ->method('updateDevice')
+            ->with(
+                1,
+                'node-3',
+                '10.0.0.30',
+                '00:11:22:33:44:77',
+                DevicePlatform::GENERIC->value,
+                null,
+                null,
+                null,
+                false
+            )
+            ->willReturn($updatedDevice);
+
+        $actionLogService->expects($this->once())
+            ->method('createActionLog')
+            ->with(ActionLog::SOURCE_CLI, 'device.update', ActionLog::LEVEL_INFO, "Device 'node-3' updated.");
+
+        $tester = new CommandTester(new DeviceUpdateCommand($deviceService, $upsService, $actionLogService));
+        $exitCode = $tester->execute([
+            'id' => '1',
+            '--name' => 'node-3',
+            '--ip' => '10.0.0.30',
+            '--mac' => '00:11:22:33:44:77',
+            '--platform' => DevicePlatform::GENERIC->value,
+            '--disallow-auto-stop' => true,
+        ], ['interactive' => false]);
+
+        $this->assertSame(Command::SUCCESS, $exitCode);
+        $this->assertStringContainsString("Device 'node-3' updated.", $tester->getDisplay());
     }
 }

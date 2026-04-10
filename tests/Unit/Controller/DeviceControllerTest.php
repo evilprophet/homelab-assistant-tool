@@ -56,6 +56,28 @@ class DeviceControllerTest extends TestCase
         $this->assertNull($result['username']);
     }
 
+    public function testExtractFormDataMapsAutoStopCheckboxState(): void
+    {
+        $controller = $this->createTestableController();
+
+        $uncheckedRequest = Request::create('/devices/new', 'POST', [
+            'allow_auto_stop_present' => '1',
+        ]);
+        $uncheckedResult = $controller->callExtractFormData($uncheckedRequest);
+        $this->assertFalse($uncheckedResult['allow_auto_stop']);
+
+        $checkedRequest = Request::create('/devices/new', 'POST', [
+            'allow_auto_stop_present' => '1',
+            'allow_auto_stop' => '1',
+        ]);
+        $checkedResult = $controller->callExtractFormData($checkedRequest);
+        $this->assertTrue($checkedResult['allow_auto_stop']);
+
+        $legacyRequest = Request::create('/devices/new', 'POST', []);
+        $legacyResult = $controller->callExtractFormData($legacyRequest);
+        $this->assertTrue($legacyResult['allow_auto_stop']);
+    }
+
     public function testValidateFormDataReturnsErrorsForInvalidInputAndDuplicates(): void
     {
         $existingDevice = $this->createDeviceEntity(2, 'node-1');

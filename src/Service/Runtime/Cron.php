@@ -7,6 +7,7 @@ namespace EvilStudio\HAT\Service\Runtime;
 use Cron\CronExpression;
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Contract\DeviceAction;
+use EvilStudio\HAT\Contract\DeviceInterface;
 use EvilStudio\HAT\Contract\ScheduleInterface;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Entity\Device;
@@ -44,7 +45,10 @@ class Cron
     {
         $this->logWarning('[UPS Battery Mode enabled]');
 
-        $deviceList = $this->deviceOperationsService->listDevices(true);
+        $deviceList = array_values(array_filter(
+            $this->deviceOperationsService->listDevices(true),
+            static fn (DeviceInterface $device): bool => $device->isAutoStopAllowed()
+        ));
 
         foreach ($deviceList as $device) {
             if (!$device->getStatus()) {
@@ -213,6 +217,11 @@ class Cron
 
                 if (!$device->getStatus()) {
                     $this->logInfo(sprintf("Device '%s' already stopped.", $deviceName));
+                    continue;
+                }
+
+                if (!$device->isAutoStopAllowed()) {
+                    $this->logInfo(sprintf("Device '%s' action skipped: auto-stop is disabled.", $deviceName));
                     continue;
                 }
 

@@ -75,18 +75,25 @@ class DeviceOperationsService
     public function assertDeviceActionSupported(DeviceInterface $device, DeviceAction $action): void
     {
         $platform = $device->getPlatform();
+        if ($this->supportsPlatformAction($platform, $action)) {
+            return;
+        }
+
+        throw UnsupportedDeviceAction::forPlatform($action, $platform);
+    }
+
+    public function supportsDeviceAction(DeviceInterface $device, DeviceAction $action): bool
+    {
+        return $this->supportsPlatformAction($device->getPlatform(), $action);
+    }
+
+    protected function supportsPlatformAction(string $platform, DeviceAction $action): bool
+    {
         $resolvedPlatform = DevicePlatform::tryFrom($platform);
-
-        if ($resolvedPlatform !== null && $resolvedPlatform->supportsAction($action)) {
-            return;
+        if ($resolvedPlatform === null) {
+            return $action === DeviceAction::START;
         }
 
-        if ($resolvedPlatform === null && $action === DeviceAction::START) {
-            return;
-        }
-
-        throw new UnsupportedDeviceAction(
-            sprintf("%s action is not supported on '%s' device.", $action->label(), $platform)
-        );
+        return $resolvedPlatform->supportsAction($action);
     }
 }

@@ -35,6 +35,7 @@ class RuntimeDeviceFactoryTest extends TestCase
         $this->assertInstanceOf(Generic::class, $runtimeDevice);
         $this->assertSame('node-1', $runtimeData['name']);
         $this->assertSame('10.0.0.10', $runtimeData['ip']);
+        $this->assertSame('yes', $runtimeData['auto_stop']);
         $this->assertSame('5 min', $runtimeData['ups_low_battery_runtime_threshold']);
         $this->assertSame('root', $runtimeDevice->getUsername());
     }

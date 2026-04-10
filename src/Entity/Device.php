@@ -46,6 +46,9 @@ class Device
     )]
     protected ?int $upsLowBatteryRuntimeThreshold = null;
 
+    #[ORM\Column(name: 'auto_stop_allowed', type: Types::BOOLEAN, options: ['default' => true])]
+    protected bool $autoStopAllowed = true;
+
     #[ORM\ManyToOne(targetEntity: Ups::class, inversedBy: 'devices')]
     #[ORM\JoinColumn(name: 'ups_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     protected ?Ups $ups = null;
@@ -132,6 +135,18 @@ class Device
     public function setUpsLowBatteryRuntimeThreshold(?int $upsLowBatteryRuntimeThreshold): self
     {
         $this->upsLowBatteryRuntimeThreshold = $upsLowBatteryRuntimeThreshold;
+
+        return $this;
+    }
+
+    public function isAutoStopAllowed(): bool
+    {
+        return $this->autoStopAllowed;
+    }
+
+    public function setAutoStopAllowed(bool $autoStopAllowed): self
+    {
+        $this->autoStopAllowed = $autoStopAllowed;
 
         return $this;
     }

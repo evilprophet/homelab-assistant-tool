@@ -69,7 +69,7 @@
                                 <a href="{{ path('hat_devices_index', current_query|merge({ sort_by: 'name_id', sort_dir: name_id_next_dir, page: 1 })) }}" class="inline-flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200">
                                     Name / ID
                                     {% if sort_by == 'name_id' %}
-                                        <span class="text-[10px]">{{ sort_dir == 'asc' ? 'ASC' : 'DESC' }}</span>
+                                        <span class="text-[10px] leading-none">{{ sort_dir == 'asc' ? '▲' : '▼' }}</span>
                                     {% endif %}
                                 </a>
                             </th>
@@ -77,7 +77,7 @@
                                 <a href="{{ path('hat_devices_index', current_query|merge({ sort_by: 'network', sort_dir: network_next_dir, page: 1 })) }}" class="inline-flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200">
                                     Network
                                     {% if sort_by == 'network' %}
-                                        <span class="text-[10px]">{{ sort_dir == 'asc' ? 'ASC' : 'DESC' }}</span>
+                                        <span class="text-[10px] leading-none">{{ sort_dir == 'asc' ? '▲' : '▼' }}</span>
                                     {% endif %}
                                 </a>
                             </th>
@@ -85,7 +85,7 @@
                                 <a href="{{ path('hat_devices_index', current_query|merge({ sort_by: 'platform', sort_dir: platform_next_dir, page: 1 })) }}" class="inline-flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200">
                                     Platform
                                     {% if sort_by == 'platform' %}
-                                        <span class="text-[10px]">{{ sort_dir == 'asc' ? 'ASC' : 'DESC' }}</span>
+                                        <span class="text-[10px] leading-none">{{ sort_dir == 'asc' ? '▲' : '▼' }}</span>
                                     {% endif %}
                                 </a>
                             </th>
@@ -93,11 +93,12 @@
                                 <a href="{{ path('hat_devices_index', current_query|merge({ sort_by: 'ups', sort_dir: ups_next_dir, page: 1 })) }}" class="inline-flex items-center gap-1 hover:text-slate-700 dark:hover:text-slate-200">
                                     UPS Link
                                     {% if sort_by == 'ups' %}
-                                        <span class="text-[10px]">{{ sort_dir == 'asc' ? 'ASC' : 'DESC' }}</span>
+                                        <span class="text-[10px] leading-none">{{ sort_dir == 'asc' ? '▲' : '▼' }}</span>
                                     {% endif %}
                                 </a>
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">UPS Low Runtime Threshold</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Auto Stop</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
                         </tr>
@@ -159,6 +160,12 @@
                                     {% endif %}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-white">{{ device.ups_low_battery_runtime_threshold|default('-') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% set auto_stop_allowed = device.auto_stop|default('yes') == 'yes' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {{ auto_stop_allowed ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' : 'bg-rose-100 dark:bg-rose-900/30 text-rose-800 dark:text-rose-400' }}">
+                                        {{ auto_stop_allowed ? 'YES' : 'NO' }}
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300" data-device-status="{{ device.name }}">
                                         <span data-status-dot class="w-2 h-2 rounded-full {{ status == 'online' ? 'bg-green-500' : (status == 'offline' ? 'bg-red-500' : 'bg-slate-400') }}"></span>

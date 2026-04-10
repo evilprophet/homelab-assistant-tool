@@ -24,7 +24,7 @@ class LinuxTest extends TestCase
             }
         };
 
-        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'linux', null, null, null, null, 'root');
+        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'linux', null, null, null, 'root', null, true);
         $result = $device->stop();
 
         $this->assertTrue($result);
@@ -40,7 +40,7 @@ class LinuxTest extends TestCase
             }
         };
 
-        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'linux', null, null, null, null, 'root');
+        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'linux', null, null, null, 'root', null, true);
 
         $this->assertFalse($device->stop());
     }
@@ -138,7 +138,7 @@ class LinuxTest extends TestCase
             }
         };
 
-        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'linux', null, null, null, null, 'root');
+        $device->configure(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55', 'linux', null, null, null, 'root', null, true);
 
         return $device;
     }

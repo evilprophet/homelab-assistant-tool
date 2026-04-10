@@ -64,6 +64,8 @@ class DeviceControllerFunctionalTest extends HttpFunctionalTestCase
             'username' => 'root',
             'ups_id' => (string)$ups->getId(),
             'threshold_minutes' => '5',
+            'allow_auto_stop_present' => '1',
+            'allow_auto_stop' => '1',
         ]);
 
         $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode());
@@ -73,6 +75,30 @@ class DeviceControllerFunctionalTest extends HttpFunctionalTestCase
         $this->assertSame(DevicePlatform::LINUX->value, $device->getPlatform());
         $this->assertSame($ups->getId(), $device->getUps()?->getId());
         $this->assertSame(300, $device->getUpsLowBatteryRuntimeThreshold());
+        $this->assertTrue($device->isAutoStopAllowed());
+    }
+
+    public function testNewCreatesDeviceWithAutoStopDisabledWhenCheckboxIsUnchecked(): void
+    {
+        $this->createSimpleUser('admin', 'secret-1');
+        $this->loginAsSimpleUser('admin', 'secret-1', '/devices');
+
+        $response = $this->request('POST', '/devices/new', [
+            'name' => 'node-1-no-auto-stop',
+            'ip' => '10.0.0.12',
+            'mac' => '00:11:22:33:44:77',
+            'platform' => DevicePlatform::GENERIC->value,
+            'username' => '',
+            'ups_id' => '',
+            'threshold_minutes' => '',
+            'allow_auto_stop_present' => '1',
+        ]);
+
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode());
+        $this->assertSame('/devices', $response->headers->get('Location'));
+
+        $device = static::getContainer()->get(DeviceService::class)->getDeviceByName('node-1-no-auto-stop');
+        $this->assertFalse($device->isAutoStopAllowed());
     }
 
     public function testEditUpdatesDeviceAndRedirectsToEditPage(): void
@@ -104,6 +130,7 @@ class DeviceControllerFunctionalTest extends HttpFunctionalTestCase
             'username' => 'admin',
             'ups_id' => (string)$targetUps->getId(),
             'threshold_minutes' => '12',
+            'allow_auto_stop_present' => '1',
         ]);
 
         $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode());
@@ -121,6 +148,7 @@ class DeviceControllerFunctionalTest extends HttpFunctionalTestCase
         $this->assertSame('admin', $updatedDevice->getUsername());
         $this->assertNotNull($updatedDevice->getUps());
         $this->assertSame(720, $updatedDevice->getUpsLowBatteryRuntimeThreshold());
+        $this->assertFalse($updatedDevice->isAutoStopAllowed());
     }
 
     public function testRemoveDeletesDeviceAndDetachesScheduleLink(): void

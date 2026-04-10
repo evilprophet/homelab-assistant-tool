@@ -46,7 +46,7 @@ class DeviceListCommand extends Command
             $rows[] = $row;
         }
 
-        $headers = ['ID', 'Name', 'IP', 'MAC', 'Platform', 'UPS', 'UPS Low Runtime Threshold'];
+        $headers = ['ID', 'Name', 'IP', 'MAC', 'Platform', 'UPS', 'UPS Low Runtime Threshold', 'Auto Stop'];
         if ($withStatus) {
             $headers[] = 'Status';
         }

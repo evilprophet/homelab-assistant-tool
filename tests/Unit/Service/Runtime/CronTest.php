@@ -44,6 +44,7 @@ class CronTest extends TestCase
         $configuration->expects($this->once())->method('isUpsModeEnabled')->willReturn(true);
         $upsRuntimeService->expects($this->once())->method('isAnyUpsOnBattery')->willReturn(true);
         $deviceOperations->expects($this->once())->method('listDevices')->with(true)->willReturn([$runtimeDevice]);
+        $runtimeDevice->expects($this->once())->method('isAutoStopAllowed')->willReturn(true);
         $runtimeDevice->expects($this->once())->method('getStatus')->willReturn(true);
         $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn('ups-main');
         $upsRuntimeService->expects($this->once())
@@ -130,6 +131,7 @@ class CronTest extends TestCase
         $configuration->expects($this->once())->method('isUpsModeEnabled')->willReturn(true);
         $upsRuntimeService->expects($this->once())->method('isAnyUpsOnBattery')->willReturn(true);
         $deviceOperations->expects($this->once())->method('listDevices')->with(true)->willReturn([$runtimeDevice]);
+        $runtimeDevice->expects($this->once())->method('isAutoStopAllowed')->willReturn(true);
         $runtimeDevice->expects($this->once())->method('getStatus')->willReturn(true);
         $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn('ups-main');
         $upsRuntimeService->expects($this->once())
@@ -173,6 +175,7 @@ class CronTest extends TestCase
         $configuration->expects($this->once())->method('isUpsModeEnabled')->willReturn(true);
         $upsRuntimeService->expects($this->once())->method('isAnyUpsOnBattery')->willReturn(true);
         $deviceOperations->expects($this->once())->method('listDevices')->with(true)->willReturn([$runtimeDevice]);
+        $runtimeDevice->expects($this->once())->method('isAutoStopAllowed')->willReturn(true);
         $runtimeDevice->expects($this->once())->method('getStatus')->willReturn(true);
         $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn('ups-main');
         $upsRuntimeService->expects($this->once())
@@ -210,6 +213,7 @@ class CronTest extends TestCase
         $configuration->expects($this->once())->method('isUpsModeEnabled')->willReturn(true);
         $upsRuntimeService->expects($this->once())->method('isAnyUpsOnBattery')->willReturn(true);
         $deviceOperations->expects($this->once())->method('listDevices')->with(true)->willReturn([$runtimeDevice]);
+        $runtimeDevice->expects($this->once())->method('isAutoStopAllowed')->willReturn(true);
         $runtimeDevice->expects($this->once())->method('getStatus')->willReturn(true);
         $runtimeDevice->expects($this->once())->method('getUpsIdentifier')->willReturn('ups-main');
         $upsRuntimeService->expects($this->once())
