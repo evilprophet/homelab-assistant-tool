@@ -57,7 +57,50 @@ For technical details, see [Tech Stack](./docs/tech-stack.md).
 
 ## 🚀 Quick Start
 
-### 1. Clone and install
+You can run HAT in two ways.
+
+### Option 1: Docker only (without cloning the full repository)
+
+### 1. Download `docker-compose.yml` and `.env.example`
+
+```bash
+curl -L -o docker-compose.yml https://raw.githubusercontent.com/evilstudio/homelab-assistant-tool/main/docker-compose.yml
+curl -L -o .env https://raw.githubusercontent.com/evilstudio/homelab-assistant-tool/main/.env.example
+```
+
+### 2. Update `.env`
+
+Set values for your environment (application/auth settings, and OIDC values when using `HAT_AUTH_MODE=oidc`).
+
+### 3. Pull GHCR image
+
+```bash
+docker compose pull
+```
+
+### 4. Run initial setup commands
+
+```bash
+docker compose run --rm hat-app php bin/console hat:setup:configure
+docker compose run --rm hat-app php bin/console hat:setup:db --init
+docker compose run --rm hat-app php bin/console hat:user:create
+```
+
+`hat:user:create` is required only for `simple` auth mode.
+
+### 5. Start container
+
+```bash
+docker compose up -d
+```
+
+### 6. Open application
+
+Open: `http://localhost:8080`
+
+### Option 2: Clone full project (development/local workflow)
+
+### 1. Clone repository
 
 ```bash
 git clone https://github.com/evilstudio/homelab-assistant-tool.git
@@ -70,39 +113,29 @@ cp .env.example .env
 
 Set values for your environment (application/auth settings, and OIDC values when using `HAT_AUTH_MODE=oidc`).
 
-### 3. Configure application settings
+
+### 3. Run setup commands locally
 
 ```bash
 php bin/console hat:setup:configure
-```
-
-### 4. Initialize database
-
-```bash
 php bin/console hat:setup:db --init
+php bin/console hat:user:create # Required only for `simple` auth mode
 ```
 
-### 5. Create first user (simple auth mode)
+### 4. Start an application with an GHCR image
 
 ```bash
-php bin/console hat:user:create
+docker compose pull
+docker compose up -d
 ```
 
-### 6. Run Web UI (Docker Compose)
-
-```bash
-docker compose up -d --build
-```
-
-Open: `http://localhost:8080`
-
-For local development with Xdebug and dedicated compose config:
+### 5. Or run development compose with local build and Xdebug
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
-### 7. Run CLI commands
+For local non-docker CLI workflow (optional):
 
 ```bash
 php bin/console list

@@ -1,18 +1,13 @@
 services:
   hat-app:
-    image: hat-app:local
+    image: ghcr.io/evilstudio/homelab-assistant-tool:latest
     container_name: hat-app
-    restart: unless-stopped
-    env_file:
-      - .env
-    network_mode: host
     volumes:
       - ./var/data:/app/var/data
       - ./var/log:/app/var/log
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        INSTALL_XDEBUG: ${HAT_WITH_XDEBUG:-0}
+    env_file:
+      - .env
+    network_mode: host
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    restart: unless-stopped
