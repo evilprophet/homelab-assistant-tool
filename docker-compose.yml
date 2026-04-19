@@ -3,6 +3,7 @@ services:
     image: ghcr.io/evilprophet/homelab-assistant-tool:latest
     container_name: hat-app
     volumes:
+      - ./config/parameters.yaml:/app/config/parameters.yaml
       - ./var/data:/app/var/data
       - ./var/log:/app/var/log
     env_file:

@@ -61,16 +61,18 @@ You can run HAT in two ways.
 
 ### Option 1: Docker only (without cloning the full repository)
 
-### 1. Download `docker-compose.yml` and `.env.example`
+### 1. Download `docker-compose.yml`, `.env.example`, and `config/parameters.yaml`
 
 ```bash
+mkdir -p config var/data
 curl -L -o docker-compose.yml https://raw.githubusercontent.com/evilstudio/homelab-assistant-tool/main/docker-compose.yml
 curl -L -o .env https://raw.githubusercontent.com/evilstudio/homelab-assistant-tool/main/.env.example
+curl -L -o config/parameters.yaml https://raw.githubusercontent.com/evilstudio/homelab-assistant-tool/main/config/parameters.yaml
 ```
 
-### 2. Update `.env`
+### 2. Update `.env` and `config/parameters.yaml`
 
-Set values for your environment (application/auth settings, and OIDC values when using `HAT_AUTH_MODE=oidc`).
+Set values for your environment (`.env` for app/auth settings and OIDC values when using `HAT_AUTH_MODE=oidc`, `config/parameters.yaml` for runtime settings).
 
 ### 3. Pull GHCR image
 
