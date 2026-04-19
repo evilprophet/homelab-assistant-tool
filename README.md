@@ -61,7 +61,7 @@ You can run HAT in two ways.
 
 ### Option 1: Docker only (without cloning the full repository)
 
-### 1. Download `docker-compose.yml`, `.env.example`, and `config/parameters.yaml`
+#### 1. Download `docker-compose.yml`, `.env.example`, and `config/parameters.yaml`
 
 ```bash
 mkdir -p config var/data
@@ -70,17 +70,17 @@ curl -L -o .env https://raw.githubusercontent.com/evilstudio/homelab-assistant-t
 curl -L -o config/parameters.yaml https://raw.githubusercontent.com/evilstudio/homelab-assistant-tool/main/config/parameters.yaml
 ```
 
-### 2. Update `.env` and `config/parameters.yaml`
+#### 2. Update `.env` and `config/parameters.yaml`
 
 Set values for your environment (`.env` for app/auth settings and OIDC values when using `HAT_AUTH_MODE=oidc`, `config/parameters.yaml` for runtime settings).
 
-### 3. Pull GHCR image
+#### 3. Pull GHCR image
 
 ```bash
 docker compose pull
 ```
 
-### 4. Run initial setup commands
+#### 4. Run initial setup commands
 
 ```bash
 docker compose run --rm hat-app php bin/console hat:setup:configure
@@ -90,19 +90,19 @@ docker compose run --rm hat-app php bin/console hat:user:create
 
 `hat:user:create` is required only for `simple` auth mode.
 
-### 5. Start container
+#### 5. Start container
 
 ```bash
 docker compose up -d
 ```
 
-### 6. Open application
+#### 6. Open application
 
 Open: `http://localhost:8080`
 
 ### Option 2: Clone full project (development/local workflow)
 
-### 1. Clone repository
+#### 1. Clone repository
 
 ```bash
 git clone https://github.com/evilstudio/homelab-assistant-tool.git
@@ -111,12 +111,12 @@ composer install
 cp .env.example .env
 ```
 
-### 2. Update `.env`
+#### 2. Update `.env`
 
 Set values for your environment (application/auth settings, and OIDC values when using `HAT_AUTH_MODE=oidc`).
 
 
-### 3. Run setup commands locally
+#### 3. Run setup commands locally
 
 ```bash
 php bin/console hat:setup:configure
@@ -124,14 +124,14 @@ php bin/console hat:setup:db --init
 php bin/console hat:user:create # Required only for `simple` auth mode
 ```
 
-### 4. Start an application with an GHCR image
+#### 4. Start an application with an GHCR image
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-### 5. Or run development compose with local build and Xdebug
+#### 5. Or run development compose with local build and Xdebug
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d --build
