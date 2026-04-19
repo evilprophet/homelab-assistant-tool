@@ -1,6 +1,6 @@
 services:
   hat-app:
-    image: ghcr.io/evilstudio/homelab-assistant-tool:latest
+    image: ghcr.io/evilprophet/homelab-assistant-tool:latest
     container_name: hat-app
     volumes:
       - ./var/data:/app/var/data
