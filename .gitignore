@@ -4,7 +4,7 @@
 /.composer-cache/
 /.idea/
 /.phpunit.cache/
-/ai-rules/
+/ai-*/
 /coverage/
 /tests/results/
 /var/
