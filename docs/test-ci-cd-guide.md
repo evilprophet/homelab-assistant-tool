@@ -1,12 +1,13 @@
 # 🚀 GitLab CI/CD Guide
 
-**Pipeline Status:** Configured  
+**Pipeline Status:** Configured
+
 **Coverage Reports:** Generated locally (Xdebug), not published by CI
 
 ## 🧭 Overview
 
 This project uses GitLab CI/CD for automated testing and code quality verification.
-Every push and merge request triggers linting and test execution.
+Every push and merge request triggers one quality job that runs linting followed by all test suites.
 
 ### ✨ Pipeline Features
 
@@ -20,28 +21,20 @@ Every push and merge request triggers linting and test execution.
 
 ### 📄 File
 
-- `.gitlab-ci.yml`
+- `.gitlab-ci.yml`, which includes `php-quality@v1.6.0` from the shared CI/CD component catalog
 
-### 🧩 Jobs
+### 🧩 Job
 
-- `lint:phpcs` - PSR-12 lint for `src` and `tests`
-- `test:phpunit` - Unit + Integration + Functional tests (no coverage in CI)
+- `PHP Quality` - PSR-12 lint followed by Unit, Integration, and Functional tests without coverage
 
 ## 🔍 Job Details
 
-### `lint:phpcs`
+### `PHP Quality`
 
 ```yaml
 stage: test
 script:
   - vendor/bin/phpcs --standard=PSR12 --extensions=php src tests
-```
-
-### `test:phpunit`
-
-```yaml
-stage: test
-script:
   - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Unit --no-coverage
   - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Integration --no-coverage
   - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Functional --no-coverage
@@ -65,7 +58,7 @@ bin/phpunit-coverage
 ## 🧱 Runtime and Caching
 
 - CI image: `php:8.4-cli`
-- Composer install executed in `before_script`
+- PHP extensions and Composer dependencies are installed once before the combined quality job
 - Cache paths:
     - `.composer-cache/`
     - `vendor/`
