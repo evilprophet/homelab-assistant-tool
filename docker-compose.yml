@@ -16,6 +16,7 @@ services:
   hat-cron:
     image: ghcr.io/evilprophet/homelab-assistant-tool:latest
     container_name: hat-cron
+    user: "0:0"
     command: ["crond", "-f", "-l", "8"]
     environment:
       HAT_AUTO_MIGRATE: "0"
@@ -31,3 +32,5 @@ services:
     depends_on:
       - hat-app
     restart: unless-stopped
+    healthcheck:
+      disable: true
