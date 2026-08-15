@@ -15,17 +15,6 @@ class ActionLogService extends AbstractDatabaseService
 {
     public const int DEFAULT_LIST_LIMIT = 25;
 
-    protected const array ALLOWED_SOURCES = [
-        ActionLog::SOURCE_CRON,
-        ActionLog::SOURCE_CLI,
-        ActionLog::SOURCE_WEB,
-    ];
-    protected const array ALLOWED_LEVELS = [
-        ActionLog::LEVEL_INFO,
-        ActionLog::LEVEL_WARNING,
-        ActionLog::LEVEL_ERROR,
-    ];
-
     public function __construct(
         EntityManagerInterface $entityManager,
         protected ActionLogRepository $actionLogRepository
@@ -37,7 +26,7 @@ class ActionLogService extends AbstractDatabaseService
         ?string $source = null,
         ?string $level = null,
         ?string $action = null,
-        ?int $limit = self::DEFAULT_LIST_LIMIT
+        int $limit = self::DEFAULT_LIST_LIMIT
     ): array {
         if ($source !== null) {
             $this->assertAllowedSource($source);
@@ -47,7 +36,7 @@ class ActionLogService extends AbstractDatabaseService
             $this->assertAllowedLevel($level);
         }
 
-        if ($limit !== null && $limit < 1) {
+        if ($limit < 1) {
             throw new InvalidArgumentException(
                 'List limit must be greater than or equal to 1.'
             );
@@ -58,12 +47,12 @@ class ActionLogService extends AbstractDatabaseService
 
     public static function getAllowedSources(): array
     {
-        return self::ALLOWED_SOURCES;
+        return ActionLog::SOURCES;
     }
 
     public static function getAllowedLevels(): array
     {
-        return self::ALLOWED_LEVELS;
+        return ActionLog::LEVELS;
     }
 
     public function createActionLog(
@@ -82,7 +71,7 @@ class ActionLogService extends AbstractDatabaseService
             ->setAction($action)
             ->setLevel($level)
             ->setMessage($message)
-            ->setCreatedAt($createdAt ?? new DateTimeImmutable('now', new DateTimeZone('UTC')));
+            ->setCreatedAt($this->normalizeCreatedAt($createdAt));
 
         $this->persist($actionLog);
         $this->flush();
@@ -161,9 +150,21 @@ class ActionLogService extends AbstractDatabaseService
         return $this->actionLogRepository->findDistinctActions();
     }
 
+    protected function normalizeCreatedAt(?DateTimeImmutable $createdAt): DateTimeImmutable
+    {
+        $utc = new DateTimeZone('UTC');
+        if ($createdAt === null) {
+            return new DateTimeImmutable('now', $utc);
+        }
+
+        // DATETIME_IMMUTABLE stores the naive wall clock, so a non-UTC value would
+        // break both the createdAt ordering and the UTC retention thresholds.
+        return $createdAt->setTimezone($utc);
+    }
+
     protected function assertAllowedSource(string $source): void
     {
-        if (in_array($source, self::ALLOWED_SOURCES, true)) {
+        if (in_array($source, ActionLog::SOURCES, true)) {
             return;
         }
 
@@ -171,14 +172,14 @@ class ActionLogService extends AbstractDatabaseService
             sprintf(
                 "Invalid action log source '%s'. Allowed values: %s.",
                 $source,
-                implode(', ', self::ALLOWED_SOURCES)
+                implode(', ', ActionLog::SOURCES)
             )
         );
     }
 
     protected function assertAllowedLevel(string $level): void
     {
-        if (in_array($level, self::ALLOWED_LEVELS, true)) {
+        if (in_array($level, ActionLog::LEVELS, true)) {
             return;
         }
 
@@ -186,7 +187,7 @@ class ActionLogService extends AbstractDatabaseService
             sprintf(
                 "Invalid action log level '%s'. Allowed values: %s.",
                 $level,
-                implode(', ', self::ALLOWED_LEVELS)
+                implode(', ', ActionLog::LEVELS)
             )
         );
     }

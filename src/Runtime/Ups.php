@@ -61,6 +61,9 @@ class Ups implements UpsInterface
             );
         }
 
+        // Without this a second poll on the same object keeps values from the first one.
+        $this->properties = [];
+
         foreach ($output as $line) {
             if (!str_contains($line, ':')) {
                 continue;
@@ -105,9 +108,13 @@ class Ups implements UpsInterface
         $batteryInfo = sprintf(
             "Current: %s%%\nRuntime: %s min\nLow Runtime Threshold: %s min\nSafe Runtime Threshold: %s min",
             $this->getBatteryLevel() ?? '-',
-            $this->getBatteryRuntime() ? round($this->getBatteryRuntime() / 60) : 'N/A',
-            $this->getLowBatteryRuntimeThreshold() ? round($this->getLowBatteryRuntimeThreshold() / 60) : 'N/A',
-            $this->getSafeBatteryRuntimeThreshold() ? round($this->getSafeBatteryRuntimeThreshold() / 60) : 'N/A'
+            $this->getBatteryRuntime() !== null ? round($this->getBatteryRuntime() / 60) : 'N/A',
+            $this->getLowBatteryRuntimeThreshold() !== null
+                ? round($this->getLowBatteryRuntimeThreshold() / 60)
+                : 'N/A',
+            $this->getSafeBatteryRuntimeThreshold() !== null
+                ? round($this->getSafeBatteryRuntimeThreshold() / 60)
+                : 'N/A'
         );
 
         return [
@@ -119,9 +126,9 @@ class Ups implements UpsInterface
             'status' => $status,
             'power' => $powerInfo,
             'battery' => $batteryInfo,
-            'linked_device' => empty($this->getLinkedDevices())
-                ? '-'
-                : implode(', ', $this->getLinkedDevices()),
+            // Structured, because joining names into one string loses the id link and
+            // breaks apart again on any name containing the delimiter.
+            'linked_devices' => $this->getLinkedDevices(),
         ];
     }
 
@@ -202,9 +209,12 @@ class Ups implements UpsInterface
 
     public function isBatteryRuntimeLow(): bool
     {
-        return $this->getLowBatteryRuntimeThreshold()
-            && $this->getBatteryRuntime()
-            && $this->getBatteryRuntime() <= $this->getLowBatteryRuntimeThreshold();
+        $lowBatteryRuntimeThreshold = $this->getLowBatteryRuntimeThreshold();
+        $batteryRuntime = $this->getBatteryRuntime();
+
+        return $lowBatteryRuntimeThreshold !== null
+            && $batteryRuntime !== null
+            && $batteryRuntime <= $lowBatteryRuntimeThreshold;
     }
 
     protected function executeCommand(string $target, array &$output, int &$resultCode): void

@@ -12,11 +12,78 @@ use EvilStudio\HAT\Repository\DeviceRepository;
 use EvilStudio\HAT\Repository\ScheduleRepository;
 use EvilStudio\HAT\Service\Application\ScheduleService;
 use EvilStudio\HAT\Tests\Support\EntityTestHelperTrait;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 class ScheduleServiceTest extends TestCase
 {
     use EntityTestHelperTrait;
+
+    public function testCreateScheduleRejectsInvalidCronExpression(): void
+    {
+        $scheduleRepository = $this->createMock(ScheduleRepository::class);
+        $scheduleRepository->expects($this->never())->method('findOneByName');
+
+        $service = new ScheduleService(
+            $this->createStub(EntityManagerInterface::class),
+            $scheduleRepository,
+            $this->createStub(DeviceRepository::class)
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Invalid cron expression 'not a cron'.");
+
+        $service->createSchedule('Night Start', 'not a cron', ScheduleInterface::COMMAND_START, []);
+    }
+
+    public function testUpdateScheduleRejectsInvalidCronExpression(): void
+    {
+        $scheduleRepository = $this->createMock(ScheduleRepository::class);
+        $scheduleRepository->expects($this->never())->method('findById');
+
+        $service = new ScheduleService(
+            $this->createStub(EntityManagerInterface::class),
+            $scheduleRepository,
+            $this->createStub(DeviceRepository::class)
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid cron expression');
+
+        $service->updateSchedule(1, 'Night Start', true, '99 * * * *', ScheduleInterface::COMMAND_START, []);
+    }
+
+    public function testCreateScheduleRejectsUnsupportedCommand(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $scheduleRepository = $this->createMock(ScheduleRepository::class);
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+
+        $scheduleRepository->expects($this->never())->method('findOneByName');
+
+        $service = new ScheduleService($entityManager, $scheduleRepository, $deviceRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Unsupported schedule command 'reboot'. Allowed values: start, stop.");
+
+        $service->createSchedule('Night Start', '0 2 * * *', 'reboot', []);
+    }
+
+    public function testUpdateScheduleRejectsUnsupportedCommand(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $scheduleRepository = $this->createMock(ScheduleRepository::class);
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+
+        $scheduleRepository->expects($this->never())->method('findById');
+
+        $service = new ScheduleService($entityManager, $scheduleRepository, $deviceRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Unsupported schedule command 'reboot'.");
+
+        $service->updateSchedule(1, 'Night Start', true, '0 2 * * *', 'reboot', []);
+    }
 
     public function testCreateScheduleThrowsWhenNameAlreadyExists(): void
     {

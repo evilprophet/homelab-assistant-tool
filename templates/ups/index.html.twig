@@ -88,24 +88,9 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                {% set linked_devices = ups.linked_device is defined and ups.linked_device != '-' ? ups.linked_device|split(', ') : [] %}
-                                {% set linked_device_names = [] %}
-                                {% for linked_device in linked_devices %}
-                                    {% set device_parts = linked_device|split(':', 2) %}
-                                    {% set device_name = device_parts|length > 1 ? device_parts[1] : linked_device %}
-                                    {% set linked_device_names = linked_device_names|merge([device_name]) %}
-                                {% endfor %}
-                                {% set linked_device_names = linked_device_names|sort %}
-                                <div class="flex flex-wrap gap-1 max-w-xs">
-                                    {% for device_name in linked_device_names %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
-                                            <span data-linked-device-status="{{ device_name }}" class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                            <span class="ml-1.5">{{ device_name }}</span>
-                                        </span>
-                                    {% else %}
-                                        <span class="text-sm text-slate-500 dark:text-slate-400">-</span>
-                                    {% endfor %}
-                                </div>
+                                {% include 'ui/_device_chips.html.twig' with {
+                                    devices: ups.linked_devices|default([])
+                                } only %}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex items-center gap-3">
@@ -139,56 +124,5 @@
 {% endblock %}
 
 {% block body_scripts %}
-    <script>
-        (() => {
-            const linkedDeviceDots = Array.from(document.querySelectorAll('[data-linked-device-status]'));
-            if (linkedDeviceDots.length === 0) {
-                return;
-            }
-
-            const deviceNames = Array.from(new Set(
-                linkedDeviceDots
-                    .map((node) => node.dataset.linkedDeviceStatus || '')
-                    .filter((name) => name !== '')
-            ));
-            if (deviceNames.length === 0) {
-                return;
-            }
-
-            const params = new URLSearchParams();
-            deviceNames.forEach((deviceName) => {
-                params.append('device_names[]', deviceName);
-            });
-
-            const linkedDotClassByStatus = {
-                online: 'bg-green-400',
-                offline: 'bg-red-400',
-                unknown: 'bg-slate-400',
-            };
-
-            fetch('{{ path('hat_runtime_statuses') }}?' + params.toString(), {
-                headers: { 'Accept': 'application/json' },
-            })
-                .then((response) => response.ok ? response.json() : Promise.reject())
-                .then((payload) => {
-                    const deviceStatusByName = payload.device_status_by_name || {};
-
-                    linkedDeviceDots.forEach((dot) => {
-                        const deviceName = dot.dataset.linkedDeviceStatus || '';
-                        if (deviceName === '') {
-                            return;
-                        }
-
-                        const status = typeof deviceStatusByName[deviceName] === 'string'
-                            ? deviceStatusByName[deviceName]
-                            : 'unknown';
-
-                        dot.classList.remove('bg-green-400', 'bg-red-400', 'bg-slate-400');
-                        dot.classList.add(linkedDotClassByStatus[status] || linkedDotClassByStatus.unknown);
-                    });
-                })
-                .catch(() => {
-                });
-        })();
-    </script>
+    {% include 'ui/_runtime_status_script.html.twig' only %}
 {% endblock %}

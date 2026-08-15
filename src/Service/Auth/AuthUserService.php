@@ -15,6 +15,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AuthUserService extends AbstractDatabaseService
 {
+    protected const string WHITESPACE_PATTERN = '/\s/';
+
     public function __construct(
         EntityManagerInterface $entityManager,
         protected UserRepository $userRepository,
@@ -35,9 +37,7 @@ class AuthUserService extends AbstractDatabaseService
             throw new InvalidArgumentException('Username cannot be empty.');
         }
 
-        if (trim($password) === '') {
-            throw new InvalidArgumentException('Password cannot be empty.');
-        }
+        $this->assertPasswordIsUsable($password);
 
         if ($this->userRepository->findByUsername($normalizedUsername) !== null) {
             throw new EntityAlreadyExists(sprintf("User with username '%s' already exists.", $normalizedUsername));
@@ -77,9 +77,7 @@ class AuthUserService extends AbstractDatabaseService
             throw new InvalidArgumentException('Username cannot be empty.');
         }
 
-        if (trim($newPassword) === '') {
-            throw new InvalidArgumentException('Password cannot be empty.');
-        }
+        $this->assertPasswordIsUsable($newPassword);
 
         $user = $this->userRepository->findByUsername($normalizedUsername);
         if ($user === null) {
@@ -89,30 +87,6 @@ class AuthUserService extends AbstractDatabaseService
         $user->setPasswordHash($this->hashPassword($user, $newPassword));
         $this->persist($user);
         $this->flush();
-
-        return $user;
-    }
-
-    public function authenticateSimple(string $username, string $password): ?User
-    {
-        $normalizedUsername = $this->normalizeUsername($username);
-        if ($normalizedUsername === '' || trim($password) === '') {
-            return null;
-        }
-
-        $user = $this->userRepository->findByUsername($normalizedUsername);
-        if ($user === null) {
-            return null;
-        }
-
-        $passwordHash = $user->getPasswordHash();
-        if ($passwordHash === null || $passwordHash === '') {
-            return null;
-        }
-
-        if (!$this->userPasswordHasher->isPasswordValid($user, $password)) {
-            return null;
-        }
 
         return $user;
     }
@@ -181,6 +155,19 @@ class AuthUserService extends AbstractDatabaseService
     protected function normalizeUsername(string $username): string
     {
         return trim($username);
+    }
+
+    protected function assertPasswordIsUsable(string $password): void
+    {
+        if ($password === '') {
+            throw new InvalidArgumentException('Password cannot be empty.');
+        }
+
+        // Whitespace survives shell quoting and copy-paste inconsistently, so it turns
+        // into logins that fail while looking identical to the operator.
+        if (preg_match(self::WHITESPACE_PATTERN, $password) === 1) {
+            throw new InvalidArgumentException('Password cannot contain whitespace characters.');
+        }
     }
 
     protected function hashPassword(User $user, string $plainPassword): string

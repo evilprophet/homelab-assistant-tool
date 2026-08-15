@@ -47,12 +47,30 @@ class ScheduleDeviceSelectionTraitTest extends TestCase
         $deviceService->expects($this->once())->method('listDevices')->willReturn([$deviceA, $deviceB]);
         $io->expects($this->once())
             ->method('choice')
-            ->with('Schedule devices', ['1: node-1', '2: node-2'], '2: node-2', true)
+            ->with('Schedule devices', ['None', '1: node-1', '2: node-2'], '2: node-2', true)
             ->willReturn(['1: node-1', '2: node-2']);
 
         $result = $helper->callPromptDeviceIds($io, [2], 'Schedule devices');
 
         $this->assertSame([1, 2], $result);
+    }
+
+    public function testPromptDeviceIdsDefaultsToNoneWhenNoDevicesAreAttached(): void
+    {
+        $deviceA = $this->createDeviceEntity(1, 'node-1');
+        $deviceService = $this->createMock(DeviceService::class);
+        $helper = $this->createHelper($deviceService);
+        $io = $this->createMock(SymfonyStyle::class);
+
+        $deviceService->expects($this->once())->method('listDevices')->willReturn([$deviceA]);
+        $io->expects($this->once())
+            ->method('choice')
+            ->with('Schedule devices', ['None', '1: node-1'], 'None', true)
+            ->willReturn(['None']);
+
+        $result = $helper->callPromptDeviceIds($io, [], 'Schedule devices');
+
+        $this->assertSame([], $result);
     }
 
     protected function createHelper(DeviceService $deviceService): object

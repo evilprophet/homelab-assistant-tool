@@ -52,16 +52,21 @@ class StartDeviceCommand extends AbstractDeviceCommand
             return Command::FAILURE;
         }
 
-        $message = sprintf("Device '%s' started: %s.", $device->getName(), $result ? 'yes' : 'no');
+        // Success only means the magic packet left the host; nothing here confirms
+        // the device supports WOL, is cabled, or actually boots.
+        $message = $result
+            ? sprintf("Wake-on-LAN packet sent to device '%s'.", $device->getName())
+            : sprintf("Wake-on-LAN packet could not be sent to device '%s'.", $device->getName());
         $outputHelper->note($message);
 
         $this->actionLogService->createActionLog(
             ActionLog::SOURCE_CLI,
             ActionLogAction::DEVICE_START->value,
-            ActionLog::LEVEL_INFO,
+            $result ? ActionLog::LEVEL_INFO : ActionLog::LEVEL_WARNING,
             $message
         );
 
-        return Command::SUCCESS;
+        // A script chaining on `&&` must not treat a failed action as done.
+        return $result ? Command::SUCCESS : Command::FAILURE;
     }
 }

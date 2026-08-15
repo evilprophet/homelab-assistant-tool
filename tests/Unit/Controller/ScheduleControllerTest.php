@@ -68,13 +68,18 @@ class ScheduleControllerTest extends TestCase
         array $runtimeDevices = [],
         ?DeviceOperationsService $deviceOperationsService = null
     ): object {
-        $scheduleService = $this->createMock(ScheduleService::class);
-        $scheduleRuntimeService = $this->createMock(ScheduleRuntimeService::class);
-        $deviceService = $this->createMock(DeviceService::class);
-        $scheduleRepository = $this->createMock(ScheduleRepository::class);
-        $actionLogService = $this->createMock(ActionLogService::class);
-        $configuration = $this->createMock(Configuration::class);
-        $configuration->method('getTimezone')->willReturn('UTC');
+        $scheduleService = $this->createStub(ScheduleService::class);
+        $scheduleRuntimeService = $this->createStub(ScheduleRuntimeService::class);
+        $deviceService = $this->createStub(DeviceService::class);
+        $scheduleRepository = $this->createStub(ScheduleRepository::class);
+        $actionLogService = $this->createStub(ActionLogService::class);
+        $configuration = new Configuration([
+            'cron' => true,
+            'ups_mode' => true,
+            'ssh_key_path' => '/tmp/test-key',
+            'default_ssh_username' => 'root',
+            'timezone' => 'UTC',
+        ]);
 
         if ($deviceOperationsService === null) {
             $deviceOperationsService = $this->createMock(DeviceOperationsService::class);

@@ -58,24 +58,9 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                {% set schedule_devices = schedule.devices is defined and schedule.devices != '-' ? schedule.devices|split(', ') : [] %}
-                                {% set schedule_device_names = [] %}
-                                {% for device_label in schedule_devices %}
-                                    {% set device_parts = device_label|split(':', 2) %}
-                                    {% set device_name = device_parts|length > 1 ? device_parts[1] : device_label %}
-                                    {% set schedule_device_names = schedule_device_names|merge([device_name]) %}
-                                {% endfor %}
-                                {% set schedule_device_names = schedule_device_names|sort %}
-                                <div class="flex flex-wrap gap-1 max-w-xs">
-                                    {% for device_name in schedule_device_names %}
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
-                                            <span data-schedule-device-status="{{ device_name }}" class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                            <span class="ml-1.5">{{ device_name }}</span>
-                                        </span>
-                                    {% else %}
-                                        <span class="text-sm text-slate-500 dark:text-slate-400">-</span>
-                                    {% endfor %}
-                                </div>
+                                {% include 'ui/_device_chips.html.twig' with {
+                                    devices: schedule.devices|default([])
+                                } only %}
                             </td>
                             <td class="px-6 py-4">
                                 {% set next_runs = next_runs_by_id[schedule.id]|default([]) %}
@@ -121,56 +106,5 @@
 {% endblock %}
 
 {% block body_scripts %}
-    <script>
-        (() => {
-            const statusDots = Array.from(document.querySelectorAll('[data-schedule-device-status]'));
-            if (statusDots.length === 0) {
-                return;
-            }
-
-            const deviceNames = Array.from(new Set(
-                statusDots
-                    .map((node) => node.dataset.scheduleDeviceStatus || '')
-                    .filter((name) => name !== '')
-            ));
-            if (deviceNames.length === 0) {
-                return;
-            }
-
-            const params = new URLSearchParams();
-            deviceNames.forEach((deviceName) => {
-                params.append('device_names[]', deviceName);
-            });
-
-            const dotClassByStatus = {
-                online: 'bg-green-400',
-                offline: 'bg-red-400',
-                unknown: 'bg-slate-400',
-            };
-
-            fetch('{{ path('hat_runtime_statuses') }}?' + params.toString(), {
-                headers: { 'Accept': 'application/json' },
-            })
-                .then((response) => response.ok ? response.json() : Promise.reject())
-                .then((payload) => {
-                    const deviceStatusByName = payload.device_status_by_name || {};
-
-                    statusDots.forEach((dot) => {
-                        const deviceName = dot.dataset.scheduleDeviceStatus || '';
-                        if (deviceName === '') {
-                            return;
-                        }
-
-                        const status = typeof deviceStatusByName[deviceName] === 'string'
-                            ? deviceStatusByName[deviceName]
-                            : 'unknown';
-
-                        dot.classList.remove('bg-green-400', 'bg-red-400', 'bg-slate-400');
-                        dot.classList.add(dotClassByStatus[status] || dotClassByStatus.unknown);
-                    });
-                })
-                .catch(() => {
-                });
-        })();
-    </script>
+    {% include 'ui/_runtime_status_script.html.twig' only %}
 {% endblock %}

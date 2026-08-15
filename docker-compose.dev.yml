@@ -1,3 +1,14 @@
+# Development compose. Two production behaviours do NOT work here, by design of the
+# environment rather than by choice:
+#
+#   - Wake-on-LAN: the magic packet is a broadcast that never leaves the Docker
+#     bridge, so `hat:device:start` reports success while nothing is woken.
+#   - UPS status: `upsc` cannot reach a NUT daemon on the host from the bridge.
+#
+# The production compose uses `network_mode: host` for exactly these two reasons.
+# It is not used here because host networking is unavailable on Docker Desktop and
+# on WSL2, which is where this file is meant to be used. Test both features against
+# the production compose on a Linux host.
 services:
   hat-app:
     image: hat-app:local
@@ -9,6 +20,11 @@ services:
     container_name: hat-app-dev
     volumes:
       - ./:/app
+      # Scoped to the one generated file: the ./:/app mount above would otherwise
+      # shadow the image-built stylesheet with the host copy, which is gitignored
+      # and therefore absent on a fresh clone - the UI then renders unstyled.
+      # Everything else under public/assets is tracked and must stay host-editable.
+      - /app/public/assets/app.css
       - ./var/data:/app/var/data
       - ./var/log:/app/var/log
     env_file:

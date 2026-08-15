@@ -6,6 +6,7 @@ namespace EvilStudio\HAT\Tests\Integration\Service\Application;
 
 use EvilStudio\HAT\Contract\DevicePlatform;
 use EvilStudio\HAT\Contract\ScheduleInterface;
+use EvilStudio\HAT\Exception\EntityAlreadyExists;
 use EvilStudio\HAT\Exception\EntityNotFound;
 use EvilStudio\HAT\Repository\DeviceRepository;
 use EvilStudio\HAT\Repository\ScheduleRepository;
@@ -80,5 +81,34 @@ class DeviceServiceDatabaseIntegrationTest extends DatabaseIntegrationTestCase
 
         $this->expectException(EntityNotFound::class);
         $this->deviceService->getDeviceByName('node-main');
+    }
+
+    public function testConcurrentInsertSurfacesAsEntityAlreadyExistsInsteadOfRawSqlError(): void
+    {
+        // Writes the conflicting row straight to the DB between the uniqueness
+        // SELECT and the flush - exactly the window a second process races through.
+        $service = new class (
+            $this->entityManager,
+            new DeviceRepository($this->entityManager),
+            new UpsRepository($this->entityManager)
+        ) extends DeviceService {
+            protected function ensureNameIsUnique(string $name, ?int $excludeDeviceId = null): void
+            {
+                parent::ensureNameIsUnique($name, $excludeDeviceId);
+
+                $this->entityManager->getConnection()->insert('devices', [
+                    'name' => $name,
+                    'ip' => '10.0.0.99',
+                    'mac' => '00:11:22:33:44:99',
+                    'platform' => 'generic',
+                    'auto_stop_allowed' => 1,
+                ]);
+            }
+        };
+
+        $this->expectException(EntityAlreadyExists::class);
+        $this->expectExceptionMessage("Device with name 'node-raced' already exists.");
+
+        $service->createDevice('node-raced', '10.0.0.10', '00:11:22:33:44:55', DevicePlatform::LINUX->value);
     }
 }

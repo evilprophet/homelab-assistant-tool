@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EvilStudio\HAT\Tests\Unit\Service\Application;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use Doctrine\ORM\EntityManagerInterface;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Repository\ActionLogRepository;
@@ -38,7 +39,27 @@ class ActionLogServiceTest extends TestCase
         $this->assertSame('device.start', $actionLog->getAction());
         $this->assertSame(ActionLog::LEVEL_INFO, $actionLog->getLevel());
         $this->assertSame('Started device', $actionLog->getMessage());
-        $this->assertSame($createdAt, $actionLog->getCreatedAt());
+        $this->assertSame($createdAt->getTimestamp(), $actionLog->getCreatedAt()->getTimestamp());
+        $this->assertSame('UTC', $actionLog->getCreatedAt()->getTimezone()->getName());
+    }
+
+    public function testCreateActionLogConvertsNonUtcCreatedAtToUtc(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $repository = $this->createMock(ActionLogRepository::class);
+        $createdAt = new DateTimeImmutable('2026-01-01 10:00:00', new DateTimeZone('Europe/Warsaw'));
+
+        $service = new ActionLogService($entityManager, $repository);
+        $actionLog = $service->createActionLog(
+            ActionLog::SOURCE_CLI,
+            'device.start',
+            ActionLog::LEVEL_INFO,
+            'Started device',
+            $createdAt
+        );
+
+        $this->assertSame('UTC', $actionLog->getCreatedAt()->getTimezone()->getName());
+        $this->assertSame('2026-01-01 09:00:00', $actionLog->getCreatedAt()->format('Y-m-d H:i:s'));
     }
 
     public function testCreateActionLogRejectsInvalidSource(): void

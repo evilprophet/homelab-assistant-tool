@@ -39,6 +39,14 @@ when@test:
 when@prod:
     monolog:
         handlers:
+            # Rotated by the application so no host-side logrotate rule is needed;
+            # the file lives on a bind mount and would otherwise grow forever.
+            web:
+                type: rotating_file
+                path: "%kernel.logs_dir%/web.log"
+                level: info
+                max_files: 28
+                channels: ["web"]
             main:
                 type: fingers_crossed
                 action_level: error
@@ -51,6 +59,12 @@ when@prod:
                 path: "%kernel.logs_dir%/%kernel.environment%.log"
                 level: debug
                 formatter: monolog.formatter.json
+            # Without this nothing the application logs reaches `docker compose logs`.
+            stderr:
+                type: stream
+                path: "php://stderr"
+                level: notice
+                channels: ["!event", "!deprecation"]
             console:
                 type: console
                 process_psr_3_messages: false

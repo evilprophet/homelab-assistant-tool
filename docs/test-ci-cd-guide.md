@@ -1,4 +1,4 @@
-# 🚀 GitLab CI/CD Guide
+# 🚀 CI/CD Guide
 
 **Pipeline Status:** Configured
 
@@ -62,6 +62,20 @@ bin/phpunit-coverage
 - Cache paths:
     - `.composer-cache/`
     - `vendor/`
+
+## 🐳 GitHub Actions: image publication
+
+A second pipeline lives in `.github/workflows/build-docker-image.yml` and is separate from the GitLab quality pipeline.
+
+- Trigger: `workflow_dispatch` only, with a required `image_tag` input. Nothing publishes automatically on push.
+- Registry: GHCR, authenticated with the workflow's own `GITHUB_TOKEN`.
+- Tags pushed: the supplied `image_tag` **and** `latest`, both from whichever ref the run was started on.
+- Build context: repository root with `./Dockerfile`.
+
+Two consequences worth knowing before dispatching a run:
+
+- The workflow runs no tests, so a dispatch from a broken ref publishes a broken image.
+- `latest` is overwritten by every run regardless of the ref, and `docker-compose.yml` pins `latest`.
 
 ## 📝 Notes
 

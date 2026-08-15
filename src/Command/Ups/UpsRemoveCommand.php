@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\Ups;
 
+use EvilStudio\HAT\Command\Support\DestructiveConfirmationTrait;
 use EvilStudio\HAT\Command\Support\UpsSelectionTrait;
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
@@ -24,6 +25,7 @@ use Throwable;
 class UpsRemoveCommand extends Command
 {
     use UpsSelectionTrait;
+    use DestructiveConfirmationTrait;
 
     public function __construct(
         protected UpsService $upsService,
@@ -73,12 +75,14 @@ class UpsRemoveCommand extends Command
             );
         }
 
-        if (!$input->getOption('force')) {
-            if (!$io->confirm(sprintf("Remove UPS '%s'?", $ups->getIdentifier()), false)) {
-                $io->warning('UPS removal aborted by user.');
-
-                return Command::SUCCESS;
-            }
+        $confirmationExitCode = $this->confirmDestructiveAction(
+            $input,
+            $io,
+            sprintf("Remove UPS '%s'?", $ups->getIdentifier()),
+            'UPS removal aborted by user.'
+        );
+        if ($confirmationExitCode !== null) {
+            return $confirmationExitCode;
         }
 
         try {

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="HAT">
+    <description>PSR-12 across application, migration and test code.</description>
+
+    <file>src</file>
+    <file>tests</file>
+    <file>migrations</file>
+
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="p"/>
+
+    <rule ref="PSR12"/>
+
+    <!-- Migration SQL is one statement per line; wrapping it hurts readability
+         and makes the statements harder to diff against the schema. -->
+    <rule ref="Generic.Files.LineLength">
+        <exclude-pattern>migrations/*</exclude-pattern>
+    </rule>
+</ruleset>

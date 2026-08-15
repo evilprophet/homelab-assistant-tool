@@ -149,11 +149,9 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    {% if device.ups is defined and device.ups != '-' %}
-                                        {% set ups_parts = device.ups|split(':', 2) %}
-                                        {% set ups_name = ups_parts|length > 1 ? ups_parts[1] : device.ups %}
+                                    {% if device.ups %}
                                         <span class="px-2.5 py-1 inline-flex text-xs font-semibold rounded-full border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300">
-                                            {{ ups_name }}
+                                            {{ device.ups.name }}
                                         </span>
                                     {% else %}
                                         <span class="text-sm text-slate-400 dark:text-slate-500">-</span>
@@ -167,7 +165,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300" data-device-status="{{ device.name }}">
+                                    <span class="inline-flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300" data-runtime-device-status="{{ device.name }}" data-status-online="bg-green-500" data-status-offline="bg-red-500">
                                         <span data-status-dot class="w-2 h-2 rounded-full {{ status == 'online' ? 'bg-green-500' : (status == 'offline' ? 'bg-red-500' : 'bg-slate-400') }}"></span>
                                         <span data-status-label class="uppercase tracking-wide">{{ status }}</span>
                                     </span>
@@ -230,66 +228,7 @@
                     platformFilter.form.submit();
                 });
             }
-
-            const deviceStatusNodes = Array.from(document.querySelectorAll('[data-device-status]'));
-            if (deviceStatusNodes.length === 0) {
-                return;
-            }
-
-            const deviceNames = Array.from(new Set(
-                deviceStatusNodes
-                    .map((node) => node.dataset.deviceStatus || '')
-                    .filter((name) => name !== '')
-            ));
-            if (deviceNames.length === 0) {
-                return;
-            }
-
-            const buildDotClass = (status) => {
-                if (status === 'online') {
-                    return 'bg-green-500';
-                }
-                if (status === 'offline') {
-                    return 'bg-red-500';
-                }
-
-                return 'bg-slate-400';
-            };
-
-            const params = new URLSearchParams();
-            deviceNames.forEach((deviceName) => {
-                params.append('device_names[]', deviceName);
-            });
-
-            fetch('{{ path('hat_runtime_statuses') }}?' + params.toString(), {
-                headers: { 'Accept': 'application/json' },
-            })
-                .then((response) => response.ok ? response.json() : Promise.reject())
-                .then((payload) => {
-                    const statusByName = payload.device_status_by_name || {};
-
-                    deviceStatusNodes.forEach((node) => {
-                        const deviceName = node.dataset.deviceStatus || '';
-                        if (deviceName === '') {
-                            return;
-                        }
-
-                        const status = typeof statusByName[deviceName] === 'string' ? statusByName[deviceName] : 'unknown';
-                        const dot = node.querySelector('[data-status-dot]');
-                        const label = node.querySelector('[data-status-label]');
-
-                        if (dot) {
-                            dot.classList.remove('bg-green-500', 'bg-red-500', 'bg-slate-400');
-                            dot.classList.add(buildDotClass(status));
-                        }
-
-                        if (label) {
-                            label.textContent = status;
-                        }
-                    });
-                })
-                .catch(() => {
-                });
         })();
     </script>
+    {% include 'ui/_runtime_status_script.html.twig' only %}
 {% endblock %}

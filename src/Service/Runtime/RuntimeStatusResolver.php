@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Service\Runtime;
 
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -17,8 +18,23 @@ class RuntimeStatusResolver
         protected DeviceOperationsService $deviceOperationsService,
         protected UpsRuntimeService $upsRuntimeService,
         #[Autowire(service: 'cache.app')]
-        protected CacheInterface $cache
+        protected CacheInterface $cache,
+        protected ?LoggerInterface $logger = null
     ) {
+    }
+
+    /**
+     * Without this a start/stop redirect re-renders the pre-action status for up to
+     * a minute, so the UI contradicts the success message the user just got.
+     */
+    public function invalidateDeviceStatus(string $deviceName): void
+    {
+        $normalizedNames = $this->normalizeIdentifiers([$deviceName]);
+        if ($normalizedNames === []) {
+            return;
+        }
+
+        $this->cache->delete($this->buildDeviceStatusCacheKey($normalizedNames[0]));
     }
 
     public function resolveDeviceStatusByNames(array $deviceNames): array
@@ -36,7 +52,11 @@ class RuntimeStatusResolver
                         $runtimeData = $runtimeDevice->toArray();
 
                         return (string)($runtimeData['status'] ?? 'unknown');
-                    } catch (Throwable) {
+                    } catch (Throwable $exception) {
+                        // Swallowed on purpose - the UI degrades to a grey dot - but a
+                        // persistent misconfiguration must leave a trail somewhere.
+                        $this->logStatusFailure('device', $deviceName, $exception);
+
                         return 'unknown';
                     }
                 }
@@ -73,7 +93,9 @@ class RuntimeStatusResolver
                         $runtimeUps->updateStatus();
 
                         return $runtimeUps->toArray();
-                    } catch (Throwable) {
+                    } catch (Throwable $exception) {
+                        $this->logStatusFailure('ups', $upsIdentifier, $exception);
+
                         return [
                             'id' => '-',
                             'name' => '-',
@@ -83,7 +105,7 @@ class RuntimeStatusResolver
                             'status' => '-',
                             'power' => '-',
                             'battery' => '-',
-                            'linked_device' => '-',
+                            'linked_devices' => [],
                         ];
                     }
                 }
@@ -91,6 +113,15 @@ class RuntimeStatusResolver
         }
 
         return $resolvedData;
+    }
+
+    protected function logStatusFailure(string $kind, string $identifier, Throwable $exception): void
+    {
+        $this->logger?->warning('Runtime status lookup failed.', [
+            'kind' => $kind,
+            'identifier' => $identifier,
+            'exception' => $exception->getMessage(),
+        ]);
     }
 
     protected function normalizeIdentifiers(array $rawValues): array

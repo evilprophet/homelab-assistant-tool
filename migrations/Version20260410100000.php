@@ -24,4 +24,3 @@ final class Version20260410100000 extends AbstractMigration
         $this->addSql('ALTER TABLE devices DROP auto_stop_allowed');
     }
 }
-

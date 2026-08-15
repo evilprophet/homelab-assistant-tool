@@ -58,10 +58,11 @@ class StopDeviceCommand extends AbstractDeviceCommand
         $this->actionLogService->createActionLog(
             ActionLog::SOURCE_CLI,
             ActionLogAction::DEVICE_STOP->value,
-            ActionLog::LEVEL_INFO,
+            $result ? ActionLog::LEVEL_INFO : ActionLog::LEVEL_WARNING,
             $message
         );
 
-        return Command::SUCCESS;
+        // A script chaining on `&&` must not treat a failed action as done.
+        return $result ? Command::SUCCESS : Command::FAILURE;
     }
 }

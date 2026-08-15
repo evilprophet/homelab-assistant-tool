@@ -9,6 +9,7 @@ use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Repository\UpsRepository;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Application\UpsService;
+use EvilStudio\HAT\Service\Runtime\RuntimeStatusResolver;
 use EvilStudio\HAT\Service\Runtime\UpsRuntimeService;
 use EvilStudio\HAT\Tests\Support\EntityTestHelperTrait;
 use PHPUnit\Framework\TestCase;
@@ -98,7 +99,8 @@ class UpsControllerTest extends TestCase
             $this->createMock(UpsService::class),
             $this->createMock(UpsRuntimeService::class),
             $upsRepository ?? $this->createMock(UpsRepository::class),
-            $actionLogService ?? $this->createMock(ActionLogService::class)
+            $actionLogService ?? $this->createMock(ActionLogService::class),
+            $this->createMock(RuntimeStatusResolver::class)
         ) extends UpsController {
             public function callMapEntityToFormData(\EvilStudio\HAT\Entity\Ups $ups): array
             {

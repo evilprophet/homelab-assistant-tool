@@ -41,6 +41,7 @@ class AbstractDeviceCommandTest extends TestCase
         $device = $this->createMock(DeviceInterface::class);
 
         $input->expects($this->once())->method('getArgument')->with('name')->willReturn(null);
+        $input->expects($this->once())->method('isInteractive')->willReturn(true);
         $operationsService->expects($this->once())->method('listDeviceNames')->willReturn(['node-1', 'node-2']);
         $io->expects($this->once())
             ->method('choice')

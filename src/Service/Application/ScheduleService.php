@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Service\Application;
 
+use Cron\CronExpression;
 use Doctrine\ORM\EntityManagerInterface;
+use EvilStudio\HAT\Contract\ScheduleInterface;
 use EvilStudio\HAT\Entity\Device;
 use EvilStudio\HAT\Entity\Schedule;
 use EvilStudio\HAT\Exception\EntityAlreadyExists;
 use EvilStudio\HAT\Exception\EntityNotFound;
 use EvilStudio\HAT\Repository\DeviceRepository;
 use EvilStudio\HAT\Repository\ScheduleRepository;
+use InvalidArgumentException;
 
 class ScheduleService extends AbstractDatabaseService
 {
@@ -49,6 +52,8 @@ class ScheduleService extends AbstractDatabaseService
         array $deviceIds,
         bool $isEnabled = true
     ): Schedule {
+        $this->assertCronExpressionIsValid($cronExpression);
+        $this->assertCommandIsSupported($command);
         $this->ensureNameIsUnique($name);
         $devices = $this->resolveDevicesByIds($deviceIds);
 
@@ -64,7 +69,7 @@ class ScheduleService extends AbstractDatabaseService
         }
 
         $this->persist($schedule);
-        $this->flush();
+        $this->flushExpectingUnique('Schedule', 'name', $name);
 
         return $schedule;
     }
@@ -77,6 +82,8 @@ class ScheduleService extends AbstractDatabaseService
         string $command,
         array $deviceIds
     ): Schedule {
+        $this->assertCronExpressionIsValid($cronExpression);
+        $this->assertCommandIsSupported($command);
         $schedule = $this->getScheduleById($scheduleId);
         $this->ensureNameIsUnique($name, $scheduleId);
         $devices = $this->resolveDevicesByIds($deviceIds);
@@ -97,7 +104,7 @@ class ScheduleService extends AbstractDatabaseService
             ->setCronExpression($cronExpression)
             ->setCommand($command);
 
-        $this->flush();
+        $this->flushExpectingUnique('Schedule', 'name', $name);
 
         return $schedule;
     }
@@ -108,6 +115,30 @@ class ScheduleService extends AbstractDatabaseService
 
         $this->remove($schedule);
         $this->flush();
+    }
+
+    protected function assertCronExpressionIsValid(string $cronExpression): void
+    {
+        if (CronExpression::isValidExpression($cronExpression)) {
+            return;
+        }
+
+        throw new InvalidArgumentException(sprintf("Invalid cron expression '%s'.", $cronExpression));
+    }
+
+    protected function assertCommandIsSupported(string $command): void
+    {
+        if (in_array($command, ScheduleInterface::COMMANDS, true)) {
+            return;
+        }
+
+        throw new InvalidArgumentException(
+            sprintf(
+                "Unsupported schedule command '%s'. Allowed values: %s.",
+                $command,
+                implode(', ', ScheduleInterface::COMMANDS)
+            )
+        );
     }
 
     protected function ensureNameIsUnique(string $name, ?int $excludeScheduleId = null): void

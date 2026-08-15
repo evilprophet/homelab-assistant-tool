@@ -47,6 +47,7 @@ class RuntimeStatusControllerTest extends TestCase
         $this->assertSame(['node-1' => 'online'], $decoded['device_status_by_name'] ?? []);
         $this->assertSame('Online', $decoded['ups_status_by_identifier']['ups-main']['label'] ?? null);
         $this->assertStringContainsString('max-age=60', (string)$response->headers->get('Cache-Control'));
-        $this->assertStringContainsString('public', (string)$response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('private', (string)$response->headers->get('Cache-Control'));
+        $this->assertStringNotContainsString('public', (string)$response->headers->get('Cache-Control'));
     }
 }

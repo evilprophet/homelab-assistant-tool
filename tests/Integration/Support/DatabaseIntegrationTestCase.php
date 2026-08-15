@@ -48,12 +48,18 @@ abstract class DatabaseIntegrationTestCase extends KernelTestCase
             return;
         }
 
+        $connection = $this->entityManager->getConnection();
         $schemaTool = new SchemaTool($this->entityManager);
+
+        // SchemaTool drops tables in an order that foreign key enforcement rejects.
+        $connection->executeStatement('PRAGMA foreign_keys = OFF');
+
         try {
             $schemaTool->dropSchema($metadata);
         } catch (Throwable) {
         }
 
         $schemaTool->createSchema($metadata);
+        $connection->executeStatement('PRAGMA foreign_keys = ON');
     }
 }

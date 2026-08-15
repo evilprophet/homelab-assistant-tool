@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\Schedule;
 
+use EvilStudio\HAT\Command\Support\RuntimeTableRowTrait;
 use EvilStudio\HAT\Service\Runtime\ScheduleRuntimeService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -14,6 +15,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'hat:schedule:list', description: 'List schedules')]
 class ScheduleListCommand extends Command
 {
+    use RuntimeTableRowTrait;
+
     public function __construct(
         protected ScheduleRuntimeService $scheduleRuntimeService
     ) {
@@ -33,7 +36,9 @@ class ScheduleListCommand extends Command
 
         $rows = [];
         foreach ($runtimeSchedules as $runtimeSchedule) {
-            $rows[] = $runtimeSchedule->toArray();
+            $row = $runtimeSchedule->toArray();
+            $row['devices'] = $this->formatDeviceList($row['devices'] ?? []);
+            $rows[] = $row;
         }
 
         $io->table(['ID', 'Name', 'Enabled', 'Cron Expression', 'Command', 'Devices'], $rows);

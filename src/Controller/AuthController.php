@@ -6,6 +6,7 @@ namespace EvilStudio\HAT\Controller;
 
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
+use EvilStudio\HAT\Security\NextPathTrait;
 use EvilStudio\HAT\Security\SimpleLoginFormAuthenticator;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Auth\AuthModeResolver;
@@ -24,8 +25,15 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 #[Route('/auth')]
 class AuthController extends AbstractController
 {
+    use NextPathTrait;
+
+    // Mirrors security.yaml logout.csrf_token_id; the functional logout test fails
+    // if the two ever drift apart.
+    public const string CSRF_AUTH_LOGOUT = 'auth.logout';
+
     protected const string OIDC_QUERY_FLAG = 'oidc';
     protected const string OIDC_SESSION_STATE_KEY = '_hat_oidc_state';
+    protected const string OIDC_SESSION_VERIFIER_KEY = '_hat_oidc_code_verifier';
     protected const string OIDC_SESSION_NEXT_KEY = '_hat_oidc_next';
     protected const string NEXT_QUERY_KEY = 'next';
     protected const string FIREWALL_TARGET_PATH_KEY = '_security.main.target_path';
@@ -101,7 +109,7 @@ class AuthController extends AbstractController
         if ($error !== '') {
             $errorDescription = trim((string)$request->query->get('error_description', ''));
             $message = $errorDescription === '' ? $error : sprintf('%s: %s', $error, $errorDescription);
-            $this->addFlash('error', sprintf('OIDC login failed: %s', $message));
+            $this->addFlash('error', 'OIDC login failed. Check the action log for details.');
             $this->safeCreateWebLog(
                 ActionLogAction::AUTH_CALLBACK,
                 ActionLog::LEVEL_ERROR,
@@ -127,8 +135,21 @@ class AuthController extends AbstractController
             ?? $this->generateUrl('hat_dashboard');
         $session->remove(self::OIDC_SESSION_NEXT_KEY);
 
+        $codeVerifier = (string)$session->get(self::OIDC_SESSION_VERIFIER_KEY, '');
+        $session->remove(self::OIDC_SESSION_VERIFIER_KEY);
+        if ($codeVerifier === '') {
+            $this->addFlash('error', 'OIDC login failed. Check the action log for details.');
+            $this->safeCreateWebLog(
+                ActionLogAction::AUTH_CALLBACK,
+                ActionLog::LEVEL_ERROR,
+                'OIDC callback failed: missing PKCE code verifier in session.'
+            );
+
+            return $this->redirectToRoute('hat_auth_login');
+        }
+
         try {
-            $accessToken = $this->oidcClient->exchangeCodeForAccessToken($code);
+            $accessToken = $this->oidcClient->exchangeCodeForAccessToken($code, $codeVerifier);
             $userInfo = $this->oidcClient->fetchUserInfo($accessToken);
 
             $preferredUsername = trim((string)($userInfo['preferred_username'] ?? ''));
@@ -142,7 +163,8 @@ class AuthController extends AbstractController
 
             return new RedirectResponse($nextPath);
         } catch (Throwable $exception) {
-            $this->addFlash('error', sprintf('OIDC login failed: %s', $exception->getMessage()));
+            // The detail goes to the action log; an unauthenticated visitor gets none of it.
+            $this->addFlash('error', 'OIDC login failed. Check the action log for details.');
             $this->safeCreateWebLog(
                 ActionLogAction::AUTH_CALLBACK,
                 ActionLog::LEVEL_ERROR,
@@ -164,7 +186,7 @@ class AuthController extends AbstractController
         try {
             $state = bin2hex(random_bytes(32));
         } catch (RandomException $exception) {
-            $this->addFlash('error', sprintf('OIDC login failed: %s', $exception->getMessage()));
+            $this->addFlash('error', 'OIDC login failed. Check the action log for details.');
             $this->safeCreateWebLog(
                 ActionLogAction::AUTH_LOGIN,
                 ActionLog::LEVEL_ERROR,
@@ -174,15 +196,18 @@ class AuthController extends AbstractController
             return $this->redirectToRoute('hat_auth_login');
         }
 
+        $codeVerifier = $this->oidcClient->createCodeVerifier();
         $request->getSession()->set(self::OIDC_SESSION_STATE_KEY, $state);
+        $request->getSession()->set(self::OIDC_SESSION_VERIFIER_KEY, $codeVerifier);
         $request->getSession()->set(self::OIDC_SESSION_NEXT_KEY, $nextPath);
 
         try {
-            return new RedirectResponse($this->oidcClient->buildAuthorizationUrl($state));
+            return new RedirectResponse($this->oidcClient->buildAuthorizationUrl($state, $codeVerifier));
         } catch (Throwable $exception) {
             $request->getSession()->remove(self::OIDC_SESSION_STATE_KEY);
+            $request->getSession()->remove(self::OIDC_SESSION_VERIFIER_KEY);
             $request->getSession()->remove(self::OIDC_SESSION_NEXT_KEY);
-            $this->addFlash('error', sprintf('OIDC login failed: %s', $exception->getMessage()));
+            $this->addFlash('error', 'OIDC login failed. Check the action log for details.');
             $this->safeCreateWebLog(
                 ActionLogAction::AUTH_LOGIN,
                 ActionLog::LEVEL_ERROR,
@@ -201,7 +226,8 @@ class AuthController extends AbstractController
         }
 
         if ($request->hasSession()) {
-            $targetPath = $this->normalizeNextPath(
+            $targetPath = $this->normalizeTargetPath(
+                $request,
                 (string)$request->getSession()->get(self::FIREWALL_TARGET_PATH_KEY, '')
             );
             if ($targetPath !== null) {
@@ -210,15 +236,6 @@ class AuthController extends AbstractController
         }
 
         return $this->generateUrl('hat_dashboard');
-    }
-
-    protected function normalizeNextPath(string $candidate): ?string
-    {
-        if ($candidate === '' || !str_starts_with($candidate, '/') || str_starts_with($candidate, '//')) {
-            return null;
-        }
-
-        return $candidate;
     }
 
     protected function safeCreateWebLog(string|ActionLogAction $action, string $level, string $message): void

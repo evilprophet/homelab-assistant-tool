@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\Device;
 
+use EvilStudio\HAT\Command\Support\DestructiveConfirmationTrait;
 use EvilStudio\HAT\Command\Support\DeviceSelectionTrait;
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
@@ -24,6 +25,7 @@ use Throwable;
 class DeviceRemoveCommand extends Command
 {
     use DeviceSelectionTrait;
+    use DestructiveConfirmationTrait;
 
     public function __construct(
         protected DeviceService $deviceService,
@@ -78,12 +80,14 @@ class DeviceRemoveCommand extends Command
             );
         }
 
-        if (!$input->getOption('force')) {
-            if (!$io->confirm(sprintf("Remove device '%s'?", $device->getName()), false)) {
-                $io->warning('Device removal aborted by user.');
-
-                return Command::SUCCESS;
-            }
+        $confirmationExitCode = $this->confirmDestructiveAction(
+            $input,
+            $io,
+            sprintf("Remove device '%s'?", $device->getName()),
+            'Device removal aborted by user.'
+        );
+        if ($confirmationExitCode !== null) {
+            return $confirmationExitCode;
         }
 
         try {

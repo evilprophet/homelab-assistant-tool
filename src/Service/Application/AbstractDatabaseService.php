@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Service\Application;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
+use EvilStudio\HAT\Exception\EntityAlreadyExists;
 use Throwable;
 
 abstract class AbstractDatabaseService
@@ -45,5 +47,19 @@ abstract class AbstractDatabaseService
     protected function flush(): void
     {
         $this->entityManager->flush();
+    }
+
+    /**
+     * The pre-flush uniqueness checks are check-then-act, so a concurrent writer can
+     * still win the race. Without this the caller gets a raw SQLSTATE message, which
+     * the controllers render straight into the form.
+     */
+    protected function flushExpectingUnique(string $entityName, string $fieldName, string $value): void
+    {
+        try {
+            $this->entityManager->flush();
+        } catch (UniqueConstraintViolationException $exception) {
+            throw EntityAlreadyExists::forField($entityName, $fieldName, $value);
+        }
     }
 }

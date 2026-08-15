@@ -3,8 +3,9 @@ parameters:
 
   configuration:
     cron: true # Enable or disable cron jobs. Command hat:cron:execute has to be manually added to crontab.
-    ups_mode: true|false # When enabled cron schedule wont be executed if any UPS is on battery and devices will be shut down when battery is low.
-    ssh_key_path: # Path to SSH key
-    default_ssh_username: # Default SSH username for devices
-    timezone: # Timezone for the server
+    ups_mode: true # When enabled cron schedule wont be executed if any UPS is on battery and devices will be shut down when battery is low.
+    ssh_key_path: var/data/id_ed25519 # Path to SSH key, relative to project root or absolute.
+    ssh_key_passphrase: '' # Passphrase for the SSH key. Leave empty for an unencrypted key.
+    default_ssh_username: root # Default SSH username for devices.
+    timezone: UTC # Timezone for the server.
     action_log_retention_days: 90 # Default retention period (days) for automatic and CLI action log cleanup.

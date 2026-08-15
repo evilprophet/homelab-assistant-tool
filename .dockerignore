@@ -1,10 +1,13 @@
+.agents
+.claude
+.codex
 .env
 .env.*
 .git
 .gitignore
 .idea
 .phpunit.cache
-ai-rules
+ai-*
 docker-compose*.yml
 Dockerfile.dev
 docs
@@ -14,3 +17,5 @@ refactoring
 tests
 var
 vendor
+config/parameters.yaml
+config/reference.php

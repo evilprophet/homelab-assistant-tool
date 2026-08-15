@@ -11,6 +11,7 @@ use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Application\DeviceService;
 use EvilStudio\HAT\Service\Application\UpsService;
 use EvilStudio\HAT\Service\Runtime\DeviceOperationsService;
+use EvilStudio\HAT\Service\Runtime\RuntimeStatusResolver;
 use EvilStudio\HAT\Tests\Support\EntityTestHelperTrait;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -118,7 +119,8 @@ class DeviceControllerTest extends TestCase
             $this->createMock(DeviceOperationsService::class),
             $this->createMock(ActionLogService::class),
             $deviceRepository ?? $this->createMock(DeviceRepository::class),
-            $upsRepository ?? $this->createMock(UpsRepository::class)
+            $upsRepository ?? $this->createMock(UpsRepository::class),
+            $this->createMock(RuntimeStatusResolver::class)
         ) extends DeviceController {
             public function callExtractFormData(Request $request): array
             {

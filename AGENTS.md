@@ -13,8 +13,10 @@ Rules are layered from most to least specific. On conflict, the more specific fi
 
 1. Subtree-local `AGENTS.md` for the files being edited, if present.
 2. This root `AGENTS.md` - local routing and project context.
-3. Matching language/task profiles in `./ai-rules/profiles/*/AGENTS.md`.
-4. `./ai-rules/AGENTS.md` - global engineering baseline.
+3. Rules shipped by the project's own dependencies, when it has any.
+4. `./ai-rules/contexts/<context>/AGENTS.md` - the context this project is worked in.
+5. Matching language/task profiles in `./ai-rules/profiles/*/AGENTS.md`.
+6. `./ai-rules/AGENTS.md` - global engineering baseline.
 
 If `./ai-rules` is missing, ask the user for instructions and do not assume another rules source.
 

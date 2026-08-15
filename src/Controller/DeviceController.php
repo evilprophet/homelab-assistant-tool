@@ -16,6 +16,7 @@ use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Application\DeviceService;
 use EvilStudio\HAT\Service\Application\UpsService;
 use EvilStudio\HAT\Service\Runtime\DeviceOperationsService;
+use EvilStudio\HAT\Service\Runtime\RuntimeStatusResolver;
 use Throwable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -26,12 +27,11 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/devices')]
 class DeviceController extends AbstractController
 {
-    protected const string MAC_PATTERN = '/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i';
-    protected const string CSRF_DEVICE_FORM_CREATE = 'device.form.create';
-    protected const string CSRF_DEVICE_FORM_EDIT_PREFIX = 'device.form.edit.';
-    protected const string CSRF_DEVICE_REMOVE_PREFIX = 'device.remove.';
-    protected const string CSRF_DEVICE_START_PREFIX = 'device.start.';
-    protected const string CSRF_DEVICE_STOP_PREFIX = 'device.stop.';
+    public const string CSRF_DEVICE_FORM_CREATE = 'device.form.create';
+    public const string CSRF_DEVICE_FORM_EDIT_PREFIX = 'device.form.edit.';
+    public const string CSRF_DEVICE_REMOVE_PREFIX = 'device.remove.';
+    public const string CSRF_DEVICE_START_PREFIX = 'device.start.';
+    public const string CSRF_DEVICE_STOP_PREFIX = 'device.stop.';
     protected const string SORT_BY_NAME_ID = 'name_id';
     protected const string SORT_BY_NETWORK = 'network';
     protected const string SORT_BY_PLATFORM = 'platform';
@@ -55,7 +55,8 @@ class DeviceController extends AbstractController
         protected DeviceOperationsService $deviceOperationsService,
         protected ActionLogService $actionLogService,
         protected DeviceRepository $deviceRepository,
-        protected UpsRepository $upsRepository
+        protected UpsRepository $upsRepository,
+        protected RuntimeStatusResolver $runtimeStatusResolver
     ) {
     }
 
@@ -343,7 +344,9 @@ class DeviceController extends AbstractController
             if ($action === 'start') {
                 $result = $this->deviceOperationsService->startDevice($device->getName());
                 $level = $result ? ActionLog::LEVEL_INFO : ActionLog::LEVEL_WARNING;
-                $message = sprintf("Device '%s' started: %s.", $device->getName(), $result ? 'yes' : 'no');
+                $message = $result
+                    ? sprintf("Wake-on-LAN packet sent to device '%s'.", $device->getName())
+                    : sprintf("Wake-on-LAN packet could not be sent to device '%s'.", $device->getName());
             } else {
                 $result = $this->deviceOperationsService->stopDevice($device->getName());
                 $level = $result ? ActionLog::LEVEL_INFO : ActionLog::LEVEL_WARNING;
@@ -357,6 +360,10 @@ class DeviceController extends AbstractController
             $message = sprintf("Device '%s': %s", $device->getName(), $exception->getMessage());
             $this->addFlash('error', $message);
             $this->safeCreateWebLog($actionName, ActionLog::LEVEL_ERROR, $message);
+        } finally {
+            // The redirect target immediately re-fetches statuses; without this it
+            // would serve the cached pre-action value for up to a minute.
+            $this->runtimeStatusResolver->invalidateDeviceStatus($device->getName());
         }
     }
 
@@ -423,12 +430,20 @@ class DeviceController extends AbstractController
             $errors['ip'][] = 'A valid IP address is required.';
         }
 
-        if ($formData['mac'] === '' || preg_match(self::MAC_PATTERN, $formData['mac']) !== 1) {
+        if ($formData['mac'] === '' || preg_match(DeviceService::MAC_PATTERN, $formData['mac']) !== 1) {
             $errors['mac'][] = 'A valid MAC address is required (format: 00:11:22:33:44:55).';
         }
 
         if (!in_array($formData['platform'], DevicePlatform::values(), true)) {
             $errors['platform'][] = sprintf('Platform must be one of: %s.', implode(', ', DevicePlatform::values()));
+        }
+
+        if (
+            $formData['username'] !== null
+            && preg_match(DeviceService::USERNAME_PATTERN, $formData['username']) !== 1
+        ) {
+            $errors['username'][] = 'Username may contain letters, digits, dot, underscore and dash, '
+                . 'and cannot start with a dash.';
         }
 
         if ($formData['threshold_minutes'] !== '') {
@@ -588,8 +603,8 @@ class DeviceController extends AbstractController
 
     protected function compareDevicesByUps(array $left, array $right): int
     {
-        $leftUps = $this->resolveUpsSortData((string)($left['ups'] ?? '-'));
-        $rightUps = $this->resolveUpsSortData((string)($right['ups'] ?? '-'));
+        $leftUps = $this->resolveUpsSortData($left['ups'] ?? null);
+        $rightUps = $this->resolveUpsSortData($right['ups'] ?? null);
 
         $leftHasUps = $leftUps['has_ups'];
         $rightHasUps = $rightUps['has_ups'];
@@ -619,10 +634,10 @@ class DeviceController extends AbstractController
         return (int)$deviceId;
     }
 
-    protected function resolveUpsSortData(string $upsLink): array
+    protected function resolveUpsSortData(?array $ups): array
     {
-        $normalizedUpsLink = trim($upsLink);
-        if ($normalizedUpsLink === '' || $normalizedUpsLink === '-') {
+        $upsName = trim((string)($ups['name'] ?? ''));
+        if ($ups === null || $upsName === '') {
             return [
                 'has_ups' => false,
                 'id' => 0,
@@ -630,18 +645,12 @@ class DeviceController extends AbstractController
             ];
         }
 
-        $parts = explode(':', $normalizedUpsLink, 2);
-        $upsId = filter_var(
-            $parts[0] ?? null,
-            FILTER_VALIDATE_INT,
-            ['options' => ['min_range' => 1]]
-        );
-        $upsName = $parts[1] ?? $normalizedUpsLink;
+        $upsId = filter_var($ups['id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 
         return [
             'has_ups' => true,
             'id' => $upsId === false ? 0 : (int)$upsId,
-            'name' => trim($upsName),
+            'name' => $upsName,
         ];
     }
 

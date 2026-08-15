@@ -1,0 +1,3 @@
+{# Single source for the runtime-status fetch. Pages only declare data-* attributes. #}
+<span data-runtime-status-endpoint="{{ path('hat_runtime_statuses') }}" class="hidden"></span>
+<script src="{{ asset('assets/runtime-status.js') }}" defer></script>

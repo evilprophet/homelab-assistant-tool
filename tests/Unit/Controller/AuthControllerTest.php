@@ -34,6 +34,16 @@ class AuthControllerTest extends TestCase
         $this->assertNull($controller->callNormalizeNextPath('http://external'));
     }
 
+    public function testNormalizeNextPathRejectsBackslashSchemeRelativePaths(): void
+    {
+        $controller = $this->createTestableController();
+
+        $this->assertNull($controller->callNormalizeNextPath('/\\evil.example'));
+        $this->assertNull($controller->callNormalizeNextPath('/\\'));
+        $this->assertNull($controller->callNormalizeNextPath('/\\/evil.example'));
+        $this->assertSame('/a/b?x=1', $controller->callNormalizeNextPath('/a/b?x=1'));
+    }
+
     public function testSafeCreateWebLogSwallowsLoggingExceptions(): void
     {
         $actionLogService = $this->createMock(ActionLogService::class);

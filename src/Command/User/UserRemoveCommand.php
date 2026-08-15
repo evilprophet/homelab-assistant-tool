@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\User;
 
+use EvilStudio\HAT\Command\Support\DestructiveConfirmationTrait;
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Exception\EntityNotFound;
@@ -22,6 +23,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'hat:user:remove', description: 'Remove authentication user for simple auth mode')]
 class UserRemoveCommand extends Command
 {
+    use DestructiveConfirmationTrait;
+
     public function __construct(
         protected AuthModeResolver $authModeResolver,
         protected AuthUserService $authUserService,
@@ -42,14 +45,14 @@ class UserRemoveCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         if (!$this->authModeResolver->isSimpleMode()) {
-            $io->warning(
+            $io->error(
                 sprintf(
                     "Command 'hat:user:remove' is disabled for auth mode '%s'. Set HAT_AUTH_MODE=simple to enable it.",
                     $this->authModeResolver->getMode()
                 )
             );
 
-            return Command::SUCCESS;
+            return Command::FAILURE;
         }
 
         $username = trim((string)$input->getArgument('username'));
@@ -68,12 +71,14 @@ class UserRemoveCommand extends Command
             }
         }
 
-        if (!$input->getOption('force')) {
-            if (!$io->confirm(sprintf("Remove user '%s'?", $username), false)) {
-                $io->warning('User removal aborted by user.');
-
-                return Command::SUCCESS;
-            }
+        $confirmationExitCode = $this->confirmDestructiveAction(
+            $input,
+            $io,
+            sprintf("Remove user '%s'?", $username),
+            'User removal aborted by user.'
+        );
+        if ($confirmationExitCode !== null) {
+            return $confirmationExitCode;
         }
 
         try {

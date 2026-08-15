@@ -28,7 +28,9 @@ class SetupInitCommand extends Command
             return Command::FAILURE;
         }
 
-        if (!$this->runCommand(self::SETUP_DB_COMMAND_NAME, $input, $output)) {
+        // hat:setup:db refuses to guess a mode when non-interactive, and init is the
+        // only mode this flow can mean.
+        if (!$this->runCommand(self::SETUP_DB_COMMAND_NAME, $input, $output, ['--init' => true])) {
             $io->error('Setup failed during database step.');
 
             return Command::FAILURE;
@@ -39,8 +41,12 @@ class SetupInitCommand extends Command
         return Command::SUCCESS;
     }
 
-    protected function runCommand(string $commandName, InputInterface $input, OutputInterface $output): bool
-    {
+    protected function runCommand(
+        string $commandName,
+        InputInterface $input,
+        OutputInterface $output,
+        array $options = []
+    ): bool {
         $application = $this->getApplication();
         if ($application === null) {
             return false;
@@ -49,7 +55,7 @@ class SetupInitCommand extends Command
         $command = $application->find($commandName);
         $commandInput = new ArrayInput([
             'command' => $commandName,
-        ]);
+        ] + $options);
         $commandInput->setInteractive($input->isInteractive());
 
         return $command->run($commandInput, $output) === Command::SUCCESS;

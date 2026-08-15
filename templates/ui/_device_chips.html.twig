@@ -1,0 +1,12 @@
+{# Renders linked devices as status chips. Expects `devices` as a list of {id, name}
+   structures. Status dots are driven by public/assets/runtime-status.js. #}
+<div class="flex flex-wrap gap-1 max-w-xs">
+    {% for device in devices|sort((a, b) => a.name <=> b.name) %}
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
+            <span data-runtime-device-status="{{ device.name }}" data-status-online="bg-green-400" data-status-offline="bg-red-400" class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+            <span class="ml-1.5">{{ device.name }}</span>
+        </span>
+    {% else %}
+        <span class="text-sm text-slate-500 dark:text-slate-400">-</span>
+    {% endfor %}
+</div>

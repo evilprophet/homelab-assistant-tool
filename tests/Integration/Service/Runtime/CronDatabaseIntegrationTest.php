@@ -68,9 +68,8 @@ class CronDatabaseIntegrationTest extends DatabaseIntegrationTestCase
         $capturedMessages = [];
         $this->captureLogs($actionLogService, $capturedMessages);
 
-        $upsRuntimeService->expects($this->once())->method('updateAllUpsStatus');
+        $upsRuntimeService->expects($this->once())->method('pollAllUpsStatus')->willReturn([]);
         $configuration->expects($this->once())->method('isUpsModeEnabled')->willReturn(false);
-        $upsRuntimeService->expects($this->never())->method('isAnyUpsOnBattery');
         $configuration->expects($this->once())
             ->method('getCurrentDateTime')
             ->willReturn(new DateTime('2026-02-28 10:00:00', new DateTimeZone('UTC')));
@@ -97,7 +96,7 @@ class CronDatabaseIntegrationTest extends DatabaseIntegrationTestCase
         $cron->execute();
 
         $this->assertContains('Schedule "Night Start" is matching.', $capturedMessages);
-        $this->assertContains("Device 'node-1' started.", $capturedMessages);
+        $this->assertContains("Wake-on-LAN packet sent to device 'node-1'.", $capturedMessages);
     }
 
     public function testExecuteInBatteryModeStopsDeviceWhenDeviceThresholdExceedsUpsRuntime(): void
@@ -128,9 +127,11 @@ class CronDatabaseIntegrationTest extends DatabaseIntegrationTestCase
         $capturedMessages = [];
         $this->captureLogs($actionLogService, $capturedMessages);
 
-        $upsRuntimeService->expects($this->once())->method('updateAllUpsStatus');
+        $upsRuntimeService->expects($this->once())
+            ->method('pollAllUpsStatus')
+            ->willReturn(['ups-main' => $runtimeUps]);
         $configuration->expects($this->once())->method('isUpsModeEnabled')->willReturn(true);
-        $upsRuntimeService->expects($this->once())->method('isAnyUpsOnBattery')->willReturn(true);
+        $runtimeUps->expects($this->exactly(2))->method('isOnBattery')->willReturn(true);
 
         $deviceOperationsService->expects($this->once())
             ->method('listDevices')
@@ -148,11 +149,8 @@ class CronDatabaseIntegrationTest extends DatabaseIntegrationTestCase
             ->with($runtimeDevice, DeviceAction::STOP);
         $runtimeDevice->expects($this->once())->method('stop')->willReturn(true);
 
-        $upsRuntimeService->expects($this->once())
-            ->method('getRuntimeUpsByIdentifier')
-            ->with('ups-main')
-            ->willReturn($runtimeUps);
-        $runtimeUps->expects($this->once())->method('updateStatus');
+        $upsRuntimeService->expects($this->never())->method('getRuntimeUpsByIdentifier');
+        $runtimeUps->expects($this->never())->method('updateStatus');
         $runtimeUps->expects($this->once())->method('isBatteryRuntimeLow')->willReturn(false);
         $runtimeUps->expects($this->once())->method('getBatteryRuntime')->willReturn(600);
 
@@ -207,9 +205,12 @@ class CronDatabaseIntegrationTest extends DatabaseIntegrationTestCase
                 return new ActionLog();
             });
 
-        $upsRuntimeService->expects($this->once())->method('updateAllUpsStatus');
+        $onBatteryUps = $this->createMock(UpsInterface::class);
+        $onBatteryUps->expects($this->once())->method('isOnBattery')->willReturn(true);
+        $upsRuntimeService->expects($this->once())
+            ->method('pollAllUpsStatus')
+            ->willReturn(['ups-main' => $onBatteryUps]);
         $configuration->expects($this->once())->method('isUpsModeEnabled')->willReturn(true);
-        $upsRuntimeService->expects($this->once())->method('isAnyUpsOnBattery')->willReturn(true);
         $configuration->expects($this->never())->method('getCurrentDateTime');
 
         $deviceOperationsService->expects($this->once())

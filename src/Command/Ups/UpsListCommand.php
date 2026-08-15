@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\Ups;
 
+use EvilStudio\HAT\Command\Support\RuntimeTableRowTrait;
 use EvilStudio\HAT\Service\Runtime\UpsRuntimeService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -15,6 +16,8 @@ use Throwable;
 #[AsCommand(name: 'hat:ups:list', description: 'List UPS')]
 class UpsListCommand extends Command
 {
+    use RuntimeTableRowTrait;
+
     public function __construct(
         protected UpsRuntimeService $upsRuntimeService
     ) {
@@ -33,17 +36,30 @@ class UpsListCommand extends Command
         }
 
         $rows = [];
+        $unreachableIdentifiers = [];
         foreach ($runtimeUpsList as $runtimeUps) {
             try {
                 $runtimeUps->updateStatus();
             } catch (Throwable) {
+                $unreachableIdentifiers[] = $runtimeUps->getIdentifier();
             }
 
-            $rows[] = $runtimeUps->toArray();
+            $row = $runtimeUps->toArray();
+            $row['linked_devices'] = $this->formatDeviceList($row['linked_devices'] ?? []);
+            $rows[] = $row;
+        }
+
+        if (!empty($unreachableIdentifiers)) {
+            $io->warning(
+                sprintf(
+                    'Status could not be read for: %s. Those rows show no live data.',
+                    implode(', ', $unreachableIdentifiers)
+                )
+            );
         }
 
         $io->table(
-            ['ID', 'Name', 'Identifier', 'Model Name', 'Serial Number', 'Status', 'Power', 'Battery', 'Linked Device'],
+            ['ID', 'Name', 'Identifier', 'Model Name', 'Serial Number', 'Status', 'Power', 'Battery', 'Linked Devices'],
             $rows
         );
 

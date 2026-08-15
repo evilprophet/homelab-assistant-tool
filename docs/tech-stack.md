@@ -115,5 +115,5 @@ Important runtime binaries:
 - Dedicated SQLite test database: `var/data/hat_test.sqlite`
 - Test-specific container config:
     - `config/packages/test/framework.yaml`
-    - `config/services_test.yaml`
+    - `config/packages/test/parameters.yaml`
 - Integration database tests recreate schema from Doctrine metadata for deterministic runs

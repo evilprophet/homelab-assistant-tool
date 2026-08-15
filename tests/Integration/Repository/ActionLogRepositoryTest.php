@@ -38,6 +38,17 @@ class ActionLogRepositoryTest extends DatabaseIntegrationTestCase
         $this->assertSame('ups.update', $logs[0]->getAction());
     }
 
+    public function testFindByFiltersReturnsNewestRowsFirst(): void
+    {
+        $this->seedLogs();
+
+        $logs = $this->actionLogRepository->findByFilters(null, null, null, 2);
+
+        $this->assertCount(2, $logs);
+        $this->assertSame('node-1 runtime refreshed', $logs[0]->getMessage());
+        $this->assertSame('node-2 started from CLI', $logs[1]->getMessage());
+    }
+
     public function testFindPaginatedByFiltersAppliesDateEntityAndOrdering(): void
     {
         $this->seedLogs();
@@ -79,7 +90,55 @@ class ActionLogRepositoryTest extends DatabaseIntegrationTestCase
         );
 
         $this->assertSame(2, $removed);
-        $this->assertCount(2, $this->actionLogRepository->findAll());
+        $this->assertCount(2, $this->actionLogRepository->findByFilters(null, null, null, 10));
+    }
+
+    public function testEntityTextSearchTreatsWildcardsAsLiterals(): void
+    {
+        $this->persistActionLog(
+            ActionLog::SOURCE_WEB,
+            ActionLog::LEVEL_INFO,
+            'ups.update',
+            'battery at 100% capacity',
+            $this->utc('2026-02-28 10:00:00')
+        );
+        $this->persistActionLog(
+            ActionLog::SOURCE_WEB,
+            ActionLog::LEVEL_INFO,
+            'ups.update',
+            'battery at 100 percent capacity',
+            $this->utc('2026-02-28 11:00:00')
+        );
+        $this->entityManager->flush();
+
+        $result = $this->actionLogRepository->findPaginatedByFilters(null, null, null, null, null, '100%', 1, 10);
+
+        $this->assertSame(1, $result['total']);
+        $this->assertSame('battery at 100% capacity', $result['items'][0]->getMessage());
+    }
+
+    public function testEntityTextSearchTreatsUnderscoreAsLiteral(): void
+    {
+        $this->persistActionLog(
+            ActionLog::SOURCE_WEB,
+            ActionLog::LEVEL_INFO,
+            'device.start',
+            'node_1 started',
+            $this->utc('2026-02-28 10:00:00')
+        );
+        $this->persistActionLog(
+            ActionLog::SOURCE_WEB,
+            ActionLog::LEVEL_INFO,
+            'device.start',
+            'node-1 started',
+            $this->utc('2026-02-28 11:00:00')
+        );
+        $this->entityManager->flush();
+
+        $result = $this->actionLogRepository->findPaginatedByFilters(null, null, null, null, null, 'node_1', 1, 10);
+
+        $this->assertSame(1, $result['total']);
+        $this->assertSame('node_1 started', $result['items'][0]->getMessage());
     }
 
     protected function seedLogs(): void

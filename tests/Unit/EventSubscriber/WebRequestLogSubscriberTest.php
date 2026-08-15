@@ -20,7 +20,7 @@ class WebRequestLogSubscriberTest extends TestCase
     public function testOnRequestStoresStartTimeAndLogsRequestStart(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
-        $kernel = $this->createMock(HttpKernelInterface::class);
+        $kernel = $this->createStub(HttpKernelInterface::class);
         $request = Request::create('/devices?foo=bar', 'GET');
 
         $logger->expects($this->once())
@@ -37,7 +37,7 @@ class WebRequestLogSubscriberTest extends TestCase
     public function testOnRequestRedactsSensitiveQueryParameters(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
-        $kernel = $this->createMock(HttpKernelInterface::class);
+        $kernel = $this->createStub(HttpKernelInterface::class);
         $request = Request::create('/auth/callback?code=abc&state=def&next=%2Fdevices', 'GET');
 
         $logger->expects($this->once())
@@ -64,7 +64,7 @@ class WebRequestLogSubscriberTest extends TestCase
     public function testOnResponseLogsRequestFinishedWithDuration(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
-        $kernel = $this->createMock(HttpKernelInterface::class);
+        $kernel = $this->createStub(HttpKernelInterface::class);
         $request = Request::create('/devices', 'GET');
         $request->attributes->set('_hat_request_started_at', microtime(true) - 0.2);
         $response = new Response('ok', 200);
@@ -86,7 +86,7 @@ class WebRequestLogSubscriberTest extends TestCase
     public function testOnExceptionLogsUnhandledException(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
-        $kernel = $this->createMock(HttpKernelInterface::class);
+        $kernel = $this->createStub(HttpKernelInterface::class);
         $request = Request::create('/devices', 'GET');
         $exception = new RuntimeException('Failure');
 

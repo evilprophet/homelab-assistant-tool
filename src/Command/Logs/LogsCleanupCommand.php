@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\Logs;
 
+use EvilStudio\HAT\Command\Support\DestructiveConfirmationTrait;
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Helper\Configuration;
@@ -19,6 +20,8 @@ use Throwable;
 #[AsCommand(name: 'hat:logs:cleanup', description: 'Clean logs')]
 class LogsCleanupCommand extends Command
 {
+    use DestructiveConfirmationTrait;
+
     protected const string ALL_LOGS_CONFIRMATION = 'This will permanently remove all action logs. Continue?';
 
     public function __construct(
@@ -54,12 +57,14 @@ class LogsCleanupCommand extends Command
                 return Command::FAILURE;
             }
 
-            if (!$input->getOption('force')) {
-                if (!$io->confirm(self::ALL_LOGS_CONFIRMATION, false)) {
-                    $io->warning('Action logs cleanup aborted by user.');
-
-                    return Command::SUCCESS;
-                }
+            $confirmationExitCode = $this->confirmDestructiveAction(
+                $input,
+                $io,
+                self::ALL_LOGS_CONFIRMATION,
+                'Action logs cleanup aborted by user.'
+            );
+            if ($confirmationExitCode !== null) {
+                return $confirmationExitCode;
             }
 
             try {

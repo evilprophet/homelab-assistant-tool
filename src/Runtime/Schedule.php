@@ -20,16 +20,26 @@ class Schedule implements ScheduleInterface
 
     public function toArray(): array
     {
-        $devices = empty($this->devices) ? '-' : implode(', ', $this->devices);
-
         return [
             'id' => $this->id ?? '-',
             'name' => $this->getName(),
             'enabled' => $this->isEnabled() ? 'yes' : 'no',
             'cron_expression' => $this->getCronExpression(),
             'command' => $this->getCommand(),
-            'devices' => $devices,
+            // Structured, because joining names into one string loses the id link and
+            // breaks apart again on any name containing the delimiter.
+            'devices' => $this->devices,
         ];
+    }
+
+    public function getDevices(): array
+    {
+        return $this->devices;
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id;
     }
 
     public function getName(): string

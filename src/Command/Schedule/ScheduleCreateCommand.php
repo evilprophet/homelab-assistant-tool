@@ -32,11 +32,6 @@ class ScheduleCreateCommand extends Command
     use InteractiveInputTrait;
     use ScheduleDeviceSelectionTrait;
 
-    protected const array ALLOWED_COMMANDS = [
-        ScheduleInterface::COMMAND_START,
-        ScheduleInterface::COMMAND_STOP,
-    ];
-
     public function __construct(
         protected ScheduleService $scheduleService,
         protected DeviceService $deviceService,
@@ -164,7 +159,7 @@ class ScheduleCreateCommand extends Command
         $command = is_string($argument) && trim($argument) !== '' ? trim($argument) : null;
 
         if ($command === null && $input->isInteractive()) {
-            $command = (string)$io->choice('Schedule command', self::ALLOWED_COMMANDS, $defaultValue);
+            $command = (string)$io->choice('Schedule command', ScheduleInterface::COMMANDS, $defaultValue);
         }
 
         if ($command === null || $command === '') {
@@ -173,9 +168,13 @@ class ScheduleCreateCommand extends Command
             return null;
         }
 
-        if (!in_array($command, self::ALLOWED_COMMANDS, true)) {
+        if (!in_array($command, ScheduleInterface::COMMANDS, true)) {
             $io->error(
-                sprintf("Invalid command '%s'. Allowed values: %s.", $command, implode(', ', self::ALLOWED_COMMANDS))
+                sprintf(
+                    "Invalid command '%s'. Allowed values: %s.",
+                    $command,
+                    implode(', ', ScheduleInterface::COMMANDS)
+                )
             );
 
             return null;

@@ -12,6 +12,7 @@ use EvilStudio\HAT\Exception\EntityNotFound;
 use EvilStudio\HAT\Repository\UpsRepository;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Application\UpsService;
+use EvilStudio\HAT\Service\Runtime\RuntimeStatusResolver;
 use EvilStudio\HAT\Service\Runtime\UpsRuntimeService;
 use Throwable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -23,15 +24,16 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/ups')]
 class UpsController extends AbstractController
 {
-    protected const string CSRF_UPS_FORM_CREATE = 'ups.form.create';
-    protected const string CSRF_UPS_FORM_EDIT_PREFIX = 'ups.form.edit.';
-    protected const string CSRF_UPS_REMOVE_PREFIX = 'ups.remove.';
+    public const string CSRF_UPS_FORM_CREATE = 'ups.form.create';
+    public const string CSRF_UPS_FORM_EDIT_PREFIX = 'ups.form.edit.';
+    public const string CSRF_UPS_REMOVE_PREFIX = 'ups.remove.';
 
     public function __construct(
         protected UpsService $upsService,
         protected UpsRuntimeService $upsRuntimeService,
         protected UpsRepository $upsRepository,
-        protected ActionLogService $actionLogService
+        protected ActionLogService $actionLogService,
+        protected RuntimeStatusResolver $runtimeStatusResolver
     ) {
     }
 
@@ -41,23 +43,30 @@ class UpsController extends AbstractController
         $page = max(1, (int)$request->query->get('page', 1));
         $perPage = ActionLogService::DEFAULT_LIST_LIMIT;
 
-        $upsCollection = [];
-        foreach ($this->upsRuntimeService->listRuntimeUps() as $runtimeUps) {
-            try {
-                $runtimeUps->updateStatus();
-            } catch (Throwable) {
-            }
-
-            $upsCollection[] = $runtimeUps->toArray();
-        }
-        $total = count($upsCollection);
+        $runtimeUpsList = $this->upsRuntimeService->listRuntimeUps();
+        $total = count($runtimeUpsList);
         $totalPages = max(1, (int)ceil($total / $perPage));
         if ($page > $totalPages) {
             $page = $totalPages;
         }
 
         $offset = ($page - 1) * $perPage;
-        $upsCollection = array_slice($upsCollection, $offset, $perPage);
+        $pageUpsList = array_slice($runtimeUpsList, $offset, $perPage, true);
+        $upsDataByIdentifier = $this->runtimeStatusResolver->resolveUpsDataByIdentifiers(array_keys($pageUpsList));
+
+        $upsCollection = [];
+        foreach ($pageUpsList as $upsIdentifier => $runtimeUps) {
+            $entityData = $runtimeUps->toArray();
+            $upsData = $upsDataByIdentifier[$upsIdentifier] ?? $entityData;
+
+            // Keeps the row identifiable when a failed poll returned the placeholder.
+            $upsData['id'] = $entityData['id'];
+            $upsData['name'] = $entityData['name'];
+            $upsData['identifier'] = $entityData['identifier'];
+            $upsData['linked_devices'] = $entityData['linked_devices'];
+
+            $upsCollection[] = $upsData;
+        }
 
         return $this->render('ups/index.html.twig', [
             'page_title' => 'UPS Units',

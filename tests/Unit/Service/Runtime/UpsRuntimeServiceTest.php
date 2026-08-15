@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EvilStudio\HAT\Tests\Unit\Service\Runtime;
 
 use EvilStudio\HAT\Contract\UpsInterface;
+use EvilStudio\HAT\Exception\UpsFailedUpdateStatus;
 use EvilStudio\HAT\Factory\RuntimeUpsFactory;
 use EvilStudio\HAT\Service\Application\UpsService;
 use EvilStudio\HAT\Service\Runtime\UpsRuntimeService;
@@ -40,7 +41,7 @@ class UpsRuntimeServiceTest extends TestCase
         $this->assertSame($runtimeB, $result['ups-backup']);
     }
 
-    public function testIsAnyUpsOnBatteryReturnsTrueWhenAnyRuntimeUpsIsOnBattery(): void
+    public function testPollAllUpsStatusUpdatesEveryUnitExactlyOnce(): void
     {
         $upsService = $this->createMock(UpsService::class);
         $runtimeUpsFactory = $this->createMock(RuntimeUpsFactory::class);
@@ -56,11 +57,37 @@ class UpsRuntimeServiceTest extends TestCase
             ->willReturnOnConsecutiveCalls($runtimeA, $runtimeB);
         $runtimeA->method('getIdentifier')->willReturn('ups-main');
         $runtimeB->method('getIdentifier')->willReturn('ups-backup');
-        $runtimeA->expects($this->once())->method('isOnBattery')->willReturn(false);
-        $runtimeB->expects($this->once())->method('isOnBattery')->willReturn(true);
+        $runtimeA->expects($this->once())->method('updateStatus');
+        $runtimeB->expects($this->once())->method('updateStatus');
 
         $service = new UpsRuntimeService($upsService, $runtimeUpsFactory);
 
-        $this->assertTrue($service->isAnyUpsOnBattery());
+        $this->assertSame(['ups-main' => $runtimeA, 'ups-backup' => $runtimeB], $service->pollAllUpsStatus());
+    }
+
+    public function testPollAllUpsStatusIsolatesAFailingUnitAsUnknown(): void
+    {
+        $upsService = $this->createMock(UpsService::class);
+        $runtimeUpsFactory = $this->createMock(RuntimeUpsFactory::class);
+        $upsA = $this->createUpsEntity(1, 'Main UPS', 'ups-main', 'ups-main.local');
+        $upsB = $this->createUpsEntity(2, 'Backup UPS', 'ups-backup', 'ups-backup.local');
+        $runtimeA = $this->createMock(UpsInterface::class);
+        $runtimeB = $this->createMock(UpsInterface::class);
+
+        $upsService->expects($this->once())->method('listUps')->willReturn([$upsA, $upsB]);
+        $runtimeUpsFactory->expects($this->exactly(2))
+            ->method('createFromEntity')
+            ->with($this->logicalOr($upsA, $upsB))
+            ->willReturnOnConsecutiveCalls($runtimeA, $runtimeB);
+        $runtimeA->method('getIdentifier')->willReturn('ups-main');
+        $runtimeB->method('getIdentifier')->willReturn('ups-backup');
+        $runtimeA->expects($this->once())
+            ->method('updateStatus')
+            ->willThrowException(new UpsFailedUpdateStatus('unreachable'));
+        $runtimeB->expects($this->once())->method('updateStatus');
+
+        $service = new UpsRuntimeService($upsService, $runtimeUpsFactory);
+
+        $this->assertSame(['ups-main' => null, 'ups-backup' => $runtimeB], $service->pollAllUpsStatus());
     }
 }

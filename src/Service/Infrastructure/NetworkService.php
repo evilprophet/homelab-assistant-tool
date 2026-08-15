@@ -10,6 +10,8 @@ use JJG\Ping;
 
 class NetworkService
 {
+    protected const int PING_ATTEMPTS = 3;
+
     public function __construct(
         ?callable $pingFactory = null,
         ?callable $wakeOnLanFactory = null
@@ -23,9 +25,16 @@ class NetworkService
         $factory = $this->pingFactory ??
             static fn(string $ip, int $ttl, int $timeout): Ping => new Ping($ip, $ttl, $timeout);
 
-        $ping = $factory($ip, $ttl, $timeout);
+        // JJG\Ping hardcodes a single ICMP packet, so one dropped packet would report a
+        // running device as offline and skip its battery-mode shutdown. Retrying only
+        // after a failure keeps reachable devices at one packet.
+        for ($attempt = 1; $attempt <= self::PING_ATTEMPTS; $attempt++) {
+            if ($factory($ip, $ttl, $timeout)->ping() !== false) {
+                return true;
+            }
+        }
 
-        return $ping->ping() !== false;
+        return false;
     }
 
     public function wakeOnLan(string $mac): bool

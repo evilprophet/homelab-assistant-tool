@@ -14,8 +14,12 @@ use InvalidArgumentException;
 
 class UpsService extends AbstractDatabaseService
 {
-    protected const string IDENTIFIER_PATTERN = '/^[A-Za-z0-9._-]+$/';
-    protected const string HOST_PATTERN = '/^[A-Za-z0-9.-]+(?::[0-9]{1,5})?$/';
+    // Anchored on an alphanumeric so the identifier cannot start with '-', which
+    // upsc would parse as an option rather than a UPS name.
+    protected const string IDENTIFIER_PATTERN = '/^[A-Za-z0-9][A-Za-z0-9._-]*$/';
+    // Labels of letters, digits and inner dashes only, so '-', '...' and 'a-' are rejected.
+    protected const string HOSTNAME_PATTERN =
+        '/^(?=.{1,253}$)[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*$/';
 
     public function __construct(
         EntityManagerInterface $entityManager,
@@ -55,20 +59,22 @@ class UpsService extends AbstractDatabaseService
         string $host,
         ?int $safeBatteryRuntimeThreshold = null
     ): Ups {
+        $normalizedName = $this->normalizeName($name);
         $normalizedIdentifier = $this->normalizeIdentifier($identifier);
         $normalizedHost = $this->normalizeHost($host);
+        $this->assertThresholdIsNonNegative($safeBatteryRuntimeThreshold);
 
         $this->ensureIdentifierIsUnique($normalizedIdentifier);
 
         $ups = new Ups();
         $ups
-            ->setName($name)
+            ->setName($normalizedName)
             ->setIdentifier($normalizedIdentifier)
             ->setHost($normalizedHost)
             ->setSafeBatteryRuntimeThreshold($safeBatteryRuntimeThreshold);
 
         $this->persist($ups);
-        $this->flush();
+        $this->flushExpectingUnique('UPS', 'identifier', $normalizedIdentifier);
 
         return $ups;
     }
@@ -80,18 +86,20 @@ class UpsService extends AbstractDatabaseService
         string $host,
         ?int $safeBatteryRuntimeThreshold = null
     ): Ups {
+        $normalizedName = $this->normalizeName($name);
         $normalizedIdentifier = $this->normalizeIdentifier($identifier);
         $normalizedHost = $this->normalizeHost($host);
+        $this->assertThresholdIsNonNegative($safeBatteryRuntimeThreshold);
         $ups = $this->getUpsById($upsId);
         $this->ensureIdentifierIsUnique($normalizedIdentifier, $upsId);
 
         $ups
-            ->setName($name)
+            ->setName($normalizedName)
             ->setIdentifier($normalizedIdentifier)
             ->setHost($normalizedHost)
             ->setSafeBatteryRuntimeThreshold($safeBatteryRuntimeThreshold);
 
-        $this->flush();
+        $this->flushExpectingUnique('UPS', 'identifier', $normalizedIdentifier);
 
         return $ups;
     }
@@ -109,6 +117,23 @@ class UpsService extends AbstractDatabaseService
 
             $this->remove($ups);
         });
+    }
+
+    protected function normalizeName(string $name): string
+    {
+        $normalizedName = trim($name);
+        if ($normalizedName === '') {
+            throw new InvalidArgumentException('UPS name cannot be empty.');
+        }
+
+        return $normalizedName;
+    }
+
+    protected function assertThresholdIsNonNegative(?int $threshold): void
+    {
+        if ($threshold !== null && $threshold < 0) {
+            throw new InvalidArgumentException('Safe battery runtime threshold cannot be negative.');
+        }
     }
 
     protected function ensureIdentifierIsUnique(string $identifier, ?int $excludeUpsId = null): void
@@ -134,7 +159,8 @@ class UpsService extends AbstractDatabaseService
 
         if (preg_match(self::IDENTIFIER_PATTERN, $normalizedIdentifier) !== 1) {
             throw new InvalidArgumentException(
-                'UPS identifier can contain only letters, digits, dot, underscore, and dash.'
+                'UPS identifier can contain only letters, digits, dot, underscore, and dash, '
+                . 'and must start with a letter or digit.'
             );
         }
 
@@ -148,23 +174,77 @@ class UpsService extends AbstractDatabaseService
             throw new InvalidArgumentException('UPS host cannot be empty.');
         }
 
-        if (preg_match(self::HOST_PATTERN, $normalizedHost) !== 1) {
-            throw new InvalidArgumentException(
-                'UPS host must be a valid hostname or IP with optional :port ' .
-                '(for example ups.local or 192.168.1.10:3493).'
-            );
-        }
+        [$hostPart, $port] = $this->splitHostAndPort($normalizedHost);
 
-        if (!str_contains($normalizedHost, ':')) {
-            return $normalizedHost;
-        }
-
-        [, $rawPort] = explode(':', $normalizedHost, 2);
-        $port = (int)$rawPort;
-        if ($port < 1 || $port > 65535) {
+        if ($port !== null && ($port < 1 || $port > 65535)) {
             throw new InvalidArgumentException('UPS host port must be between 1 and 65535.');
         }
 
+        if (!$this->isValidHostPart($hostPart)) {
+            throw new InvalidArgumentException(
+                'UPS host must be a hostname, IPv4 address, or bracketed IPv6 address with optional :port ' .
+                '(for example ups.local, 192.168.1.10:3493 or [fd00::10]:3493).'
+            );
+        }
+
         return $normalizedHost;
+    }
+
+    /**
+     * @return array{0: string, 1: int|null}
+     */
+    protected function splitHostAndPort(string $host): array
+    {
+        if (str_starts_with($host, '[')) {
+            $closingBracket = strpos($host, ']');
+            if ($closingBracket === false) {
+                return ['', null];
+            }
+
+            $remainder = substr($host, $closingBracket + 1);
+            $hostPart = substr($host, 1, $closingBracket - 1);
+            if ($remainder === '') {
+                return [$hostPart, null];
+            }
+
+            return str_starts_with($remainder, ':')
+                ? [$hostPart, $this->parsePort(substr($remainder, 1))]
+                : ['', null];
+        }
+
+        // More than one colon means a bare IPv6 literal, which carries no port.
+        if (!str_contains($host, ':') || substr_count($host, ':') > 1) {
+            return [$host, null];
+        }
+
+        [$hostPart, $rawPort] = explode(':', $host, 2);
+
+        return [$hostPart, $this->parsePort($rawPort)];
+    }
+
+    protected function parsePort(string $rawPort): int
+    {
+        $port = filter_var($rawPort, FILTER_VALIDATE_INT);
+
+        return $port === false ? 0 : (int)$port;
+    }
+
+    protected function isValidHostPart(string $hostPart): bool
+    {
+        if ($hostPart === '') {
+            return false;
+        }
+
+        if (filter_var($hostPart, FILTER_VALIDATE_IP) !== false) {
+            return true;
+        }
+
+        // Digits and dots that failed the IP check are malformed addresses such as
+        // 192.168.1.999, which the hostname rule would otherwise accept.
+        if (preg_match('/^[0-9.]+$/', $hostPart) === 1) {
+            return false;
+        }
+
+        return preg_match(self::HOSTNAME_PATTERN, $hostPart) === 1;
     }
 }

@@ -14,8 +14,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Entity]
 #[ORM\HasLifecycleCallbacks]
 #[ORM\Table(name: 'users')]
-#[ORM\Index(name: 'idx_users_username', columns: ['username'])]
-#[ORM\Index(name: 'idx_users_oidc_subject', columns: ['oidc_subject'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]

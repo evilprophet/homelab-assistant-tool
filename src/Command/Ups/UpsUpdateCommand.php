@@ -115,7 +115,7 @@ class UpsUpdateCommand extends Command
         } elseif ($input->isInteractive()) {
             $safeBatteryRuntimeThreshold = $this->promptOptionalNonNegativeInt(
                 $io,
-                'Safe battery runtime threshold in seconds (leave empty to clear)',
+                sprintf('Safe battery runtime threshold in seconds (enter %s to clear)', self::CLEAR_SENTINEL),
                 $safeBatteryRuntimeThreshold
             );
             if ($safeBatteryRuntimeThreshold === false) {

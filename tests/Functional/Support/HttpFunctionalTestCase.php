@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Tests\Functional\Support;
 
+use EvilStudio\HAT\Controller\AuthController;
+use EvilStudio\HAT\Controller\DeviceController;
+use EvilStudio\HAT\Controller\LogsController;
+use EvilStudio\HAT\Controller\ScheduleController;
+use EvilStudio\HAT\Controller\UpsController;
+use EvilStudio\HAT\Security\SimpleLoginFormAuthenticator;
 use EvilStudio\HAT\Service\Auth\AuthUserService;
 use EvilStudio\HAT\Tests\Integration\Support\DatabaseIntegrationTestCase;
+use LogicException;
 use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -103,7 +110,14 @@ abstract class HttpFunctionalTestCase extends DatabaseIntegrationTestCase
 
         $tokenId = $this->resolveCsrfTokenId($uri);
         if ($tokenId === null) {
-            return $parameters;
+            // Silently posting without a token would surface as a confusing redirect
+            // or flash mismatch instead of pointing at the missing mapping.
+            throw new LogicException(sprintf(
+                "No CSRF token id mapped for POST '%s'. Add it to %s::resolveCsrfTokenId() "
+                . "or pass an explicit '_token' parameter.",
+                $uri,
+                self::class
+            ));
         }
 
         /** @var CsrfTokenManagerInterface $tokenManager */
@@ -122,33 +136,37 @@ abstract class HttpFunctionalTestCase extends DatabaseIntegrationTestCase
         return $parameters;
     }
 
+    /**
+     * Token ids come from the controllers themselves, so a renamed id breaks
+     * compilation here instead of silently sending an unauthenticated POST.
+     */
     protected function resolveCsrfTokenId(string $uri): ?string
     {
         $path = (string)parse_url($uri, PHP_URL_PATH);
 
         return match (true) {
-            $path === '/auth/login' => 'auth.login',
-            $path === '/auth/logout' => 'auth.logout',
-            $path === '/devices/new' => 'device.form.create',
-            $path === '/ups/new' => 'ups.form.create',
-            $path === '/schedules/new' => 'schedule.form.create',
-            $path === '/logs/cleanup' => 'logs.cleanup',
+            $path === '/auth/login' => SimpleLoginFormAuthenticator::LOGIN_CSRF_TOKEN_ID,
+            $path === '/auth/logout' => AuthController::CSRF_AUTH_LOGOUT,
+            $path === '/devices/new' => DeviceController::CSRF_DEVICE_FORM_CREATE,
+            $path === '/ups/new' => UpsController::CSRF_UPS_FORM_CREATE,
+            $path === '/schedules/new' => ScheduleController::CSRF_SCHEDULE_FORM_CREATE,
+            $path === '/logs/cleanup' => LogsController::CSRF_LOGS_CLEANUP,
             preg_match('#^/devices/(\d+)/edit$#', $path, $matches) === 1
-                => sprintf('device.form.edit.%d', (int)$matches[1]),
+                => DeviceController::CSRF_DEVICE_FORM_EDIT_PREFIX . (int)$matches[1],
             preg_match('#^/devices/(\d+)/remove$#', $path, $matches) === 1
-                => sprintf('device.remove.%d', (int)$matches[1]),
+                => DeviceController::CSRF_DEVICE_REMOVE_PREFIX . (int)$matches[1],
             preg_match('#^/devices/(\d+)/start$#', $path, $matches) === 1
-                => sprintf('device.start.%d', (int)$matches[1]),
+                => DeviceController::CSRF_DEVICE_START_PREFIX . (int)$matches[1],
             preg_match('#^/devices/(\d+)/stop$#', $path, $matches) === 1
-                => sprintf('device.stop.%d', (int)$matches[1]),
+                => DeviceController::CSRF_DEVICE_STOP_PREFIX . (int)$matches[1],
             preg_match('#^/ups/(\d+)/edit$#', $path, $matches) === 1
-                => sprintf('ups.form.edit.%d', (int)$matches[1]),
+                => UpsController::CSRF_UPS_FORM_EDIT_PREFIX . (int)$matches[1],
             preg_match('#^/ups/(\d+)/remove$#', $path, $matches) === 1
-                => sprintf('ups.remove.%d', (int)$matches[1]),
+                => UpsController::CSRF_UPS_REMOVE_PREFIX . (int)$matches[1],
             preg_match('#^/schedules/(\d+)/edit$#', $path, $matches) === 1
-                => sprintf('schedule.form.edit.%d', (int)$matches[1]),
+                => ScheduleController::CSRF_SCHEDULE_FORM_EDIT_PREFIX . (int)$matches[1],
             preg_match('#^/schedules/(\d+)/remove$#', $path, $matches) === 1
-                => sprintf('schedule.remove.%d', (int)$matches[1]),
+                => ScheduleController::CSRF_SCHEDULE_REMOVE_PREFIX . (int)$matches[1],
             default => null,
         };
     }

@@ -70,4 +70,15 @@ trait EntityTestHelperTrait
 
         return $schedule;
     }
+
+    /**
+     * Writes the column directly, bypassing the setter's whitelist, to reproduce a
+     * row that reached the database outside the application (hand-edited SQLite).
+     */
+    protected function forceEntityProperty(object $entity, string $property, mixed $value): void
+    {
+        $reflectionProperty = new ReflectionProperty($entity, $property);
+        $reflectionProperty->setAccessible(true);
+        $reflectionProperty->setValue($entity, $value);
+    }
 }

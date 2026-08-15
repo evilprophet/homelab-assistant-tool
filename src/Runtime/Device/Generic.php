@@ -75,9 +75,9 @@ class Generic implements DeviceInterface
             $upsLowBatteryRuntimeThreshold = '-';
         }
 
-        $upsLink = '-';
+        $ups = null;
         if ($this->upsId !== null && $this->upsName !== null) {
-            $upsLink = sprintf('%d:%s', $this->upsId, $this->upsName);
+            $ups = ['id' => $this->upsId, 'name' => $this->upsName];
         }
 
         $data = [
@@ -87,7 +87,7 @@ class Generic implements DeviceInterface
             'mac' => $this->getMac(),
             'platform' => $platformLabel,
             'platform_key' => $platformKey,
-            'ups' => $upsLink,
+            'ups' => $ups,
             'ups_low_battery_runtime_threshold' => $upsLowBatteryRuntimeThreshold,
             'auto_stop' => $this->isAutoStopAllowed() ? 'yes' : 'no',
         ];
@@ -169,7 +169,7 @@ class Generic implements DeviceInterface
         throw UnsupportedDeviceAction::forPlatform(DeviceAction::STOP, $this->getPlatform());
     }
 
-    public function ssh(OutputInterface $output): void
+    public function ssh(OutputInterface $output): int
     {
         throw UnsupportedDeviceAction::forPlatform(DeviceAction::SSH, $this->getPlatform());
     }

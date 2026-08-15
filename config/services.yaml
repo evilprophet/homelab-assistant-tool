@@ -16,3 +16,7 @@ services:
       - '../src/Kernel.php'
 
   Symfony\Component\Filesystem\Filesystem: ~
+
+  EvilStudio\HAT\Service\Infrastructure\SqlitePragmaMiddleware:
+    tags:
+      - { name: doctrine.middleware }

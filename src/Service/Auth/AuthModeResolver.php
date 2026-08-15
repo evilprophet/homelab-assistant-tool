@@ -4,48 +4,34 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Service\Auth;
 
-use LogicException;
+use EvilStudio\HAT\Contract\AuthMode;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 class AuthModeResolver
 {
-    public const string MODE_SIMPLE = 'simple';
-    public const string MODE_OIDC = 'oidc';
-
-    protected const array ALLOWED_MODES = [
-        self::MODE_SIMPLE,
-        self::MODE_OIDC,
-    ];
+    public const string MODE_SIMPLE = AuthMode::SIMPLE->value;
+    public const string MODE_OIDC = AuthMode::OIDC->value;
 
     public function __construct(
-        #[Autowire('%env(string:HAT_AUTH_MODE)%')]
-        protected string $authMode,
+        // The enum processor resolves at container build time, so a typo fails once
+        // with a clear message instead of turning every request into a 500.
+        #[Autowire('%env(enum:' . AuthMode::class . ':trim:HAT_AUTH_MODE)%')]
+        protected AuthMode $authMode,
     ) {
     }
 
     public function getMode(): string
     {
-        $mode = mb_strtolower(trim($this->authMode));
-        if (in_array($mode, self::ALLOWED_MODES, true)) {
-            return $mode;
-        }
-
-        throw new LogicException(
-            sprintf(
-                "Invalid HAT_AUTH_MODE '%s'. Allowed values: %s.",
-                $this->authMode,
-                implode(', ', self::ALLOWED_MODES)
-            )
-        );
+        return $this->authMode->value;
     }
 
     public function isSimpleMode(): bool
     {
-        return $this->getMode() === self::MODE_SIMPLE;
+        return $this->authMode === AuthMode::SIMPLE;
     }
 
     public function isOidcMode(): bool
     {
-        return $this->getMode() === self::MODE_OIDC;
+        return $this->authMode === AuthMode::OIDC;
     }
 }

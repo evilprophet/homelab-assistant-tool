@@ -8,17 +8,14 @@ use DateTimeImmutable;
 use DateTimeZone;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use InvalidArgumentException;
 
 #[ORM\Entity]
-#[ORM\Table(
-    name: 'action_logs',
-    indexes: [
-        new ORM\Index(name: 'idx_action_logs_created_at', columns: ['created_at']),
-        new ORM\Index(name: 'idx_action_logs_source', columns: ['source']),
-        new ORM\Index(name: 'idx_action_logs_level', columns: ['level']),
-        new ORM\Index(name: 'idx_action_logs_action', columns: ['action']),
-    ]
-)]
+#[ORM\Table(name: 'action_logs')]
+#[ORM\Index(name: 'idx_action_logs_created_at', columns: ['created_at'])]
+#[ORM\Index(name: 'idx_action_logs_source', columns: ['source'])]
+#[ORM\Index(name: 'idx_action_logs_level', columns: ['level'])]
+#[ORM\Index(name: 'idx_action_logs_action', columns: ['action'])]
 class ActionLog
 {
     public const string SOURCE_CRON = 'CRON';
@@ -28,6 +25,17 @@ class ActionLog
     public const string LEVEL_INFO = 'info';
     public const string LEVEL_WARNING = 'warning';
     public const string LEVEL_ERROR = 'error';
+
+    public const array SOURCES = [
+        self::SOURCE_CRON,
+        self::SOURCE_CLI,
+        self::SOURCE_WEB,
+    ];
+    public const array LEVELS = [
+        self::LEVEL_INFO,
+        self::LEVEL_WARNING,
+        self::LEVEL_ERROR,
+    ];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -66,6 +74,12 @@ class ActionLog
 
     public function setSource(string $source): self
     {
+        if (!in_array($source, self::SOURCES, true)) {
+            throw new InvalidArgumentException(
+                sprintf("Invalid action log source '%s'. Allowed values: %s.", $source, implode(', ', self::SOURCES))
+            );
+        }
+
         $this->source = $source;
 
         return $this;
@@ -90,6 +104,12 @@ class ActionLog
 
     public function setLevel(string $level): self
     {
+        if (!in_array($level, self::LEVELS, true)) {
+            throw new InvalidArgumentException(
+                sprintf("Invalid action log level '%s'. Allowed values: %s.", $level, implode(', ', self::LEVELS))
+            );
+        }
+
         $this->level = $level;
 
         return $this;

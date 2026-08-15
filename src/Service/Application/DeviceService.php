@@ -17,6 +17,11 @@ use InvalidArgumentException;
 
 class DeviceService extends AbstractDatabaseService
 {
+    public const string MAC_PATTERN = '/^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i';
+    // Must not start with '-': the name is glued into an argv token for ssh,
+    // where a leading dash is parsed as an option instead of a login.
+    public const string USERNAME_PATTERN = '/^[A-Za-z0-9_][A-Za-z0-9._-]{0,63}$/';
+
     public function __construct(
         EntityManagerInterface $entityManager,
         protected DeviceRepository $deviceRepository,
@@ -60,22 +65,27 @@ class DeviceService extends AbstractDatabaseService
         ?int $upsId = null,
         bool $autoStopAllowed = true
     ): Device {
-        $this->ensureNameIsUnique($name);
+        $normalizedName = $this->normalizeName($name);
+        $normalizedIp = $this->normalizeIp($ip);
+        $normalizedMac = $this->normalizeMac($mac);
+        $normalizedUsername = $this->normalizeUsername($username);
+        $this->assertThresholdIsNonNegative($upsLowBatteryRuntimeThreshold);
+        $this->ensureNameIsUnique($normalizedName);
         $this->assertSupportedPlatform($platform);
 
         $device = new Device();
         $device
-            ->setName($name)
-            ->setIp($ip)
-            ->setMac($mac)
+            ->setName($normalizedName)
+            ->setIp($normalizedIp)
+            ->setMac($normalizedMac)
             ->setPlatform($platform)
-            ->setUsername($username)
+            ->setUsername($normalizedUsername)
             ->setUpsLowBatteryRuntimeThreshold($upsLowBatteryRuntimeThreshold)
             ->setAutoStopAllowed($autoStopAllowed)
             ->setUps($this->resolveUps($upsId));
 
         $this->persist($device);
-        $this->flush();
+        $this->flushExpectingUnique('Device', 'name', $normalizedName);
 
         return $device;
     }
@@ -91,21 +101,29 @@ class DeviceService extends AbstractDatabaseService
         ?int $upsId = null,
         ?bool $autoStopAllowed = null
     ): Device {
+        $normalizedName = $this->normalizeName($name);
+        $normalizedIp = $this->normalizeIp($ip);
+        $normalizedMac = $this->normalizeMac($mac);
+        $normalizedUsername = $this->normalizeUsername($username);
+        $this->assertThresholdIsNonNegative($upsLowBatteryRuntimeThreshold);
         $device = $this->getDeviceById($deviceId);
-        $this->ensureNameIsUnique($name, $deviceId);
+        $this->ensureNameIsUnique($normalizedName, $deviceId);
         $this->assertSupportedPlatform($platform);
+        // Resolved up front: throwing mid-chain would leave the managed entity
+        // partially updated, and flush() is EntityManager-wide.
+        $ups = $this->resolveUps($upsId);
 
         $device
-            ->setName($name)
-            ->setIp($ip)
-            ->setMac($mac)
+            ->setName($normalizedName)
+            ->setIp($normalizedIp)
+            ->setMac($normalizedMac)
             ->setPlatform($platform)
-            ->setUsername($username)
+            ->setUsername($normalizedUsername)
             ->setUpsLowBatteryRuntimeThreshold($upsLowBatteryRuntimeThreshold)
             ->setAutoStopAllowed($autoStopAllowed ?? $device->isAutoStopAllowed())
-            ->setUps($this->resolveUps($upsId));
+            ->setUps($ups);
 
-        $this->flush();
+        $this->flushExpectingUnique('Device', 'name', $normalizedName);
 
         return $device;
     }
@@ -151,6 +169,63 @@ class DeviceService extends AbstractDatabaseService
         }
 
         return $ups;
+    }
+
+    protected function normalizeName(string $name): string
+    {
+        $normalizedName = trim($name);
+        if ($normalizedName === '') {
+            throw new InvalidArgumentException('Device name cannot be empty.');
+        }
+
+        return $normalizedName;
+    }
+
+    protected function normalizeUsername(?string $username): ?string
+    {
+        $normalizedUsername = trim((string)$username);
+        if ($normalizedUsername === '') {
+            return null;
+        }
+
+        if (preg_match(self::USERNAME_PATTERN, $normalizedUsername) !== 1) {
+            throw new InvalidArgumentException(sprintf(
+                "'%s' is not a valid SSH username (letters, digits, dot, underscore and dash; "
+                . 'cannot start with a dash).',
+                $username
+            ));
+        }
+
+        return $normalizedUsername;
+    }
+
+    protected function assertThresholdIsNonNegative(?int $threshold): void
+    {
+        if ($threshold !== null && $threshold < 0) {
+            throw new InvalidArgumentException('UPS low battery runtime threshold cannot be negative.');
+        }
+    }
+
+    protected function normalizeIp(string $ip): string
+    {
+        $normalizedIp = trim($ip);
+        if (filter_var($normalizedIp, FILTER_VALIDATE_IP) === false) {
+            throw new InvalidArgumentException(sprintf("'%s' is not a valid IP address.", $ip));
+        }
+
+        return $normalizedIp;
+    }
+
+    protected function normalizeMac(string $mac): string
+    {
+        $normalizedMac = trim($mac);
+        if (preg_match(self::MAC_PATTERN, $normalizedMac) !== 1) {
+            throw new InvalidArgumentException(
+                sprintf("'%s' is not a valid MAC address (format: 00:11:22:33:44:55).", $mac)
+            );
+        }
+
+        return $normalizedMac;
     }
 
     protected function assertSupportedPlatform(string $platform): void
