@@ -99,8 +99,15 @@ class ExecuteCronCommandTest extends TestCase
         $cronLogger = $this->createMock(LoggerInterface::class);
 
         $configuration->expects($this->once())->method('isCronEnabled')->willReturn(true);
-        $cron->expects($this->once())->method('execute')->willThrowException(new RuntimeException('Cron failed.'));
-        $cronLogger->expects($this->once())->method('error')->with('Cron execution failed.', ['exception' => 'Cron failed.']);
+        $cron->expects($this->once())
+            ->method('execute')
+            ->willThrowException(new RuntimeException('Cron failed.'));
+        $cronLogger->expects($this->once())
+            ->method('error')
+            ->with(
+                'Cron execution failed.',
+                ['exception' => 'Cron failed.']
+            );
         $actionLogService->expects($this->once())
             ->method('createActionLog')
             ->with(

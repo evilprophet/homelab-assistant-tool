@@ -75,7 +75,6 @@ class ExecuteCronCommand extends Command
                     )
                 );
             }
-
         } catch (Exception $e) {
             $this->actionLogService->createActionLog(
                 ActionLog::SOURCE_CLI,
@@ -83,9 +82,11 @@ class ExecuteCronCommand extends Command
                 ActionLog::LEVEL_ERROR,
                 sprintf('Cron execution failed: %s', $e->getMessage())
             );
-            $this->cronLogger->error("Cron execution failed.", ["exception" => $e->getMessage()]);
+            $this->cronLogger->error(
+                'Cron execution failed.',
+                ['exception' => $e->getMessage()]
+            );
             $outputHelper->error($e->getMessage());
-
             return Command::FAILURE;
         } finally {
             $this->releaseLock($lockHandle);

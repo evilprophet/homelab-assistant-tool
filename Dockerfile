@@ -53,7 +53,9 @@ RUN set -eux; \
     addgroup -g 1000 hat; \
     adduser -u 1000 -G hat -s /bin/sh -D hat; \
     mkdir -p /app/var/data /app/var/log; \
-    chown -R hat:hat /app/var /etc/crontabs
+    chown -R hat:hat /app/var; \
+    chown root:root /etc/crontabs/hat; \
+    chmod 0600 /etc/crontabs/hat
 
 USER hat
 
