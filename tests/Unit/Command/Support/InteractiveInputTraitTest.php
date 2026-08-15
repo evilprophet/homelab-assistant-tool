@@ -87,10 +87,49 @@ class InteractiveInputTraitTest extends TestCase
         $this->assertNull($result);
     }
 
+    public function testPromptOptionalStringClearsOnSentinelAndKeepsDefaultOnEnter(): void
+    {
+        $helper = $this->createHelper();
+        $io = $this->createMock(SymfonyStyle::class);
+        $io->expects($this->exactly(3))
+            ->method('ask')
+            ->willReturnOnConsecutiveCalls('-', 'root', 'admin');
+
+        $this->assertNull($helper->callPromptOptionalString($io, 'SSH username', 'root'));
+        $this->assertSame('root', $helper->callPromptOptionalString($io, 'SSH username', 'root'));
+        $this->assertSame('admin', $helper->callPromptOptionalString($io, 'SSH username', 'root'));
+    }
+
+    public function testPromptOptionalNonNegativeIntClearsOnSentinel(): void
+    {
+        $helper = $this->createHelper();
+        $io = $this->createMock(SymfonyStyle::class);
+        $io->expects($this->exactly(2))->method('ask')->willReturnOnConsecutiveCalls('-', '600');
+
+        $this->assertNull($helper->callPromptOptionalNonNegativeInt($io, 'Threshold', 300));
+        $this->assertSame(600, $helper->callPromptOptionalNonNegativeInt($io, 'Threshold', 300));
+    }
+
     protected function createHelper(): object
     {
         return new class {
             use \EvilStudio\HAT\Command\Support\InteractiveInputTrait;
+
+            public function callPromptOptionalString(
+                SymfonyStyle $io,
+                string $question,
+                ?string $defaultValue
+            ): ?string {
+                return $this->promptOptionalString($io, $question, $defaultValue);
+            }
+
+            public function callPromptOptionalNonNegativeInt(
+                SymfonyStyle $io,
+                string $question,
+                ?int $defaultValue
+            ): int|false|null {
+                return $this->promptOptionalNonNegativeInt($io, $question, $defaultValue);
+            }
 
             public function callResolveRequiredArgument(
                 InputInterface $input,

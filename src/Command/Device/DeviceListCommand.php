@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\Device;
 
+use EvilStudio\HAT\Command\Support\RuntimeTableRowTrait;
 use EvilStudio\HAT\Service\Runtime\DeviceOperationsService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -15,6 +16,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'hat:device:list', description: 'List devices')]
 class DeviceListCommand extends Command
 {
+    use RuntimeTableRowTrait;
+
     public function __construct(
         protected DeviceOperationsService $deviceOperationsService
     ) {
@@ -43,6 +46,7 @@ class DeviceListCommand extends Command
         foreach ($runtimeDevices as $runtimeDevice) {
             $row = $runtimeDevice->toArray();
             unset($row['platform_key']);
+            $row['ups'] = $this->formatEntityLink($row['ups'] ?? null);
             $rows[] = $row;
         }
 

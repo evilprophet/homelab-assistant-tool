@@ -19,7 +19,7 @@ class RuntimeUpsFactory
                 continue;
             }
 
-            $linkedDevices[] = sprintf('%d:%s', $deviceId, $device->getName());
+            $linkedDevices[] = ['id' => (int)$deviceId, 'name' => $device->getName()];
         }
 
         return new RuntimeUps(

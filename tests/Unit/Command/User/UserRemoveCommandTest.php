@@ -18,7 +18,7 @@ class UserRemoveCommandTest extends TestCase
     {
         $authModeResolver = $this->createMock(AuthModeResolver::class);
         $authUserService = $this->createMock(AuthUserService::class);
-        $actionLogService = $this->createMock(ActionLogService::class);
+        $actionLogService = $this->createStub(ActionLogService::class);
 
         $authModeResolver->expects($this->once())->method('isSimpleMode')->willReturn(true);
         $authUserService->expects($this->once())->method('removeSimpleUser')->with('admin');
@@ -37,7 +37,7 @@ class UserRemoveCommandTest extends TestCase
     {
         $authModeResolver = $this->createMock(AuthModeResolver::class);
         $authUserService = $this->createMock(AuthUserService::class);
-        $actionLogService = $this->createMock(ActionLogService::class);
+        $actionLogService = $this->createStub(ActionLogService::class);
 
         $authModeResolver->expects($this->once())->method('isSimpleMode')->willReturn(true);
         $authUserService->expects($this->never())->method('removeSimpleUser');
@@ -49,11 +49,11 @@ class UserRemoveCommandTest extends TestCase
         $this->assertStringContainsString("Argument 'username' is required.", $tester->getDisplay());
     }
 
-    public function testExecuteSkipsWhenSimpleModeIsDisabled(): void
+    public function testExecuteFailsWhenSimpleModeIsDisabled(): void
     {
         $authModeResolver = $this->createMock(AuthModeResolver::class);
         $authUserService = $this->createMock(AuthUserService::class);
-        $actionLogService = $this->createMock(ActionLogService::class);
+        $actionLogService = $this->createStub(ActionLogService::class);
 
         $authModeResolver->expects($this->once())->method('isSimpleMode')->willReturn(false);
         $authModeResolver->expects($this->once())->method('getMode')->willReturn('oidc');
@@ -62,6 +62,6 @@ class UserRemoveCommandTest extends TestCase
         $tester = new CommandTester(new UserRemoveCommand($authModeResolver, $authUserService, $actionLogService));
         $exitCode = $tester->execute(['username' => 'admin', '--force' => true], ['interactive' => false]);
 
-        $this->assertSame(Command::SUCCESS, $exitCode);
+        $this->assertSame(Command::FAILURE, $exitCode);
     }
 }

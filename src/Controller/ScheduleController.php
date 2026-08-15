@@ -6,7 +6,6 @@ namespace EvilStudio\HAT\Controller;
 
 use Cron\CronExpression;
 use DateTimeImmutable;
-use DateTimeZone;
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Contract\ScheduleInterface;
 use EvilStudio\HAT\Entity\ActionLog;
@@ -31,13 +30,9 @@ use Throwable;
 #[Route('/schedules')]
 class ScheduleController extends AbstractController
 {
-    protected const array ALLOWED_COMMANDS = [
-        ScheduleInterface::COMMAND_START,
-        ScheduleInterface::COMMAND_STOP,
-    ];
-    protected const string CSRF_SCHEDULE_FORM_CREATE = 'schedule.form.create';
-    protected const string CSRF_SCHEDULE_FORM_EDIT_PREFIX = 'schedule.form.edit.';
-    protected const string CSRF_SCHEDULE_REMOVE_PREFIX = 'schedule.remove.';
+    public const string CSRF_SCHEDULE_FORM_CREATE = 'schedule.form.create';
+    public const string CSRF_SCHEDULE_FORM_EDIT_PREFIX = 'schedule.form.edit.';
+    public const string CSRF_SCHEDULE_REMOVE_PREFIX = 'schedule.remove.';
 
     public function __construct(
         protected ScheduleService $scheduleService,
@@ -88,7 +83,7 @@ class ScheduleController extends AbstractController
             'per_page' => $perPage,
             'total' => $total,
             'total_pages' => $totalPages,
-            'timezone_name' => $this->configuration->getTimezone(),
+            'timezone_name' => $this->configuration->getResolvedTimezone()->getName(),
         ]);
     }
 
@@ -138,9 +133,9 @@ class ScheduleController extends AbstractController
             'form_data' => $formData,
             'errors' => $errors,
             'devices' => $this->deviceService->listDevices(),
-            'allowed_commands' => self::ALLOWED_COMMANDS,
+            'allowed_commands' => ScheduleInterface::COMMANDS,
             'preview_next_runs' => $this->buildNextRuns($formData['cron_expression']),
-            'timezone_name' => $this->configuration->getTimezone(),
+            'timezone_name' => $this->configuration->getResolvedTimezone()->getName(),
         ]);
     }
 
@@ -203,9 +198,9 @@ class ScheduleController extends AbstractController
             'form_data' => $formData,
             'errors' => $errors,
             'devices' => $this->deviceService->listDevices(),
-            'allowed_commands' => self::ALLOWED_COMMANDS,
+            'allowed_commands' => ScheduleInterface::COMMANDS,
             'preview_next_runs' => $this->buildNextRuns($formData['cron_expression']),
-            'timezone_name' => $this->configuration->getTimezone(),
+            'timezone_name' => $this->configuration->getResolvedTimezone()->getName(),
         ]);
     }
 
@@ -350,8 +345,8 @@ class ScheduleController extends AbstractController
             $errors['cron_expression'][] = 'Cron expression is invalid.';
         }
 
-        if (!in_array($formData['command'], self::ALLOWED_COMMANDS, true)) {
-            $errors['command'][] = sprintf('Command must be one of: %s.', implode(', ', self::ALLOWED_COMMANDS));
+        if (!in_array($formData['command'], ScheduleInterface::COMMANDS, true)) {
+            $errors['command'][] = sprintf('Command must be one of: %s.', implode(', ', ScheduleInterface::COMMANDS));
         }
 
         $availableDeviceIds = [];
@@ -387,7 +382,7 @@ class ScheduleController extends AbstractController
         }
 
         try {
-            $timezone = new DateTimeZone($this->configuration->getTimezone());
+            $timezone = $this->configuration->getResolvedTimezone();
             $cronExpressionParser = new CronExpression($cronExpression);
             $cursor = new DateTimeImmutable('now', $timezone);
 

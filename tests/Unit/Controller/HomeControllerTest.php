@@ -52,8 +52,13 @@ class HomeControllerTest extends TestCase
 
     protected function createTestableController(string $timezone): object
     {
-        $configuration = $this->createMock(Configuration::class);
-        $configuration->method('getTimezone')->willReturn($timezone);
+        $configuration = new Configuration([
+            'cron' => true,
+            'ups_mode' => true,
+            'ssh_key_path' => '/tmp/test-key',
+            'default_ssh_username' => 'root',
+            'timezone' => $timezone,
+        ]);
 
         return new class (
             $this->createMock(DeviceOperationsService::class),

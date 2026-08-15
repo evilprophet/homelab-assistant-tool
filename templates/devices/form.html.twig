@@ -52,6 +52,7 @@
                     <div class="sm:col-span-4">
                         <label for="device-username" class="block text-sm font-medium text-slate-700 dark:text-slate-300">SSH Username</label>
                         <input id="device-username" type="text" name="username" value="{{ form_data.username }}" placeholder="root" class="mt-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-slate-300 dark:border-slate-600 rounded-lg p-2.5 border bg-white dark:bg-slate-700 dark:text-white">
+                        {% include 'ui/_field_errors.html.twig' with { errors: errors, field_name: 'username' } only %}
                     </div>
                 </div>
             </div>
@@ -114,7 +115,7 @@
         (() => {
             const platformSelect = document.getElementById('device-platform');
             const actionsContainer = document.querySelector('[data-platform-actions]');
-            const platformSupportedActions = {{ platform_supported_actions|json_encode|raw }};
+            const platformSupportedActions = {{ platform_supported_actions|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT'))|raw }};
             const actionLabels = {
                 start: 'Start',
                 stop: 'Stop',

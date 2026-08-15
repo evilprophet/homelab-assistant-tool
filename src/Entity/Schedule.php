@@ -8,6 +8,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use EvilStudio\HAT\Contract\ScheduleInterface;
+use InvalidArgumentException;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'schedules')]
@@ -90,6 +92,16 @@ class Schedule
 
     public function setCommand(string $command): self
     {
+        if (!in_array($command, ScheduleInterface::COMMANDS, true)) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    "Invalid schedule command '%s'. Allowed values: %s.",
+                    $command,
+                    implode(', ', ScheduleInterface::COMMANDS)
+                )
+            );
+        }
+
         $this->command = $command;
 
         return $this;

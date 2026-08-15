@@ -1,101 +1,93 @@
 # 🧪 Test Implementation Summary
 
-**Project:** Homelab Assistant Tool  
-**Coverage Source:** Xdebug (Real Data)  
-**Coverage:** 77.96% (3198/4102 lines)  
-**Total Tests:** 242  
-**Total Assertions:** 1330  
-**Status:** Active and maintained  
-**Last Updated:** 2026-04-10
+**Project:** Homelab Assistant Tool
+**Coverage Source:** Xdebug (Real Data)
+**Coverage:** 81.24% (3733/4595 lines)
+**Total Tests:** 376
+**Total Assertions:** 1890
+**Status:** Active and maintained
+**Last Updated:** 2026-08-13
 
 ---
 
 ## 📌 Scope At A Glance
 
-- 242 automated tests (150 Unit + 52 Integration + 40 Functional).
-- 1330 assertions.
-- All suites currently pass.
-- Test setup is isolated and deterministic (`.env.test`, dedicated SQLite test DB, schema reset between tests).
+- 376 automated tests (310 Unit + 20 Integration + 46 Functional)
+- 1890 assertions
+- All suites currently pass
+- Test setup is isolated and deterministic (`.env.test`, dedicated SQLite test DB, schema reset between tests)
 
 ---
 
 ## ⚙️ Test Runtime Notes
 
-- Tests use `.env.test` defaults with `APP_ENV=test`.
-- Integration and functional suites use an isolated SQLite test database.
-- Schema is reset deterministically between DB-backed test runs.
-- Coverage is generated with Xdebug using `bin/phpunit-coverage`.
+- Tests use `.env.test` defaults with `APP_ENV=test`
+- DB-backed suites use an isolated SQLite test database (`var/data/hat_test.sqlite`)
+- Schema is reset deterministically between DB-backed test runs
+- Coverage is generated with Xdebug using `bin/phpunit-coverage`
+- PHPUnit 12 reports notices for mock objects created without expectations; the suite still exits `0`, and converting the remaining ones to test stubs is tracked as test debt
 
 ---
 
 ## 📊 Coverage Overview
 
 ```text
-Classes:  26.83% (22/82)
-Methods:  66.87% (329/492)
-Lines:    77.96% (3198/4102)
+Classes:  30.43% (28/92)
+Methods:  69.74% (378/542)
+Lines:    81.24% (3733/4595)
 ```
 
 ### 🌍 Global Coverage Statistics
 
 ```text
-Tests:       242
-Assertions:  1330
+Tests:       376
+Assertions:  1890
 
-Unit:        150 tests / 690 assertions
-Integration: 52 tests / 412 assertions
-Functional:  40 tests / 228 assertions
+Unit:        310 tests / 1506 assertions
+Integration:  20 tests /  125 assertions
+Functional:   46 tests /  259 assertions
 
-Covered:   3198 lines
-Uncovered: 904 lines (22.04%)
+Covered:   3733 lines
+Uncovered:  862 lines (18.76%)
 ```
 
 ### 📁 Coverage by Category
 
 | Category             | Methods              | Lines                  | Coverage   |
 |----------------------|----------------------|------------------------|------------|
-| **Command/**         | 49.06% (52/106)      | 68.74% (1029/1497)     | 68.74%     |
-| **Contract/**        | 100.00% (9/9)        | 100.00% (40/40)        | 100.00%    |
-| **Controller/**      | 43.24% (32/74)       | 80.13% (875/1092)      | 80.13%     |
-| **Entity/**          | 96.00% (72/75)       | 96.00% (120/125)       | 96.00%     |
-| **EventSubscriber/** | 64.29% (9/14)        | 93.68% (89/95)         | 93.68%     |
-| **Exception/**       | 100.00% (3/3)        | 100.00% (5/5)          | 100.00%    |
+| **Command/**         | 49.15% (58/118)      | 72.41% (1223/1689)     | 72.41%     |
+| **Contract/**        | 100.00% (10/10)      | 100.00% (41/41)        | 100.00%    |
+| **Controller/**      | 42.47% (31/73)       | 80.42% (891/1108)      | 80.42%     |
+| **Entity/**          | 96.00% (72/75)       | 96.64% (144/149)       | 96.64%     |
+| **EventSubscriber/** | 81.25% (13/16)       | 96.19% (101/105)       | 96.19%     |
+| **Exception/**       | 100.00% (4/4)        | 100.00% (6/6)          | 100.00%    |
 | **Factory/**         | 40.00% (2/5)         | 94.23% (49/52)         | 94.23%     |
-| **Helper/**          | 90.00% (9/10)        | 95.24% (20/21)         | 95.24%     |
-| **Kernel.php**       | 33.33% (1/3)         | 57.69% (15/26)         | 57.69%     |
-| **Repository/**      | 84.00% (21/25)       | 95.00% (133/140)       | 95.00%     |
-| **Runtime/**         | 81.63% (40/49)       | 89.78% (167/186)       | 89.78%     |
-| **Security/**        | 37.50% (3/8)         | 87.50% (35/40)         | 87.50%     |
-| **Service/**         | 68.47% (76/111)      | 79.31% (621/783)       | 79.31%     |
-| **GLOBAL**           | **66.87% (329/492)** | **77.96% (3198/4102)** | **77.96%** |
-
-### 🗺️ Coverage by Area
-
-| Area                        | Methods              | Lines                  | Coverage   |
-|-----------------------------|----------------------|------------------------|------------|
-| **CLI**                     | 49.06% (52/106)      | 68.74% (1029/1497)     | 68.74%     |
-| **Web**                     | 45.83% (44/96)       | 81.42% (999/1227)      | 81.42%     |
-| **Domain Model**            | 96.55% (84/87)       | 97.06% (165/170)       | 97.06%     |
-| **Application and Runtime** | 71.91% (128/178)     | 81.65% (872/1068)      | 81.65%     |
-| **Persistence**             | 84.00% (21/25)       | 95.00% (133/140)       | 95.00%     |
-| **GLOBAL**                  | **66.87% (329/492)** | **77.96% (3198/4102)** | **77.96%** |
+| **Helper/**          | 92.31% (12/13)       | 96.77% (30/31)         | 96.77%     |
+| **Kernel.php**       | 50.00% (2/4)         | 60.71% (17/28)         | 60.71%     |
+| **Repository/**      | 84.00% (21/25)       | 95.36% (144/151)       | 95.36%     |
+| **Runtime/**         | 80.77% (42/52)       | 91.74% (200/218)       | 91.74%     |
+| **Security/**        | 45.45% (5/11)        | 75.00% (45/60)         | 75.00%     |
+| **Service/**         | 77.94% (106/136)     | 87.98% (842/957)       | 87.98%     |
+| **GLOBAL**           | **69.74% (378/542)** | **81.24% (3733/4595)** | **81.24%** |
 
 ### 📈 Visual Representation
 
 ```text
-Domain Model:    ██████████████████████████████████████░░ 97%
-Helper:          ██████████████████████████████████████░░ 95%
-Persistence:     █████████████████████████████████████░░░ 95%
+Contract:        ████████████████████████████████████████ 100%
+Exception:       ████████████████████████████████████████ 100%
+Helper:          ██████████████████████████████████████░░ 97%
+Entity:          ██████████████████████████████████████░░ 97%
+EventSubscriber: ██████████████████████████████████████░░ 96%
+Repository:      ██████████████████████████████████████░░ 95%
 Factory:         █████████████████████████████████████░░░ 94%
-Runtime:         ████████████████████████████████████░░░░ 90%
-Security:        ███████████████████████████████████░░░░░ 88%
-Web:             █████████████████████████████████░░░░░░░ 81%
-Application+RT:  █████████████████████████████████░░░░░░░ 82%
-Service:         ███████████████████████████████░░░░░░░░░ 79%
-CLI:             ███████████████████████████░░░░░░░░░░░░░ 69%
-Kernel.php:      ███████████████████████░░░░░░░░░░░░░░░░░ 58%
+Runtime:         ████████████████████████████████████░░░░ 92%
+Service:         ███████████████████████████████████░░░░░ 88%
+Controller:      ████████████████████████████████░░░░░░░░ 80%
+Security:        ██████████████████████████████░░░░░░░░░░ 75%
+Command:         █████████████████████████████░░░░░░░░░░░ 72%
+Kernel.php:      ████████████████████████░░░░░░░░░░░░░░░░ 61%
 
-GLOBAL:          ███████████████████████████████░░░░░░░░░ 78%
+GLOBAL:          ████████████████████████████████░░░░░░░░ 81%
 ```
 
 ---
@@ -104,46 +96,50 @@ GLOBAL:          █████████████████████
 
 ### Unit Tests
 
-Unit tests cover core logic with mocked infrastructure boundaries.
+Unit tests cover logic in isolation, with infrastructure boundaries mocked or stubbed.
 
-- Application services: `DeviceService`, `UpsService`, `ScheduleService`, `ActionLogService`.
-- Auth services: `AuthModeResolver`, `AuthUserService`, Symfony Security authenticators.
-- Runtime services: `Cron`, `RuntimeStatusResolver`, `DeviceOperationsService`, selected runtime helpers.
-- Domain/support pieces: entities, helper logic, factories, and validation branches.
+- Console commands: every `hat:*` command driven through `CommandTester` with mocked services, covering argument and option handling, exit codes, and action-log calls
+- Application services: `DeviceService`, `UpsService`, `ScheduleService`, `ActionLogService`
+- Auth: `AuthModeResolver`, `AuthUserService`, and `SimpleLoginFormAuthenticator` (next-path normalisation and the login-timing decoy)
+- Runtime services: `Cron`, `RuntimeStatusResolver`, `DeviceOperationsService`, `UpsRuntimeService`
+- Runtime models: `Runtime\Ups`, `Runtime\Device\Linux` including SSH key loading and argument building
+- Domain and support: entity invariants, `Configuration`, factories, command input traits, asset version strategy
 
 ### Integration Tests
 
-Integration tests verify collaboration between commands, services, repositories, and DB state.
+Every test in this suite boots the kernel and runs against the SQLite test database. Command tests that only exercise argument parsing with mocked services live in the unit suite instead, where they belong.
 
-- Setup commands: `hat:setup:configure`, `hat:setup:db`, `hat:setup:init`.
-- CRUD commands: device, UPS, and schedule create/update/remove/list flows.
-- Runtime commands: `hat:device:check-status`, `hat:device:start`, `hat:device:stop`, `hat:device:ssh`, `hat:cron:execute`.
-- Logs commands: `hat:logs:list`, `hat:logs:cleanup`.
-- User commands: `hat:user:create`, `hat:user:remove`, `hat:user:reset-password`.
-- DB-backed repository/service behavior, including runtime cron branches.
+- `CommandWiringTest` - resolves every `hat:*` command from the real container, asserts the expected command list, and runs create/list against the database. This is what catches a DI wiring break: a renamed constructor argument, a dropped `services.yaml` bind, or a command that stopped being registered
+- `DeviceServiceDatabaseIntegrationTest`, `UpsServiceDatabaseIntegrationTest`, `ScheduleServiceDatabaseIntegrationTest` - persistence, cascades, and unique-constraint mapping
+- `AuthUserServiceDatabaseIntegrationTest` - user creation, password reset, and removal verified through the password hasher
+- `CronDatabaseIntegrationTest` - cron branches against real schedules and devices
+- `ActionLogRepositoryTest` - filtering, pagination, and retention deletes
+- `MigrationSchemaDriftTest` - migrates from an empty database and asserts that every entity table and hand-written index exists
 
 ### Functional Tests
 
-Functional tests cover HTTP routing, controllers, forms, auth, and Twig output.
+Functional tests send real HTTP requests through the kernel and assert on rendered output.
 
-- Simple auth: login success/failure, protected route redirects, logout behavior.
-- OIDC auth: callback success/error branches and transport failure branches.
-- Management pages: device/UPS/schedule CRUD with validation, pagination, sorting, and unknown-entity branches.
-- Logs pages: filters, pagination, cleanup by retention/level, invalid input handling.
-- Dashboard/runtime: dashboard rendering and runtime statuses payload contracts.
+- Simple auth: login success and failure, protected route redirects, logout behaviour
+- OIDC auth: callback success and error branches, plus transport failures
+- Management pages: device, UPS, and schedule CRUD with validation, pagination, sorting, and unknown-entity branches
+- Logs pages: filters, pagination, cleanup by retention and level, invalid input handling
+- Dashboard and runtime: dashboard rendering and the runtime-statuses payload contract
+- CSRF: every mutating route rejects a request without a valid token
 
 ---
 
 ## 🧩 Remaining Risk Areas
 
-- Command depth/branch coverage remains uneven in `Schedule*` commands.
-- Runtime Linux path is still significantly lower than `Runtime\Device\Generic`.
-- `OidcClient` still has uncovered malformed or partial response paths.
-- `Kernel` and selected controller sort/action branches remain partially covered.
+- Command branch coverage is uneven; `ScheduleUpdateCommand` and `ScheduleRemoveCommand` are the weakest, because interactive prompt paths are not exercised
+- `Kernel` and some controller sort and manual-action branches remain partially covered
+- `OidcClient`'s transport is covered through an injectable `sendRequest()` seam, but no test performs a real HTTP call
+- `Linux::ssh()` and `Runtime\Ups::executeCommand()` spawn real processes and are covered only up to the argument-building boundary; the process execution itself is verified manually
+- `NetworkService` ping and wake-on-LAN factories are not covered, for the same reason
+- Mock objects without expectations still produce PHPUnit 12 notices in several suites
 
 ## 🎯 Next Priorities
 
-1. Expand branch coverage for `ScheduleUpdateCommand` and `ScheduleRemoveCommand`.
-2. Add missing Linux runtime path tests (`ssh` and SSH key/client edge cases).
-3. Add focused `OidcClient` tests for malformed provider payloads and network error edge cases.
-4. Add targeted controller tests for remaining device sorting and manual action branches.
+1. Expand branch coverage for `ScheduleUpdateCommand` and `ScheduleRemoveCommand`
+2. Add targeted controller tests for the remaining device sorting and manual action branches
+3. Convert the remaining expectation-free mocks to test stubs to clear the PHPUnit 12 notices

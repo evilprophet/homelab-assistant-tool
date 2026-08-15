@@ -8,14 +8,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use EvilStudio\HAT\Contract\DevicePlatform;
+use InvalidArgumentException;
 
 #[ORM\Entity]
-#[ORM\Table(
-    name: 'devices',
-    indexes: [
-        new ORM\Index(name: 'idx_devices_ups_id', columns: ['ups_id']),
-    ]
-)]
+#[ORM\Table(name: 'devices')]
 class Device
 {
     #[ORM\Id]
@@ -110,6 +107,16 @@ class Device
 
     public function setPlatform(string $platform): self
     {
+        if (DevicePlatform::tryFrom($platform) === null) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    "Unsupported platform '%s'. Allowed values: %s.",
+                    $platform,
+                    implode(', ', DevicePlatform::values())
+                )
+            );
+        }
+
         $this->platform = $platform;
 
         return $this;

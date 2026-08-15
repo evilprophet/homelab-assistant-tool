@@ -1,3 +1,8 @@
 doctrine_migrations:
   migrations_paths:
     'EvilStudio\HAT\Migration': '%kernel.project_dir%/migrations'
+  # Both are the safe behaviour on SQLite, which supports transactional DDL. They
+  # are stated rather than inherited because the container entrypoint migrates
+  # unattended, so a half-applied upgrade batch is the worst possible outcome.
+  transactional: true
+  all_or_nothing: true

@@ -64,12 +64,12 @@ class DeviceOperationsService
         return $device->stop();
     }
 
-    public function sshIntoDevice(string $name, OutputInterface $output): void
+    public function sshIntoDevice(string $name, OutputInterface $output): int
     {
         $device = $this->getDevice($name);
         $this->assertDeviceActionSupported($device, DeviceAction::SSH);
 
-        $device->ssh($output);
+        return $device->ssh($output);
     }
 
     public function assertDeviceActionSupported(DeviceInterface $device, DeviceAction $action): void

@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page_title|default('Login') }} - Homelab Assistant</title>
-    <link rel="stylesheet" href="/assets/app.css">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/icons/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/icons/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/icons/apple-touch-icon.png') }}">
+    <link rel="stylesheet" href="{{ asset('assets/app.css') }}">
     <script>
         (() => {
             try {
@@ -30,6 +34,7 @@
 
     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-lg w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-700">
         <div class="bg-slate-900 px-8 py-6 text-center">
+            <img src="{{ asset('assets/icons/icon-128.png') }}" alt="" class="h-14 w-14 mx-auto mb-3">
             <h1 class="text-2xl font-bold text-white tracking-wider">
                 HAT <span class="text-blue-400 text-sm font-normal align-top">v2</span>
             </h1>
@@ -37,22 +42,7 @@
         </div>
 
         <div class="p-8">
-            {% for label, messages in app.flashes %}
-                {% for message in messages %}
-                    {% set style = 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200' %}
-                    {% if label in ['success'] %}
-                        {% set style = 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' %}
-                    {% elseif label in ['error', 'danger'] %}
-                        {% set style = 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200' %}
-                    {% elseif label in ['warning'] %}
-                        {% set style = 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200' %}
-                    {% endif %}
-
-                    <div class="mb-4 border rounded-lg px-4 py-3 text-sm {{ style }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endfor %}
+            {% include 'ui/_flash_messages.html.twig' %}
 
             {% if error_message is not null %}
                 <div class="mb-6 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded text-sm">

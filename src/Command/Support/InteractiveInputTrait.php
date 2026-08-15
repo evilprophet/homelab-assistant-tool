@@ -9,6 +9,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 trait InteractiveInputTrait
 {
+    // Symfony returns the default value on empty input, so pressing Enter can never
+    // clear a field that already has one. This sentinel gives the prompts a way to.
+    protected const string CLEAR_SENTINEL = '-';
+
     protected function resolveRequiredArgument(
         InputInterface $input,
         SymfonyStyle $io,
@@ -120,7 +124,7 @@ trait InteractiveInputTrait
         $rawValue = $io->ask($question, $defaultValue === null ? '' : (string)$defaultValue);
         $value = trim((string)$rawValue);
 
-        if ($value === '') {
+        if ($value === '' || $value === self::CLEAR_SENTINEL) {
             return null;
         }
 
@@ -132,6 +136,13 @@ trait InteractiveInputTrait
         }
 
         return (int)$normalized;
+    }
+
+    protected function promptOptionalString(SymfonyStyle $io, string $question, ?string $defaultValue): ?string
+    {
+        $value = trim((string)$io->ask($question, $defaultValue ?? ''));
+
+        return $value === self::CLEAR_SENTINEL ? null : $this->nullIfEmpty($value);
     }
 
     protected function nullIfEmpty(mixed $value): ?string

@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\Setup;
 
+use DateTimeZone;
+use InvalidArgumentException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 #[AsCommand(name: 'hat:setup:configure', description: 'Configure app')]
 class SetupConfigureCommand extends Command
 {
     protected const string DEFAULT_TIMEZONE = 'UTC';
-    protected const string DEFAULT_SSH_KEY_PATH = '/root/.ssh/id_ed25519';
+    protected const string DEFAULT_SSH_KEY_PATH = 'var/data/id_ed25519';
     protected const string DEFAULT_SSH_USERNAME = 'root';
     protected const string DEFAULT_SQLITE_DATABASE_PATH = 'var/data/hat.sqlite';
     protected const int DEFAULT_ACTION_LOG_RETENTION_DAYS = 90;
@@ -33,7 +36,7 @@ class SetupConfigureCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $configPath = $this->getConfigPath();
-        $existingConfig = $this->readExistingConfig($configPath);
+        $existingConfig = $this->readExistingConfig($configPath, $io);
 
         if ($this->filesystem->exists($configPath)) {
             if (!$input->isInteractive()) {
@@ -52,7 +55,20 @@ class SetupConfigureCommand extends Command
         $configuration = $existingConfig['configuration'] ?? [];
         $cronEnabled = $io->confirm('Enable cron mode?', (bool)($configuration['cron'] ?? true));
         $upsModeEnabled = $io->confirm('Enable UPS mode?', (bool)($configuration['ups_mode'] ?? true));
-        $timezone = $io->ask('Timezone', (string)($configuration['timezone'] ?? self::DEFAULT_TIMEZONE));
+        $timezone = $io->ask(
+            'Timezone',
+            (string)($configuration['timezone'] ?? self::DEFAULT_TIMEZONE),
+            static function (mixed $value): string {
+                $timezone = trim((string)$value);
+                if (!in_array($timezone, DateTimeZone::listIdentifiers(), true)) {
+                    throw new InvalidArgumentException(
+                        sprintf("'%s' is not a known timezone identifier, for example Europe/Warsaw.", $timezone)
+                    );
+                }
+
+                return $timezone;
+            }
+        );
         $sshKeyPath = $io->ask(
             'SSH private key path',
             (string)($configuration['ssh_key_path'] ?? self::DEFAULT_SSH_KEY_PATH)
@@ -63,7 +79,17 @@ class SetupConfigureCommand extends Command
         );
         $sqliteDatabasePath = $io->ask(
             'SQLite database path (relative to project root)',
-            (string)($existingConfig['sqlite_database_path'] ?? self::DEFAULT_SQLITE_DATABASE_PATH)
+            (string)($existingConfig['sqlite_database_path'] ?? self::DEFAULT_SQLITE_DATABASE_PATH),
+            static function (mixed $value): string {
+                $path = trim((string)$value);
+                if ($path === '' || str_starts_with($path, '/')) {
+                    throw new InvalidArgumentException(
+                        'Database path must be relative to the project root, for example var/data/hat.sqlite.'
+                    );
+                }
+
+                return $path;
+            }
         );
         $actionLogDefaultRetentionDays = (int)$io->ask(
             'Default action log retention in days',
@@ -74,7 +100,7 @@ class SetupConfigureCommand extends Command
             static function (mixed $value): int {
                 $parsed = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
                 if ($parsed === false) {
-                    throw new \InvalidArgumentException('Action log retention days must be a positive integer.');
+                    throw new InvalidArgumentException('Action log retention days must be a positive integer.');
                 }
 
                 return (int)$parsed;
@@ -109,13 +135,28 @@ class SetupConfigureCommand extends Command
         return sprintf('%s/config/parameters.yaml', $this->applicationDirectory);
     }
 
-    protected function readExistingConfig(string $configPath): array
+    protected function readExistingConfig(string $configPath, SymfonyStyle $io): array
     {
         if (!$this->filesystem->exists($configPath)) {
             return [];
         }
 
-        $parsed = Yaml::parseFile($configPath);
+        try {
+            $parsed = Yaml::parseFile($configPath);
+        } catch (ParseException $exception) {
+            // Repairing a broken file is exactly why this command gets run, so an
+            // unreadable one must fall back to defaults instead of aborting.
+            $io->warning(
+                sprintf(
+                    "Existing configuration '%s' is not valid YAML (%s). Continuing with defaults.",
+                    $configPath,
+                    $exception->getMessage()
+                )
+            );
+
+            return [];
+        }
+
         if (!is_array($parsed)) {
             return [];
         }

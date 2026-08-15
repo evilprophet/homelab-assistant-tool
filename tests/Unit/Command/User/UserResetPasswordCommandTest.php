@@ -18,7 +18,7 @@ class UserResetPasswordCommandTest extends TestCase
     {
         $authModeResolver = $this->createMock(AuthModeResolver::class);
         $authUserService = $this->createMock(AuthUserService::class);
-        $actionLogService = $this->createMock(ActionLogService::class);
+        $actionLogService = $this->createStub(ActionLogService::class);
 
         $authModeResolver->expects($this->once())->method('isSimpleMode')->willReturn(true);
         $authUserService->expects($this->once())
@@ -37,11 +37,38 @@ class UserResetPasswordCommandTest extends TestCase
         $this->assertStringContainsString("Password reset for user 'admin' completed.", $tester->getDisplay());
     }
 
+    public function testExecuteReadsPasswordFromStandardInput(): void
+    {
+        $authModeResolver = $this->createMock(AuthModeResolver::class);
+        $authUserService = $this->createMock(AuthUserService::class);
+        $actionLogService = $this->createStub(ActionLogService::class);
+
+        $authModeResolver->expects($this->once())->method('isSimpleMode')->willReturn(true);
+        $authUserService->expects($this->once())
+            ->method('resetSimpleUserPassword')
+            ->with('admin', 'secret-123');
+
+        $command = new class ($authModeResolver, $authUserService, $actionLogService) extends UserResetPasswordCommand {
+            protected function readStandardInput(): string|false
+            {
+                return "secret-123\n";
+            }
+        };
+
+        $tester = new CommandTester($command);
+        $exitCode = $tester->execute([
+            'username' => 'admin',
+            '--password-stdin' => true,
+        ], ['interactive' => false]);
+
+        $this->assertSame(Command::SUCCESS, $exitCode);
+    }
+
     public function testExecuteReturnsFailureWhenPasswordMissingInNonInteractiveMode(): void
     {
         $authModeResolver = $this->createMock(AuthModeResolver::class);
         $authUserService = $this->createMock(AuthUserService::class);
-        $actionLogService = $this->createMock(ActionLogService::class);
+        $actionLogService = $this->createStub(ActionLogService::class);
 
         $authModeResolver->expects($this->once())->method('isSimpleMode')->willReturn(true);
         $authUserService->expects($this->never())->method('resetSimpleUserPassword');
@@ -53,16 +80,16 @@ class UserResetPasswordCommandTest extends TestCase
 
         $this->assertSame(Command::FAILURE, $exitCode);
         $this->assertStringContainsString(
-            'Option --password is required in non-interactive mode.',
+            'Option --password-stdin or --password is required',
             $tester->getDisplay()
         );
     }
 
-    public function testExecuteSkipsWhenSimpleModeIsDisabled(): void
+    public function testExecuteFailsWhenSimpleModeIsDisabled(): void
     {
         $authModeResolver = $this->createMock(AuthModeResolver::class);
         $authUserService = $this->createMock(AuthUserService::class);
-        $actionLogService = $this->createMock(ActionLogService::class);
+        $actionLogService = $this->createStub(ActionLogService::class);
 
         $authModeResolver->expects($this->once())->method('isSimpleMode')->willReturn(false);
         $authModeResolver->expects($this->once())->method('getMode')->willReturn('oidc');
@@ -73,6 +100,6 @@ class UserResetPasswordCommandTest extends TestCase
         );
         $exitCode = $tester->execute(['username' => 'admin', '--password' => 'secret-123'], ['interactive' => false]);
 
-        $this->assertSame(Command::SUCCESS, $exitCode);
+        $this->assertSame(Command::FAILURE, $exitCode);
     }
 }

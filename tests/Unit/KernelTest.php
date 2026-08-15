@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
+use Symfony\Component\Filesystem\Filesystem;
 
 class KernelTest extends TestCase
 {
@@ -16,21 +17,23 @@ class KernelTest extends TestCase
 
     protected string $projectDirectory;
     protected string $parametersFilePath;
-    protected ?string $parametersBackupPath = null;
+    protected ?string $isolatedProjectDirectory = null;
     protected ?string $isolatedCacheDirectory = null;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->projectDirectory = dirname(__DIR__, 2);
+        // The kernel is booted against a throwaway copy of config/ so that a crash
+        // mid-test can never leave the real installation without its parameters file.
+        $this->projectDirectory = $this->createIsolatedProjectDirectory();
         $this->parametersFilePath = $this->projectDirectory . '/config/parameters.yaml';
     }
 
     protected function tearDown(): void
     {
-        $this->restoreParametersFile();
         $this->removeIsolatedCacheDirectory();
+        $this->removeIsolatedProjectDirectory();
 
         parent::tearDown();
     }
@@ -44,8 +47,6 @@ class KernelTest extends TestCase
 
     public function testBootInTestEnvironmentDoesNotRequireParametersFile(): void
     {
-        $this->moveParametersFileAwayIfExists();
-
         $kernel = $this->createIsolatedCacheKernel('test');
         $kernel->boot();
 
@@ -62,8 +63,6 @@ class KernelTest extends TestCase
 
     public function testBootInProdEnvironmentThrowsWhenParametersFileIsMissing(): void
     {
-        $this->moveParametersFileAwayIfExists();
-
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage("Missing required configuration file '{$this->parametersFilePath}'");
 
@@ -80,11 +79,12 @@ class KernelTest extends TestCase
             str_replace('.', '', uniqid('', true))
         );
 
-        return new class ($environment, true, $this->isolatedCacheDirectory) extends Kernel {
+        return new class ($environment, true, $this->isolatedCacheDirectory, $this->projectDirectory) extends Kernel {
             public function __construct(
                 string $environment,
                 bool $debug,
-                private readonly string $cacheDirectory
+                private readonly string $cacheDirectory,
+                private readonly string $projectDirectory
             ) {
                 parent::__construct($environment, $debug);
             }
@@ -93,31 +93,39 @@ class KernelTest extends TestCase
             {
                 return $this->cacheDirectory;
             }
+
+            public function getProjectDir(): string
+            {
+                return $this->projectDirectory;
+            }
         };
     }
 
-    protected function moveParametersFileAwayIfExists(): void
+    protected function createIsolatedProjectDirectory(): string
     {
-        if (!is_file($this->parametersFilePath)) {
-            return;
-        }
+        $directory = sys_get_temp_dir() . '/hat-kernel-test-' . str_replace('.', '', uniqid('', true));
+        $realProjectDirectory = dirname(__DIR__, 2);
 
-        $this->parametersBackupPath = $this->parametersFilePath . '.bak-kernel-test-' . uniqid('', true);
+        $filesystem = new Filesystem();
+        $filesystem->mirror($realProjectDirectory . '/config', $directory . '/config');
+        $filesystem->remove($directory . '/config/parameters.yaml');
+        $filesystem->mkdir($directory . '/var/data');
+        // services.yaml loads '../src/' and the Doctrine mapping points at src/Entity.
+        $filesystem->symlink($realProjectDirectory . '/src', $directory . '/src');
 
-        rename($this->parametersFilePath, $this->parametersBackupPath);
+        $this->isolatedProjectDirectory = $directory;
+
+        return $directory;
     }
 
-    protected function restoreParametersFile(): void
+    protected function removeIsolatedProjectDirectory(): void
     {
-        if ($this->parametersBackupPath === null) {
+        if ($this->isolatedProjectDirectory === null) {
             return;
         }
 
-        if (is_file($this->parametersBackupPath)) {
-            rename($this->parametersBackupPath, $this->parametersFilePath);
-        }
-
-        $this->parametersBackupPath = null;
+        (new Filesystem())->remove($this->isolatedProjectDirectory);
+        $this->isolatedProjectDirectory = null;
     }
 
     protected function removeIsolatedCacheDirectory(): void

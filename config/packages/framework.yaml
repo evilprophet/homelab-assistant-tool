@@ -4,3 +4,11 @@ framework:
   handle_all_throwables: true
   session: true
   csrf_protection: true
+  # Unset by default so no proxy is trusted until its address is named explicitly.
+  trusted_proxies: '%env(default::TRUSTED_PROXIES)%'
+  assets:
+    # Adds a per-build query string so a caching proxy stops serving stale CSS.
+    # Serving under a path prefix additionally needs the proxy to send
+    # X-Forwarded-Prefix and 'x-forwarded-prefix' added to trusted_headers,
+    # which is not part of Symfony's default set.
+    version_strategy: 'EvilStudio\HAT\Service\Infrastructure\AssetMtimeVersionStrategy'

@@ -8,6 +8,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 trait ScheduleDeviceSelectionTrait
 {
+    protected const string NO_DEVICES_CHOICE = 'None';
+
     protected function parseDeviceIds(array $values, SymfonyStyle $io): ?array
     {
         $deviceIds = [];
@@ -35,7 +37,7 @@ trait ScheduleDeviceSelectionTrait
             return [];
         }
 
-        $choices = [];
+        $deviceChoices = [];
         $mapping = [];
         $defaultChoices = [];
 
@@ -46,7 +48,7 @@ trait ScheduleDeviceSelectionTrait
             }
 
             $label = sprintf('%d: %s', $deviceId, $device->getName());
-            $choices[] = $label;
+            $deviceChoices[] = $label;
             $mapping[$label] = $deviceId;
 
             if (in_array($deviceId, $defaultDeviceIds, true)) {
@@ -54,11 +56,16 @@ trait ScheduleDeviceSelectionTrait
             }
         }
 
-        if (empty($choices)) {
+        if (empty($deviceChoices)) {
             return [];
         }
 
-        $defaultSelection = empty($defaultChoices) ? null : implode(',', $defaultChoices);
+        // A multiselect rejects empty input, so without an explicit opt-out the
+        // prompt would loop forever and no schedule could keep an empty device list.
+        $choices = array_merge([self::NO_DEVICES_CHOICE], $deviceChoices);
+        $defaultSelection = empty($defaultChoices)
+            ? self::NO_DEVICES_CHOICE
+            : implode(',', $defaultChoices);
         $selected = $io->choice($question, $choices, $defaultSelection, true);
         $selectedLabels = is_array($selected) ? $selected : [$selected];
 

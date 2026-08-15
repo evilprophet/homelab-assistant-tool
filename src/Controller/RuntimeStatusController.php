@@ -31,7 +31,7 @@ class RuntimeStatusController extends AbstractController
             'ups_status_by_identifier' => $this->runtimeStatusResolver->resolveUpsStatusByIdentifiers($upsIdentifiers),
         ]);
 
-        $response->setPublic();
+        $response->setPrivate();
         $response->setMaxAge(self::RESPONSE_CACHE_TTL_SECONDS);
 
         return $response;

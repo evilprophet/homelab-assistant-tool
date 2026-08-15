@@ -20,7 +20,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/logs')]
 class LogsController extends AbstractController
 {
-    protected const string CSRF_LOGS_CLEANUP = 'logs.cleanup';
+    public const string CSRF_LOGS_CLEANUP = 'logs.cleanup';
 
     public function __construct(
         protected ActionLogService $actionLogService,
@@ -31,7 +31,7 @@ class LogsController extends AbstractController
     #[Route(path: '', name: 'hat_logs_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $timezone = new DateTimeZone($this->configuration->getTimezone());
+        $timezone = $this->configuration->getResolvedTimezone();
         $query = $request->query;
 
         $filters = [

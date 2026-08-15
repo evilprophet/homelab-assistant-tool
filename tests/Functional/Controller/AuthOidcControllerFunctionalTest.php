@@ -16,7 +16,7 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $authModeResolver = $this->createMock(AuthModeResolver::class);
+        $authModeResolver = $this->createStub(AuthModeResolver::class);
         $authModeResolver->method('getMode')->willReturn(AuthModeResolver::MODE_OIDC);
         $authModeResolver->method('isOidcMode')->willReturn(true);
         $authModeResolver->method('isSimpleMode')->willReturn(false);
@@ -27,6 +27,7 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
     public function testCallbackRejectsInvalidState(): void
     {
         $this->session->set('_hat_oidc_state', 'expected-state');
+        $this->session->set('_hat_oidc_code_verifier', 'expected-verifier');
 
         $callbackResponse = $this->request('GET', '/auth/callback?state=wrong-state');
         $this->assertSame(Response::HTTP_FOUND, $callbackResponse->getStatusCode());
@@ -40,6 +41,7 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
     public function testCallbackShowsProviderErrorMessage(): void
     {
         $this->session->set('_hat_oidc_state', 'expected-state');
+        $this->session->set('_hat_oidc_code_verifier', 'expected-verifier');
 
         $callbackResponse = $this->request(
             'GET',
@@ -51,7 +53,23 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
         $loginResponse = $this->request('GET', '/auth/login');
         $this->assertSame(Response::HTTP_OK, $loginResponse->getStatusCode());
         $this->assertStringContainsString(
-            'OIDC login failed: access_denied: Consent required',
+            'OIDC login failed. Check the action log for details.',
+            (string)$loginResponse->getContent()
+        );
+        $this->assertStringNotContainsString(
+            'OIDC discovery failed.',
+            (string)$loginResponse->getContent()
+        );
+        $this->assertStringNotContainsString(
+            'OIDC userinfo request failed.',
+            (string)$loginResponse->getContent()
+        );
+        $this->assertStringNotContainsString(
+            'OIDC token request failed.',
+            (string)$loginResponse->getContent()
+        );
+        $this->assertStringNotContainsString(
+            'access_denied: Consent required',
             (string)$loginResponse->getContent()
         );
     }
@@ -59,6 +77,7 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
     public function testCallbackRequiresAuthorizationCode(): void
     {
         $this->session->set('_hat_oidc_state', 'expected-state');
+        $this->session->set('_hat_oidc_code_verifier', 'expected-verifier');
 
         $callbackResponse = $this->request('GET', '/auth/callback?state=expected-state');
         $this->assertSame(Response::HTTP_FOUND, $callbackResponse->getStatusCode());
@@ -76,14 +95,19 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
     {
         $oidcClient = $this->createMock(OidcClient::class);
         $oidcClient->method('getProviderName')->willReturn('Test OIDC');
+        // The whole client is mocked, so the real verifier generator never runs.
+        $oidcClient->method('createCodeVerifier')->willReturn('generated-verifier');
         $oidcClient->expects($this->once())
             ->method('buildAuthorizationUrl')
             ->willReturnCallback(
-                static fn (string $state): string => sprintf('https://oidc.local/authorize?state=%s', $state)
+                static fn (string $state, string $verifier): string => sprintf(
+                    'https://oidc.local/authorize?state=%s',
+                    $state
+                )
             );
         $oidcClient->expects($this->once())
             ->method('exchangeCodeForAccessToken')
-            ->with('sample-code')
+            ->with('sample-code', 'generated-verifier')
             ->willReturn('oidc-access-token');
         $oidcClient->expects($this->once())
             ->method('fetchUserInfo')
@@ -125,12 +149,13 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
         $oidcClient->method('getProviderName')->willReturn('Test OIDC');
         $oidcClient->expects($this->once())
             ->method('exchangeCodeForAccessToken')
-            ->with('sample-code')
+            ->with('sample-code', 'expected-verifier')
             ->willThrowException(new RuntimeException('OIDC token request failed.'));
         $oidcClient->expects($this->never())->method('fetchUserInfo');
         static::getContainer()->set(OidcClient::class, $oidcClient);
 
         $this->session->set('_hat_oidc_state', 'expected-state');
+        $this->session->set('_hat_oidc_code_verifier', 'expected-verifier');
 
         $callbackResponse = $this->request('GET', '/auth/callback?state=expected-state&code=sample-code');
         $this->assertSame(Response::HTTP_FOUND, $callbackResponse->getStatusCode());
@@ -139,7 +164,19 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
         $loginResponse = $this->request('GET', '/auth/login');
         $this->assertSame(Response::HTTP_OK, $loginResponse->getStatusCode());
         $this->assertStringContainsString(
-            'OIDC login failed: OIDC token request failed.',
+            'OIDC login failed. Check the action log for details.',
+            html_entity_decode((string)$loginResponse->getContent(), ENT_QUOTES)
+        );
+        $this->assertStringNotContainsString(
+            'OIDC discovery failed.',
+            html_entity_decode((string)$loginResponse->getContent(), ENT_QUOTES)
+        );
+        $this->assertStringNotContainsString(
+            'OIDC userinfo request failed.',
+            html_entity_decode((string)$loginResponse->getContent(), ENT_QUOTES)
+        );
+        $this->assertStringNotContainsString(
+            'OIDC token request failed.',
             html_entity_decode((string)$loginResponse->getContent(), ENT_QUOTES)
         );
     }
@@ -150,7 +187,7 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
         $oidcClient->method('getProviderName')->willReturn('Test OIDC');
         $oidcClient->expects($this->once())
             ->method('exchangeCodeForAccessToken')
-            ->with('sample-code')
+            ->with('sample-code', 'expected-verifier')
             ->willReturn('token-ok');
         $oidcClient->expects($this->once())
             ->method('fetchUserInfo')
@@ -159,6 +196,7 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
         static::getContainer()->set(OidcClient::class, $oidcClient);
 
         $this->session->set('_hat_oidc_state', 'expected-state');
+        $this->session->set('_hat_oidc_code_verifier', 'expected-verifier');
 
         $callbackResponse = $this->request('GET', '/auth/callback?state=expected-state&code=sample-code');
         $this->assertSame(Response::HTTP_FOUND, $callbackResponse->getStatusCode());
@@ -167,7 +205,7 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
         $loginResponse = $this->request('GET', '/auth/login');
         $this->assertSame(Response::HTTP_OK, $loginResponse->getStatusCode());
         $this->assertStringContainsString(
-            'OIDC login failed: OIDC userinfo request failed.',
+            'OIDC login failed. Check the action log for details.',
             html_entity_decode((string)$loginResponse->getContent(), ENT_QUOTES)
         );
     }
@@ -188,7 +226,7 @@ class AuthOidcControllerFunctionalTest extends HttpFunctionalTestCase
         $loginResponse = $this->request('GET', '/auth/login');
         $this->assertSame(Response::HTTP_OK, $loginResponse->getStatusCode());
         $this->assertStringContainsString(
-            'OIDC login failed: OIDC discovery failed.',
+            'OIDC login failed. Check the action log for details.',
             html_entity_decode((string)$loginResponse->getContent(), ENT_QUOTES)
         );
     }

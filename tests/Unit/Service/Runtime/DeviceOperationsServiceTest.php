@@ -35,7 +35,7 @@ class DeviceOperationsServiceTest extends TestCase
     {
         $runtimeService = $this->createMock(DeviceRuntimeService::class);
         $device = $this->createMock(DeviceInterface::class);
-        $output = $this->createMock(OutputInterface::class);
+        $output = $this->createStub(OutputInterface::class);
 
         $runtimeService->expects($this->exactly(4))
             ->method('getRuntimeDeviceByName')

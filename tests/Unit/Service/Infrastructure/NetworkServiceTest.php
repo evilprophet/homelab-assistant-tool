@@ -37,6 +37,70 @@ class NetworkServiceTest extends TestCase
         $this->assertFalse($service->ping('10.0.0.10'));
     }
 
+    public function testPingStopsAtTheFirstSuccessfulAttempt(): void
+    {
+        $attempts = 0;
+        $service = new NetworkService(
+            pingFactory: static function () use (&$attempts): object {
+                $attempts++;
+
+                return new class {
+                    public function ping(): string
+                    {
+                        return 'pong';
+                    }
+                };
+            }
+        );
+
+        $this->assertTrue($service->ping('10.0.0.10'));
+        $this->assertSame(1, $attempts);
+    }
+
+    public function testPingRetriesAndSucceedsWhenALaterAttemptAnswers(): void
+    {
+        $attempts = 0;
+        $service = new NetworkService(
+            pingFactory: static function () use (&$attempts): object {
+                $attempts++;
+
+                return new class ($attempts) {
+                    public function __construct(private readonly int $attempt)
+                    {
+                    }
+
+                    public function ping(): string|bool
+                    {
+                        return $this->attempt < 3 ? false : 'pong';
+                    }
+                };
+            }
+        );
+
+        $this->assertTrue($service->ping('10.0.0.10'));
+        $this->assertSame(3, $attempts);
+    }
+
+    public function testPingGivesUpAfterThreeFailedAttempts(): void
+    {
+        $attempts = 0;
+        $service = new NetworkService(
+            pingFactory: static function () use (&$attempts): object {
+                $attempts++;
+
+                return new class {
+                    public function ping(): bool
+                    {
+                        return false;
+                    }
+                };
+            }
+        );
+
+        $this->assertFalse($service->ping('10.0.0.10'));
+        $this->assertSame(3, $attempts);
+    }
+
     public function testWakeOnLanReturnsTrueOnlyForOkResult(): void
     {
         $serviceOk = new NetworkService(

@@ -21,6 +21,7 @@ security:
             entry_point: EvilStudio\HAT\Security\SimpleLoginFormAuthenticator
             logout:
                 path: hat_auth_logout
+                enable_csrf: true
                 csrf_parameter: _token
                 csrf_token_id: auth.logout
                 invalidate_session: true

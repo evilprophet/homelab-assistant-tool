@@ -12,13 +12,13 @@ class RuntimeScheduleFactory
 {
     public function createFromEntity(ScheduleEntity $schedule): RuntimeSchedule
     {
-        $deviceLabels = [];
+        $devices = [];
         foreach ($schedule->getDevices()->toArray() as $device) {
             if (!$device instanceof Device || $device->getId() === null) {
                 continue;
             }
 
-            $deviceLabels[] = sprintf('%d:%s', $device->getId(), $device->getName());
+            $devices[] = ['id' => (int)$device->getId(), 'name' => $device->getName()];
         }
 
         return new RuntimeSchedule(
@@ -27,7 +27,7 @@ class RuntimeScheduleFactory
             $schedule->isEnabled(),
             $schedule->getCronExpression(),
             $schedule->getCommand(),
-            $deviceLabels
+            $devices
         );
     }
 }

@@ -1,3 +1,8 @@
 framework:
   test: true
 
+
+  # Array adapter keeps the pool per-process, so one test run cannot leave cached
+  # entries behind for the next one.
+  cache:
+    app: cache.adapter.array

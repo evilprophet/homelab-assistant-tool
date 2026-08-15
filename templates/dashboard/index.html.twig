@@ -57,7 +57,7 @@
                         {% set status = status_by_name[device.name]|default('unknown') %}
                         <li class="px-6 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 flex items-center justify-between transition-colors">
                             <div class="flex items-center gap-3">
-                                <span data-dashboard-device-status="{{ device.name }}" class="w-2 h-2 rounded-full {{ status == 'online' ? 'bg-green-500' : (status == 'offline' ? 'bg-red-500' : 'bg-slate-400') }}"></span>
+                                <span data-runtime-device-status="{{ device.name }}" data-status-online="bg-green-500" data-status-offline="bg-red-500" class="w-2 h-2 rounded-full {{ status == 'online' ? 'bg-green-500' : (status == 'offline' ? 'bg-red-500' : 'bg-slate-400') }}"></span>
                                 <div>
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">{{ device.name }}</div>
                                     <div class="text-xs text-slate-500 dark:text-slate-400">{{ device.ip }}</div>
@@ -90,11 +90,11 @@
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <div class="text-sm font-medium text-slate-900 dark:text-white">{{ ups.name }}</div>
-                                    <div data-dashboard-ups-status-details="{{ ups.identifier }}" class="text-xs text-slate-500 dark:text-slate-400">
+                                    <div data-runtime-ups-details="{{ ups.identifier }}" class="text-xs text-slate-500 dark:text-slate-400">
                                         Battery data unavailable
                                     </div>
                                 </div>
-                                <span data-dashboard-ups-status-badge="{{ ups.identifier }}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ ups_status_class }}">
+                                <span data-runtime-ups-badge="{{ ups.identifier }}" data-tone-success="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400" data-tone-warning="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400" data-tone-neutral="bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ ups_status_class }}">
                                     {{ ups_status }}
                                 </span>
                             </div>
@@ -178,111 +178,5 @@
 {% endblock %}
 
 {% block body_scripts %}
-    <script>
-        (() => {
-            const deviceDots = Array.from(document.querySelectorAll('[data-dashboard-device-status]'));
-            const upsBadges = Array.from(document.querySelectorAll('[data-dashboard-ups-status-badge]'));
-            const upsDetails = Array.from(document.querySelectorAll('[data-dashboard-ups-status-details]'));
-
-            if (deviceDots.length === 0 && upsBadges.length === 0) {
-                return;
-            }
-
-            const deviceNames = Array.from(new Set(
-                deviceDots
-                    .map((dot) => dot.dataset.dashboardDeviceStatus || '')
-                    .filter((name) => name !== '')
-            ));
-            const upsIdentifiers = Array.from(new Set(
-                upsBadges
-                    .map((badge) => badge.dataset.dashboardUpsStatusBadge || '')
-                    .filter((identifier) => identifier !== '')
-            ));
-
-            const params = new URLSearchParams();
-            deviceNames.forEach((deviceName) => {
-                params.append('device_names[]', deviceName);
-            });
-            upsIdentifiers.forEach((upsIdentifier) => {
-                params.append('ups_identifiers[]', upsIdentifier);
-            });
-
-            const dotClassByStatus = {
-                online: 'bg-green-500',
-                offline: 'bg-red-500',
-                unknown: 'bg-slate-400',
-            };
-
-            const badgeClassByTone = {
-                success: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400',
-                warning: 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400',
-                neutral: 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
-            };
-
-            fetch('{{ path('hat_runtime_statuses') }}?' + params.toString(), {
-                headers: { 'Accept': 'application/json' },
-            })
-                .then((response) => response.ok ? response.json() : Promise.reject())
-                .then((payload) => {
-                    const deviceStatusByName = payload.device_status_by_name || {};
-                    const upsStatusByIdentifier = payload.ups_status_by_identifier || {};
-
-                    deviceDots.forEach((dot) => {
-                        const deviceName = dot.dataset.dashboardDeviceStatus || '';
-                        if (deviceName === '') {
-                            return;
-                        }
-
-                        const status = typeof deviceStatusByName[deviceName] === 'string'
-                            ? deviceStatusByName[deviceName]
-                            : 'unknown';
-
-                        dot.classList.remove('bg-green-500', 'bg-red-500', 'bg-slate-400');
-                        dot.classList.add(dotClassByStatus[status] || dotClassByStatus.unknown);
-                    });
-
-                    upsBadges.forEach((badge) => {
-                        const upsIdentifier = badge.dataset.dashboardUpsStatusBadge || '';
-                        if (upsIdentifier === '') {
-                            return;
-                        }
-
-                        const runtimeStatus = upsStatusByIdentifier[upsIdentifier] || { label: 'Unknown', tone: 'neutral' };
-                        const tone = typeof runtimeStatus.tone === 'string' ? runtimeStatus.tone : 'neutral';
-
-                        badge.classList.remove(
-                            'bg-green-100', 'dark:bg-green-900/30', 'text-green-800', 'dark:text-green-400',
-                            'bg-amber-100', 'dark:bg-amber-900/30', 'text-amber-800', 'dark:text-amber-400',
-                            'bg-slate-100', 'dark:bg-slate-700', 'text-slate-700', 'dark:text-slate-300'
-                        );
-                        (badgeClassByTone[tone] || badgeClassByTone.neutral).split(' ').forEach((className) => {
-                            badge.classList.add(className);
-                        });
-                        badge.textContent = typeof runtimeStatus.label === 'string' ? runtimeStatus.label : 'Unknown';
-                    });
-
-                    upsDetails.forEach((details) => {
-                        const upsIdentifier = details.dataset.dashboardUpsStatusDetails || '';
-                        if (upsIdentifier === '') {
-                            return;
-                        }
-
-                        const runtimeStatus = upsStatusByIdentifier[upsIdentifier] || {};
-                        if (runtimeStatus.battery_level !== null && runtimeStatus.battery_level !== undefined) {
-                            let text = String(runtimeStatus.battery_level) + '% charged';
-                            if (runtimeStatus.battery_runtime_minutes !== null && runtimeStatus.battery_runtime_minutes !== undefined) {
-                                text += ' - ' + runtimeStatus.battery_runtime_minutes + 'm left';
-                            }
-
-                            details.textContent = text;
-                            return;
-                        }
-
-                        details.textContent = 'Battery data unavailable';
-                    });
-                })
-                .catch(() => {
-                });
-        })();
-    </script>
+    {% include 'ui/_runtime_status_script.html.twig' only %}
 {% endblock %}

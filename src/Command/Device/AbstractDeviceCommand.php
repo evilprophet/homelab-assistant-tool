@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace EvilStudio\HAT\Command\Device;
 
 use EvilStudio\HAT\Contract\DeviceInterface;
+use EvilStudio\HAT\Exception\EntityNotFound;
 use EvilStudio\HAT\Service\Runtime\DeviceOperationsService;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -24,6 +25,14 @@ abstract class AbstractDeviceCommand extends Command
 
         if (!$name) {
             $deviceNames = $this->deviceOperationsService->listDeviceNames();
+            if (empty($deviceNames)) {
+                throw new EntityNotFound('No devices found.');
+            }
+
+            if (!$input->isInteractive()) {
+                throw new EntityNotFound("Argument 'name' is required.");
+            }
+
             $name = $outputHelper->choice('Please select a device', $deviceNames);
         }
 

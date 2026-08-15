@@ -10,29 +10,24 @@ use EvilStudio\HAT\Entity\ActionLog;
 
 class ActionLogRepository
 {
+    protected const string LIKE_ESCAPE_CHARACTER = '!';
+
     public function __construct(
         protected EntityManagerInterface $entityManager
     ) {
     }
 
-    public function findAll(): array
-    {
-        $actionLogs = $this->entityManager->getRepository(ActionLog::class)->findBy([], ['id' => 'ASC']);
-
-        return array_values(array_filter($actionLogs, static fn ($actionLog) => $actionLog instanceof ActionLog));
-    }
-
     public function findByFilters(
-        ?string $source = null,
-        ?string $level = null,
-        ?string $action = null,
-        ?int $limit = null
+        ?string $source,
+        ?string $level,
+        ?string $action,
+        int $limit
     ): array {
         $queryBuilder = $this->entityManager->createQueryBuilder();
         $queryBuilder
             ->select('actionLog')
             ->from(ActionLog::class, 'actionLog')
-            ->orderBy('actionLog.id', 'ASC');
+            ->orderBy('actionLog.id', 'DESC');
 
         if ($source !== null) {
             $queryBuilder
@@ -52,9 +47,7 @@ class ActionLogRepository
                 ->setParameter('action', $action);
         }
 
-        if ($limit !== null) {
-            $queryBuilder->setMaxResults($limit);
-        }
+        $queryBuilder->setMaxResults($limit);
 
         $actionLogs = $queryBuilder->getQuery()->getResult();
 
@@ -110,13 +103,21 @@ class ActionLogRepository
 
         if ($entityText !== null && $entityText !== '') {
             $queryBuilder
-                ->andWhere('LOWER(actionLog.message) LIKE :entityText OR LOWER(actionLog.action) LIKE :entityText')
-                ->setParameter('entityText', sprintf('%%%s%%', mb_strtolower($entityText)));
+                ->andWhere(
+                    sprintf(
+                        "LOWER(actionLog.message) LIKE :entityText ESCAPE '%s'"
+                        . " OR LOWER(actionLog.action) LIKE :entityText ESCAPE '%s'",
+                        self::LIKE_ESCAPE_CHARACTER,
+                        self::LIKE_ESCAPE_CHARACTER
+                    )
+                )
+                ->setParameter('entityText', sprintf('%%%s%%', $this->escapeLikeTerm(mb_strtolower($entityText))));
         }
 
         $countQueryBuilder = clone $queryBuilder;
         $total = (int)$countQueryBuilder
             ->select('COUNT(actionLog.id)')
+            ->resetDQLPart('orderBy')
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -133,6 +134,17 @@ class ActionLogRepository
             'items' => $items,
             'total' => $total,
         ];
+    }
+
+    protected function escapeLikeTerm(string $term): string
+    {
+        $escapeCharacter = self::LIKE_ESCAPE_CHARACTER;
+
+        return str_replace(
+            [$escapeCharacter, '%', '_'],
+            [$escapeCharacter . $escapeCharacter, $escapeCharacter . '%', $escapeCharacter . '_'],
+            $term
+        );
     }
 
     public function findDistinctActions(): array

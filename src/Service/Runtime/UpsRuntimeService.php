@@ -7,6 +7,7 @@ namespace EvilStudio\HAT\Service\Runtime;
 use EvilStudio\HAT\Contract\UpsInterface;
 use EvilStudio\HAT\Factory\RuntimeUpsFactory;
 use EvilStudio\HAT\Service\Application\UpsService;
+use Throwable;
 
 class UpsRuntimeService
 {
@@ -34,23 +35,18 @@ class UpsRuntimeService
         return $this->runtimeUpsFactory->createFromEntity($upsEntity);
     }
 
-    public function updateAllUpsStatus(): void
+    public function pollAllUpsStatus(): array
     {
-        foreach ($this->listRuntimeUps() as $ups) {
-            $ups->updateStatus();
-        }
-    }
-
-    public function isAnyUpsOnBattery(): bool
-    {
-        foreach ($this->listRuntimeUps() as $ups) {
-            $ups->updateStatus();
-
-            if ($ups->isOnBattery()) {
-                return true;
+        $upsByIdentifier = [];
+        foreach ($this->listRuntimeUps() as $identifier => $ups) {
+            try {
+                $ups->updateStatus();
+                $upsByIdentifier[$identifier] = $ups;
+            } catch (Throwable) {
+                $upsByIdentifier[$identifier] = null;
             }
         }
 
-        return false;
+        return $upsByIdentifier;
     }
 }

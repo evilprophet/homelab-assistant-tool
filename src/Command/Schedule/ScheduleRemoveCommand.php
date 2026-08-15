@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\Schedule;
 
+use EvilStudio\HAT\Command\Support\DestructiveConfirmationTrait;
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Entity\Device;
@@ -22,6 +23,8 @@ use Throwable;
 #[AsCommand(name: 'hat:schedule:remove', description: 'Remove schedule')]
 class ScheduleRemoveCommand extends Command
 {
+    use DestructiveConfirmationTrait;
+
     public function __construct(
         protected ScheduleService $scheduleService,
         protected ActionLogService $actionLogService
@@ -70,12 +73,14 @@ class ScheduleRemoveCommand extends Command
             );
         }
 
-        if (!$input->getOption('force')) {
-            if (!$io->confirm(sprintf("Remove schedule '%s'?", $schedule->getName()), false)) {
-                $io->warning('Schedule removal aborted by user.');
-
-                return Command::SUCCESS;
-            }
+        $confirmationExitCode = $this->confirmDestructiveAction(
+            $input,
+            $io,
+            sprintf("Remove schedule '%s'?", $schedule->getName()),
+            'Schedule removal aborted by user.'
+        );
+        if ($confirmationExitCode !== null) {
+            return $confirmationExitCode;
         }
 
         try {
@@ -118,6 +123,12 @@ class ScheduleRemoveCommand extends Command
             }
 
             return (int)$normalized;
+        }
+
+        if (!$input->isInteractive()) {
+            $io->error("Argument 'id' is required.");
+
+            return null;
         }
 
         $schedules = $this->scheduleService->listSchedules();

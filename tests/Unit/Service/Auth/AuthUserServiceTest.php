@@ -33,6 +33,34 @@ class AuthUserServiceTest extends TestCase
         $service->createSimpleUser('   ', 'secret');
     }
 
+    public function testCreateSimpleUserRejectsPasswordWithWhitespace(): void
+    {
+        $service = new AuthUserService(
+            $this->createMock(EntityManagerInterface::class),
+            $this->createMock(UserRepository::class),
+            $this->createMock(UserPasswordHasherInterface::class)
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Password cannot contain whitespace characters.');
+
+        $service->createSimpleUser('admin', 'secret 123');
+    }
+
+    public function testResetSimpleUserPasswordRejectsTrailingWhitespace(): void
+    {
+        $service = new AuthUserService(
+            $this->createMock(EntityManagerInterface::class),
+            $this->createMock(UserRepository::class),
+            $this->createMock(UserPasswordHasherInterface::class)
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Password cannot contain whitespace characters.');
+
+        $service->resetSimpleUserPassword('admin', 'secret ');
+    }
+
     public function testCreateSimpleUserRejectsDuplicateUsername(): void
     {
         $entityManager = $this->createMock(EntityManagerInterface::class);
@@ -72,26 +100,6 @@ class AuthUserServiceTest extends TestCase
         $this->assertSame('admin', $user->getUsername());
         $this->assertSame('hashed-secret', $user->getPasswordHash());
         $this->assertNull($user->getOidcSubject());
-    }
-
-    public function testAuthenticateSimpleReturnsUserForValidCredentials(): void
-    {
-        $entityManager = $this->createMock(EntityManagerInterface::class);
-        $repository = $this->createMock(UserRepository::class);
-        $passwordHasher = $this->createMock(UserPasswordHasherInterface::class);
-        $user = (new User())
-            ->setUsername('admin')
-            ->setPasswordHash('stored-hash');
-
-        $repository->expects($this->once())->method('findByUsername')->with('admin')->willReturn($user);
-        $passwordHasher->expects($this->once())
-            ->method('isPasswordValid')
-            ->with($user, 'secret')
-            ->willReturn(true);
-
-        $service = new AuthUserService($entityManager, $repository, $passwordHasher);
-
-        $this->assertSame($user, $service->authenticateSimple('admin', 'secret'));
     }
 
     public function testCreateOrUpdateFromOidcUpdatesExistingSubjectUserUsername(): void

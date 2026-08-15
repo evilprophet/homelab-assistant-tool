@@ -155,8 +155,10 @@ class DeviceUpdateCommand extends Command
         } elseif ($input->hasParameterOption('--username')) {
             $username = $this->nullIfEmpty($input->getOption('username'));
         } elseif ($input->isInteractive()) {
-            $username = $this->nullIfEmpty(
-                $io->ask('SSH username (leave empty to clear)', $device->getUsername() ?? '')
+            $username = $this->promptOptionalString(
+                $io,
+                sprintf('SSH username (enter %s to clear)', self::CLEAR_SENTINEL),
+                $device->getUsername()
             );
         }
 
@@ -180,7 +182,7 @@ class DeviceUpdateCommand extends Command
         } elseif ($input->isInteractive()) {
             $upsLowBatteryRuntimeThreshold = $this->promptOptionalNonNegativeInt(
                 $io,
-                'UPS low battery runtime threshold in seconds (leave empty to clear)',
+                sprintf('UPS low battery runtime threshold in seconds (enter %s to clear)', self::CLEAR_SENTINEL),
                 $upsLowBatteryRuntimeThreshold
             );
             if ($upsLowBatteryRuntimeThreshold === false) {

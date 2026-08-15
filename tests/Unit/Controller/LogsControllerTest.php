@@ -50,8 +50,8 @@ class LogsControllerTest extends TestCase
 
     protected function createTestableController(): object
     {
-        $actionLogService = $this->createMock(ActionLogService::class);
-        $configuration = $this->createMock(Configuration::class);
+        $actionLogService = $this->createStub(ActionLogService::class);
+        $configuration = $this->createStub(Configuration::class);
 
         return new class ($actionLogService, $configuration) extends LogsController {
             public function callResolveSourceFilter(string $value, array &$errors): ?string

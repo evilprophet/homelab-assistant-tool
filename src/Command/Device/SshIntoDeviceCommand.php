@@ -34,13 +34,11 @@ class SshIntoDeviceCommand extends AbstractDeviceCommand
         }
 
         try {
-            $this->deviceOperationsService->sshIntoDevice($device->getName(), $output);
+            return $this->deviceOperationsService->sshIntoDevice($device->getName(), $output);
         } catch (Exception $e) {
             $outputHelper->error($e->getMessage());
 
             return Command::FAILURE;
         }
-
-        return Command::SUCCESS;
     }
 }

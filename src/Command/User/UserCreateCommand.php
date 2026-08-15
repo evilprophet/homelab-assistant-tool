@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\User;
 
+use EvilStudio\HAT\Command\Support\InteractiveInputTrait;
+use EvilStudio\HAT\Command\Support\PasswordInputTrait;
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Exception\EntityAlreadyExists;
@@ -13,13 +15,18 @@ use EvilStudio\HAT\Service\Auth\AuthUserService;
 use Throwable;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(name: 'hat:user:create', description: 'Create authentication user for simple auth mode')]
 class UserCreateCommand extends Command
 {
+    use InteractiveInputTrait;
+    use PasswordInputTrait;
+
     public function __construct(
         protected AuthModeResolver $authModeResolver,
         protected AuthUserService $authUserService,
@@ -28,39 +35,40 @@ class UserCreateCommand extends Command
         parent::__construct();
     }
 
+    protected function configure(): void
+    {
+        $this
+            ->addArgument('username', InputArgument::OPTIONAL, 'Username')
+            ->addOption(
+                'password-stdin',
+                null,
+                InputOption::VALUE_NONE,
+                'Read the password from standard input'
+            );
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
         if (!$this->authModeResolver->isSimpleMode()) {
-            $io->warning(
+            $io->error(
                 sprintf(
                     "Command 'hat:user:create' is disabled for auth mode '%s'. Set HAT_AUTH_MODE=simple to enable it.",
                     $this->authModeResolver->getMode()
                 )
             );
 
-            return Command::SUCCESS;
-        }
-
-        $username = trim((string)$io->ask('Username'));
-        if ($username === '') {
-            $io->error('Username cannot be empty.');
-
             return Command::FAILURE;
         }
 
-        $password = trim((string)$io->askHidden('Password'));
-        $passwordConfirm = trim((string)$io->askHidden('Confirm password'));
-        if ($password === '' || $passwordConfirm === '') {
-            $io->error('Password cannot be empty.');
-
+        $username = $this->resolveRequiredArgument($input, $io, 'username', 'Username');
+        if ($username === null) {
             return Command::FAILURE;
         }
 
-        if ($password !== $passwordConfirm) {
-            $io->error('Password confirmation does not match.');
-
+        $password = $this->resolvePassword($input, $io, 'Password', 'Confirm password');
+        if ($password === false) {
             return Command::FAILURE;
         }
 

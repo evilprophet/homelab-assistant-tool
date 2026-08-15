@@ -12,3 +12,22 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+
+  hat-cron:
+    image: ghcr.io/evilprophet/homelab-assistant-tool:latest
+    container_name: hat-cron
+    command: ["crond", "-f", "-l", "8"]
+    environment:
+      HAT_AUTO_MIGRATE: "0"
+    volumes:
+      - ./config/parameters.yaml:/app/config/parameters.yaml
+      - ./var/data:/app/var/data
+      - ./var/log:/app/var/log
+    env_file:
+      - .env
+    network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - hat-app
+    restart: unless-stopped

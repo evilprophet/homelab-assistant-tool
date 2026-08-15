@@ -13,6 +13,38 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ScheduleControllerFunctionalTest extends HttpFunctionalTestCase
 {
+    public function testIndexRendersOneChipPerDeviceEvenWhenTheNameContainsTheOldDelimiters(): void
+    {
+        $this->createSimpleUser('admin', 'secret-1');
+        $this->loginAsSimpleUser('admin', 'secret-1', '/schedules');
+
+        $deviceService = static::getContainer()->get(DeviceService::class);
+        $scheduleService = static::getContainer()->get(ScheduleService::class);
+
+        // The old contract joined names with ', ' and split them back in the template,
+        // so this single device rendered as two phantom chips with dead status dots.
+        $device = $deviceService->createDevice(
+            'Rack 1, Shelf A',
+            '10.0.0.21',
+            '00:11:22:33:44:21',
+            DevicePlatform::GENERIC->value
+        );
+        $scheduleService->createSchedule(
+            'Comma Schedule',
+            '* * * * *',
+            ScheduleInterface::COMMAND_START,
+            [(int)$device->getId()],
+            true
+        );
+
+        $response = $this->request('GET', '/schedules');
+        $content = html_entity_decode((string)$response->getContent(), ENT_QUOTES);
+
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(1, substr_count($content, 'data-runtime-device-status="Rack 1, Shelf A"'));
+        $this->assertStringNotContainsString('data-runtime-device-status="Shelf A"', $content);
+    }
+
     public function testNewShowsValidationErrorsForInvalidPayload(): void
     {
         $this->createSimpleUser('admin', 'secret-1');

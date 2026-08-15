@@ -48,5 +48,5 @@ interface DeviceInterface
 
     public function stop(): bool;
 
-    public function ssh(OutputInterface $output): void;
+    public function ssh(OutputInterface $output): int;
 }

@@ -6,7 +6,6 @@ namespace EvilStudio\HAT\Controller;
 
 use Cron\CronExpression;
 use DateTimeImmutable;
-use DateTimeZone;
 use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Runtime\DeviceOperationsService;
@@ -78,7 +77,7 @@ class HomeController extends AbstractController
             'recent_logs' => $recentLogs,
             'status_by_name' => [],
             'next_run_by_schedule_id' => $nextRunByScheduleId,
-            'timezone_name' => $this->configuration->getTimezone(),
+            'timezone_name' => $this->configuration->getResolvedTimezone()->getName(),
         ]);
     }
 
@@ -86,12 +85,7 @@ class HomeController extends AbstractController
     {
         $nextRunByScheduleId = [];
 
-        try {
-            $timezone = new DateTimeZone($this->configuration->getTimezone());
-        } catch (Throwable) {
-            $timezone = new DateTimeZone('UTC');
-        }
-
+        $timezone = $this->configuration->getResolvedTimezone();
         $cursor = new DateTimeImmutable('now', $timezone);
         foreach ($schedules as $schedule) {
             $scheduleId = $schedule['id'] ?? null;

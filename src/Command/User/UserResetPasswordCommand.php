@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace EvilStudio\HAT\Command\User;
 
+use EvilStudio\HAT\Command\Support\InteractiveInputTrait;
+use EvilStudio\HAT\Command\Support\PasswordInputTrait;
 use EvilStudio\HAT\Contract\ActionLogAction;
 use EvilStudio\HAT\Entity\ActionLog;
 use EvilStudio\HAT\Exception\EntityNotFound;
@@ -22,6 +24,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 #[AsCommand(name: 'hat:user:reset-password', description: 'Reset password for simple auth user')]
 class UserResetPasswordCommand extends Command
 {
+    use InteractiveInputTrait;
+    use PasswordInputTrait;
+
     public function __construct(
         protected AuthModeResolver $authModeResolver,
         protected AuthUserService $authUserService,
@@ -34,7 +39,18 @@ class UserResetPasswordCommand extends Command
     {
         $this
             ->addArgument('username', InputArgument::OPTIONAL, 'Username')
-            ->addOption('password', null, InputOption::VALUE_REQUIRED, 'New password');
+            ->addOption(
+                'password',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'New password (visible in the process list, prefer --password-stdin)'
+            )
+            ->addOption(
+                'password-stdin',
+                null,
+                InputOption::VALUE_NONE,
+                'Read the new password from standard input'
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -42,7 +58,7 @@ class UserResetPasswordCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         if (!$this->authModeResolver->isSimpleMode()) {
-            $io->warning(
+            $io->error(
                 sprintf(
                     "Command 'hat:user:reset-password' is disabled for auth mode '%s'. " .
                     'Set HAT_AUTH_MODE=simple to enable it.',
@@ -50,45 +66,16 @@ class UserResetPasswordCommand extends Command
                 )
             );
 
-            return Command::SUCCESS;
+            return Command::FAILURE;
         }
 
-        $username = trim((string)$input->getArgument('username'));
-        if ($username === '') {
-            if (!$input->isInteractive()) {
-                $io->error("Argument 'username' is required.");
-
-                return Command::FAILURE;
-            }
-
-            $username = trim((string)$io->ask('Username'));
-            if ($username === '') {
-                $io->error('Username cannot be empty.');
-
-                return Command::FAILURE;
-            }
+        $username = $this->resolveRequiredArgument($input, $io, 'username', 'Username');
+        if ($username === null) {
+            return Command::FAILURE;
         }
 
-        $password = (string)$input->getOption('password');
-        if (!$input->hasParameterOption('--password')) {
-            if (!$input->isInteractive()) {
-                $io->error('Option --password is required in non-interactive mode.');
-
-                return Command::FAILURE;
-            }
-
-            $password = trim((string)$io->askHidden('New password'));
-            $passwordConfirm = trim((string)$io->askHidden('Confirm new password'));
-            if ($password !== $passwordConfirm) {
-                $io->error('Password confirmation does not match.');
-
-                return Command::FAILURE;
-            }
-        }
-
-        if (trim($password) === '') {
-            $io->error('Password cannot be empty.');
-
+        $password = $this->resolvePassword($input, $io, 'New password', 'Confirm new password');
+        if ($password === false) {
             return Command::FAILURE;
         }
 

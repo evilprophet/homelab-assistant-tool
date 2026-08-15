@@ -17,3 +17,10 @@ doctrine:
         dir: '%kernel.project_dir%/src/Entity'
         prefix: 'EvilStudio\HAT\Entity'
         alias: Hat
+
+when@prod:
+  doctrine:
+    orm:
+      # Proxies are written once by the cache warmer instead of being regenerated
+      # on demand, which also keeps var/cache writable-only-at-build.
+      auto_generate_proxy_classes: false

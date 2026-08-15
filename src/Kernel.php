@@ -16,6 +16,17 @@ class Kernel extends BaseKernel
 
     protected const string APPLICATION_NAME = 'HAT (HomeLab Assistant Tools)';
 
+    public function __construct(string $environment, bool $debug)
+    {
+        // Doctrine hydrates DATETIME_IMMUTABLE without a timezone, so the value picks
+        // up PHP's default. Timestamps are stored as UTC wall time, so anything else
+        // here makes the app read them as local time and display them unshifted.
+        // The configured `timezone` parameter still drives all display conversion.
+        date_default_timezone_set('UTC');
+
+        parent::__construct($environment, $debug);
+    }
+
     public function getName(): string
     {
         return self::APPLICATION_NAME;

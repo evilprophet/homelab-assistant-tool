@@ -12,11 +12,38 @@ use EvilStudio\HAT\Repository\UpsRepository;
 use EvilStudio\HAT\Service\Application\UpsService;
 use EvilStudio\HAT\Tests\Support\EntityTestHelperTrait;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class UpsServiceTest extends TestCase
 {
     use EntityTestHelperTrait;
+
+    public function testCreateUpsRejectsBlankName(): void
+    {
+        $upsRepository = $this->createMock(UpsRepository::class);
+        $upsRepository->expects($this->never())->method('findOneByIdentifier');
+
+        $service = new UpsService($this->createMock(EntityManagerInterface::class), $upsRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('UPS name cannot be empty.');
+
+        $service->createUps('  ', 'ups-main', 'ups.local');
+    }
+
+    public function testCreateUpsRejectsNegativeThreshold(): void
+    {
+        $upsRepository = $this->createMock(UpsRepository::class);
+        $upsRepository->expects($this->never())->method('findOneByIdentifier');
+
+        $service = new UpsService($this->createMock(EntityManagerInterface::class), $upsRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Safe battery runtime threshold cannot be negative.');
+
+        $service->createUps('Main UPS', 'ups-main', 'ups.local', -1);
+    }
 
     public function testCreateUpsThrowsWhenIdentifierAlreadyExists(): void
     {
@@ -81,9 +108,22 @@ class UpsServiceTest extends TestCase
         $service = new UpsService($entityManager, $upsRepository);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('UPS identifier can contain only letters, digits, dot, underscore, and dash.');
+        $this->expectExceptionMessage('UPS identifier can contain only letters, digits, dot, underscore, and dash');
 
         $service->createUps('Main UPS', 'ups-main; rm -rf /', 'ups.local');
+    }
+
+    public function testCreateUpsRejectsIdentifierStartingWithDash(): void
+    {
+        $upsRepository = $this->createMock(UpsRepository::class);
+        $upsRepository->expects($this->never())->method('findOneByIdentifier');
+
+        $service = new UpsService($this->createMock(EntityManagerInterface::class), $upsRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('must start with a letter or digit');
+
+        $service->createUps('Main UPS', '-oProxyCommand=x', 'ups.local');
     }
 
     public function testCreateUpsThrowsWhenHostContainsUnsafeCharacters(): void
@@ -97,9 +137,61 @@ class UpsServiceTest extends TestCase
         $service = new UpsService($entityManager, $upsRepository);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('UPS host must be a valid hostname or IP with optional :port');
+        $this->expectExceptionMessage('UPS host must be a hostname, IPv4 address, or bracketed IPv6 address');
 
         $service->createUps('Main UPS', 'ups-main', 'ups.local && whoami');
+    }
+
+    #[DataProvider('provideAcceptedHosts')]
+    public function testCreateUpsAcceptsValidHostForms(string $host): void
+    {
+        $upsRepository = $this->createMock(UpsRepository::class);
+        $upsRepository->expects($this->once())->method('findOneByIdentifier')->willReturn(null);
+
+        $service = new UpsService($this->createMock(EntityManagerInterface::class), $upsRepository);
+        $ups = $service->createUps('Main UPS', 'ups-main', $host);
+
+        $this->assertSame($host, $ups->getHost());
+    }
+
+    #[DataProvider('provideRejectedHosts')]
+    public function testCreateUpsRejectsMalformedHosts(string $host): void
+    {
+        $upsRepository = $this->createMock(UpsRepository::class);
+        $upsRepository->expects($this->never())->method('findOneByIdentifier');
+
+        $service = new UpsService($this->createMock(EntityManagerInterface::class), $upsRepository);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $service->createUps('Main UPS', 'ups-main', $host);
+    }
+
+    public static function provideAcceptedHosts(): array
+    {
+        return [
+            'hostname' => ['ups.local'],
+            'hostname with port' => ['ups.local:3493'],
+            'ipv4' => ['192.168.1.10'],
+            'ipv4 with port' => ['192.168.1.10:3493'],
+            'bare ipv6' => ['fd00::10'],
+            'bracketed ipv6' => ['[fd00::10]'],
+            'bracketed ipv6 with port' => ['[fd00::10]:3493'],
+        ];
+    }
+
+    public static function provideRejectedHosts(): array
+    {
+        return [
+            'dash only' => ['-'],
+            'dots only' => ['...'],
+            'octet out of range' => ['192.168.1.999'],
+            'trailing dash' => ['ups-'],
+            'leading dot' => ['.ups.local'],
+            'unclosed bracket' => ['[fd00::10'],
+            'port out of range' => ['ups.local:70000'],
+            'non numeric port' => ['ups.local:abc'],
+        ];
     }
 
     public function testCreateUpsThrowsWhenHostPortIsOutOfRange(): void
