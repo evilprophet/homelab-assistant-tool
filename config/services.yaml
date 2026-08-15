@@ -7,6 +7,7 @@ services:
       string $sqliteDatabasePath: '%sqlite_database_path%'
       array $configuration: '%configuration%'
       Psr\Log\LoggerInterface $webLogger: '@monolog.logger.web'
+      Psr\Log\LoggerInterface $cronLogger: '@monolog.logger.cron'
 
   EvilStudio\HAT\:
     resource: '../src/'

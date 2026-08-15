@@ -10,6 +10,7 @@ use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Runtime\Cron;
 use Exception;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,6 +26,7 @@ class ExecuteCronCommand extends Command
         protected Cron $cron,
         protected Configuration $configuration,
         protected ActionLogService $actionLogService,
+        protected LoggerInterface $cronLogger,
         protected string $applicationDirectory
     ) {
         parent::__construct();
@@ -36,6 +38,7 @@ class ExecuteCronCommand extends Command
 
         if (!$this->configuration->isCronEnabled()) {
             $outputHelper->warning('Cron is disabled in configuration.');
+            $this->cronLogger->warning("Cron is disabled in configuration.");
 
             return Command::SUCCESS;
         }
@@ -43,6 +46,7 @@ class ExecuteCronCommand extends Command
         $lockHandle = $this->acquireLock();
         if ($lockHandle === null) {
             $outputHelper->warning('Another cron run is still in progress.');
+            $this->cronLogger->warning("Another cron run is still in progress.");
             $this->actionLogService->createActionLog(
                 ActionLog::SOURCE_CLI,
                 ActionLogAction::CRON_EXECUTE->value,
@@ -71,6 +75,7 @@ class ExecuteCronCommand extends Command
                     )
                 );
             }
+
         } catch (Exception $e) {
             $this->actionLogService->createActionLog(
                 ActionLog::SOURCE_CLI,
@@ -78,6 +83,7 @@ class ExecuteCronCommand extends Command
                 ActionLog::LEVEL_ERROR,
                 sprintf('Cron execution failed: %s', $e->getMessage())
             );
+            $this->cronLogger->error("Cron execution failed.", ["exception" => $e->getMessage()]);
             $outputHelper->error($e->getMessage());
 
             return Command::FAILURE;

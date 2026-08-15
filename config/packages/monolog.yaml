@@ -2,12 +2,18 @@ monolog:
     channels:
         - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
         - web
+        - cron
     handlers:
         web:
             type: stream
             path: "%kernel.logs_dir%/web.log"
             level: info
             channels: ["web"]
+        cron:
+            type: stream
+            path: "%kernel.logs_dir%/cron.log"
+            level: info
+            channels: ["cron"]
 
 when@dev:
     monolog:
@@ -47,6 +53,12 @@ when@prod:
                 level: info
                 max_files: 28
                 channels: ["web"]
+            cron:
+                type: rotating_file
+                path: "%kernel.logs_dir%/cron.log"
+                level: info
+                max_files: 28
+                channels: ["cron"]
             main:
                 type: fingers_crossed
                 action_level: error

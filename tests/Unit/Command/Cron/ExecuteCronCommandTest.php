@@ -10,6 +10,7 @@ use EvilStudio\HAT\Helper\Configuration;
 use EvilStudio\HAT\Service\Application\ActionLogService;
 use EvilStudio\HAT\Service\Runtime\Cron;
 use RuntimeException;
+use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -29,13 +30,21 @@ class ExecuteCronCommandTest extends TestCase
         $cron = $this->createMock(Cron::class);
         $configuration = $this->createMock(Configuration::class);
         $actionLogService = $this->createMock(ActionLogService::class);
+        $cronLogger = $this->createMock(LoggerInterface::class);
 
         $configuration->expects($this->once())->method('isCronEnabled')->willReturn(false);
         $cron->expects($this->never())->method('execute');
         $actionLogService->expects($this->never())->method('createActionLog');
+        $cronLogger->expects($this->once())->method('warning')->with('Cron is disabled in configuration.');
 
         $tester = new CommandTester(
-            new ExecuteCronCommand($cron, $configuration, $actionLogService, $this->createLockDirectory())
+            new ExecuteCronCommand(
+                $cron,
+                $configuration,
+                $actionLogService,
+                $cronLogger,
+                $this->createLockDirectory()
+            )
         );
         $exitCode = $tester->execute([], ['interactive' => false]);
 
@@ -48,10 +57,12 @@ class ExecuteCronCommandTest extends TestCase
         $cron = $this->createMock(Cron::class);
         $configuration = $this->createMock(Configuration::class);
         $actionLogService = $this->createMock(ActionLogService::class);
+        $cronLogger = $this->createMock(LoggerInterface::class);
 
         $configuration->expects($this->once())->method('isCronEnabled')->willReturn(true);
         $configuration->expects($this->exactly(2))->method('getActionLogRetentionDays')->willReturn(90);
         $cron->expects($this->once())->method('execute');
+        $cronLogger->expects($this->never())->method("info");
         $actionLogService->expects($this->once())
             ->method('cleanupOlderThanDays')
             ->with(90)
@@ -67,7 +78,13 @@ class ExecuteCronCommandTest extends TestCase
             );
 
         $tester = new CommandTester(
-            new ExecuteCronCommand($cron, $configuration, $actionLogService, $this->createLockDirectory())
+            new ExecuteCronCommand(
+                $cron,
+                $configuration,
+                $actionLogService,
+                $cronLogger,
+                $this->createLockDirectory()
+            )
         );
         $exitCode = $tester->execute([], ['interactive' => false]);
 
@@ -79,9 +96,11 @@ class ExecuteCronCommandTest extends TestCase
         $cron = $this->createMock(Cron::class);
         $configuration = $this->createMock(Configuration::class);
         $actionLogService = $this->createMock(ActionLogService::class);
+        $cronLogger = $this->createMock(LoggerInterface::class);
 
         $configuration->expects($this->once())->method('isCronEnabled')->willReturn(true);
         $cron->expects($this->once())->method('execute')->willThrowException(new RuntimeException('Cron failed.'));
+        $cronLogger->expects($this->once())->method('error')->with('Cron execution failed.', ['exception' => 'Cron failed.']);
         $actionLogService->expects($this->once())
             ->method('createActionLog')
             ->with(
@@ -93,7 +112,13 @@ class ExecuteCronCommandTest extends TestCase
         $actionLogService->expects($this->never())->method('cleanupOlderThanDays');
 
         $tester = new CommandTester(
-            new ExecuteCronCommand($cron, $configuration, $actionLogService, $this->createLockDirectory())
+            new ExecuteCronCommand(
+                $cron,
+                $configuration,
+                $actionLogService,
+                $cronLogger,
+                $this->createLockDirectory()
+            )
         );
         $exitCode = $tester->execute([], ['interactive' => false]);
 
@@ -107,6 +132,7 @@ class ExecuteCronCommandTest extends TestCase
         $cron = $this->createMock(Cron::class);
         $configuration = $this->createMock(Configuration::class);
         $actionLogService = $this->createMock(ActionLogService::class);
+        $cronLogger = $this->createMock(LoggerInterface::class);
 
         $configuration->expects($this->once())->method('isCronEnabled')->willReturn(true);
         $cron->expects($this->never())->method('execute');
@@ -120,11 +146,18 @@ class ExecuteCronCommandTest extends TestCase
                 'Cron execution skipped because a previous run is still in progress.'
             );
 
+        $cronLogger->expects($this->once())->method("warning")->with("Another cron run is still in progress.");
         $heldLock = fopen($applicationDirectory . '/var/data/hat-cron.lock', 'c');
         flock($heldLock, LOCK_EX | LOCK_NB);
 
         $tester = new CommandTester(
-            new ExecuteCronCommand($cron, $configuration, $actionLogService, $applicationDirectory)
+            new ExecuteCronCommand(
+                $cron,
+                $configuration,
+                $actionLogService,
+                $cronLogger,
+                $applicationDirectory
+            )
         );
         $exitCode = $tester->execute([], ['interactive' => false]);
 
