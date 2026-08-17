@@ -1,5 +1,8 @@
+stages:
+  - validate
+
 include:
-  - component: $CI_SERVER_FQDN/devops/ci-cd-components/php-quality@v1.6.0
+  - component: $CI_SERVER_FQDN/devops/ci-cd-components/php-quality@v1.8.0
     inputs:
       extra_system_packages: "libonig-dev libsqlite3-dev"
       php_extensions: "zip mbstring pdo_sqlite sockets"

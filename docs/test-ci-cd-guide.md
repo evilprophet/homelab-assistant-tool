@@ -21,7 +21,7 @@ Every push and merge request triggers one quality job that runs linting followed
 
 ### 📄 File
 
-- `.gitlab-ci.yml`, which includes `php-quality@v1.6.0` from the shared CI/CD component catalog
+- `.gitlab-ci.yml`, which includes `php-quality@v1.8.0` from the shared CI/CD component catalog
 
 ### 🧩 Job
 
@@ -32,7 +32,7 @@ Every push and merge request triggers one quality job that runs linting followed
 ### `PHP Quality`
 
 ```yaml
-stage: test
+stage: validate
 script:
   - vendor/bin/phpcs --standard=PSR12 --extensions=php src tests
   - vendor/bin/phpunit --configuration ./phpunit.xml.dist --testsuite Unit --no-coverage
